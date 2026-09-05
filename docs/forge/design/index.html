@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Экранный эталон — dodo_qr_service</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="reference/tokens.css">
+<link rel="stylesheet" href="app.css">
+<style>
+  .page { max-width: 1000px; margin: 0 auto; padding: var(--space-10) var(--space-9) var(--space-10); }
+  .lead { color: var(--ink-2); max-width: 62ch; margin: var(--space-6) 0 0; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-7); margin-top: var(--space-8); }
+  .screen {
+    display: flex; flex-direction: column; gap: var(--space-4);
+    padding: var(--space-7); text-decoration: none; color: inherit;
+    background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block);
+    box-shadow: var(--sh-xs); transition: border-color var(--t-state) var(--ease), transform var(--t-state) var(--ease);
+  }
+  .screen:hover { border-color: var(--accent-line); transform: translateY(-1px); }
+  .screen__name { font-size: var(--fs-title); font-weight: var(--w-semibold); }
+  .screen__who { font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); }
+  .screen__desc { color: var(--ink-2); font-size: var(--fs-dense); line-height: var(--lh-body); }
+  h2 { margin-top: var(--space-10); }
+  .vocab { margin-top: var(--space-8); }
+  .swatches { display: flex; gap: var(--space-6); flex-wrap: wrap; }
+  .sw { display: flex; flex-direction: column; gap: var(--space-3); font-size: var(--fs-meta); color: var(--ink-2); }
+  .sw__chip { width: 88px; height: 44px; border-radius: var(--r-control); border: 1px solid var(--line-strong); }
+  .demo-row { display: flex; gap: var(--space-6); align-items: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Экранный эталон — система чек-листов</h1>
+  <p class="lead">
+    Так продукт будет выглядеть и вести себя. Это статические страницы: кнопки не нажимаются, данные вымышленные,
+    но тексты настоящие — именно их увидят методист и сотрудник на кухне. Смотрите, спорьте, требуйте переделать:
+    правка здесь стоит минуты, та же правка после стройки стоит переделки модуля.
+  </p>
+  <p class="lead">
+    Визуальный язык взят из дизайн-системы Dodo P&amp;L Service (направление «Реестр») — только визуал,
+    структура экранов своя. Экран сотрудника намеренно другой по характеру: крупные касания, одна колонка, английский язык интерфейса по языку устройства.
+  </p>
+
+  <h2>Экран сотрудника — телефон, без входа</h2>
+  <div class="cards">
+    <a class="screen" href="screens/fill.html">
+      <span class="screen__who">Сотрудник · 375 px</span>
+      <span class="screen__name">Заполнение чек-листа</span>
+      <span class="screen__desc">Три состояния рядом: обычное заполнение с прогрессом, проваленный критичный пункт с комментарием, ввод числового значения.</span>
+    </a>
+    <a class="screen" href="screens/states.html">
+      <span class="screen__who">Сотрудник и админка</span>
+      <span class="screen__name">Состояния</span>
+      <span class="screen__desc">Отправлено, ссылка недействительна, для станции нет чек-листа, загрузка, нет сети. Плюс пустые состояния и ошибки в админке.</span>
+    </a>
+  </div>
+
+  <h2>Админка — компьютер</h2>
+  <div class="cards">
+    <a class="screen" href="screens/editor.html">
+      <span class="screen__who">Методист · главный экран</span>
+      <span class="screen__name">Редактор чек-листа</span>
+      <span class="screen__desc">Секции, пункты с типами ответов, критичность, вставленный блок библиотеки, версии, клавиатурные подсказки.</span>
+    </a>
+    <a class="screen" href="screens/library.html">
+      <span class="screen__who">Методист</span>
+      <span class="screen__name">Библиотека блоков</span>
+      <span class="screen__desc">Блок заводится раз и вставляется в десятки чек-листов. Видно, где используется и что затронет правка.</span>
+    </a>
+    <a class="screen" href="screens/templates.html">
+      <span class="screen__who">Методист</span>
+      <span class="screen__name">Список чек-листов</span>
+      <span class="screen__desc">Сгруппирован по пиццериям, видно версию, число пунктов и активность за неделю.</span>
+    </a>
+    <a class="screen" href="screens/catalog.html">
+      <span class="screen__who">Методист</span>
+      <span class="screen__name">Страны и пиццерии</span>
+      <span class="screen__desc">Три колонки: страна → пиццерия → станции. Здесь же коды станций и их перевыпуск.</span>
+    </a>
+    <a class="screen" href="screens/qr-sheet.html">
+      <span class="screen__who">Методист и управляющий</span>
+      <span class="screen__name">QR-коды станций</span>
+      <span class="screen__desc">Лист A4 для печати наклеек и вывод QR на экран планшета. Перевыпуск кода в один клик.</span>
+    </a>
+    <a class="screen" href="screens/feed.html">
+      <span class="screen__who">Управляющий</span>
+      <span class="screen__name">Лента заполнений</span>
+      <span class="screen__desc">Фильтры, три показателя за день, лента с результатом и длительностью каждого заполнения.</span>
+    </a>
+    <a class="screen" href="screens/submission.html">
+      <span class="screen__who">Управляющий</span>
+      <span class="screen__name">Карточка заполнения</span>
+      <span class="screen__desc">Ответ по каждому пункту со временем, комментарий к провалу, пункты в той версии, которую видел сотрудник.</span>
+    </a>
+    <a class="screen" href="screens/login.html">
+      <span class="screen__who">Методист</span>
+      <span class="screen__name">Вход</span>
+      <span class="screen__desc">Один пароль на админку. Сотрудникам вход не нужен — они приходят по QR.</span>
+    </a>
+  </div>
+
+  <h2 class="vocab">Словарь компонентов</h2>
+  <div class="card" style="margin-top: var(--space-7)">
+    <div class="card__body stack">
+      <div>
+        <div class="field__label" style="margin-bottom: var(--space-5)">Цвет</div>
+        <div class="swatches">
+          <div class="sw"><span class="sw__chip" style="background: var(--accent)"></span>акцент · действия</div>
+          <div class="sw"><span class="sw__chip" style="background: var(--ok)"></span>выполнено</div>
+          <div class="sw"><span class="sw__chip" style="background: var(--err)"></span>провал, опасное</div>
+          <div class="sw"><span class="sw__chip" style="background: var(--warn-mark)"></span>критичный пункт</div>
+          <div class="sw"><span class="sw__chip" style="background: var(--reg-supp)"></span>блок библиотеки</div>
+          <div class="sw"><span class="sw__chip" style="background: var(--canvas)"></span>фон приложения</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="field__label" style="margin-bottom: var(--space-5)">Кнопки</div>
+        <div class="demo-row">
+          <button class="btn btn--primary">Главное действие</button>
+          <button class="btn">Обычное</button>
+          <button class="btn btn--ghost">Второстепенное</button>
+          <button class="btn btn--danger">Опасное</button>
+          <button class="btn btn--sm">Мелкое</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="field__label" style="margin-bottom: var(--space-5)">Метки</div>
+        <div class="demo-row">
+          <span class="tag tag--ok">Всё выполнено</span>
+          <span class="tag tag--warn">Критичный</span>
+          <span class="tag tag--err">1 критичный провален</span>
+          <span class="tag tag--accent">Ссылка</span>
+          <span class="tag tag--draft">Черновик</span>
+          <span class="tag">Да / Нет</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="field__label" style="margin-bottom: var(--space-5)">Поля</div>
+        <div class="demo-row">
+          <div class="field" style="width: 220px"><label class="field__label">Обычное поле</label><input class="input" value="Открытие кухни"></div>
+          <div class="field" style="width: 180px"><label class="field__label">Выбор</label><select class="select"><option>Кухня</option></select></div>
+          <div class="field" style="width: 220px"><label class="field__label">Поле в строке списка</label><input class="input input--flush" value="Включить печь и вытяжку"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="field__label" style="margin-bottom: var(--space-5)">Сообщения</div>
+        <div class="stack">
+          <div class="notice">Нейтральное пояснение: как устроено правило, которое неочевидно.</div>
+          <div class="notice notice--warn">Предупреждение перед действием, которое трудно отменить.</div>
+          <div class="notice notice--err">Ошибка: что случилось и что делать дальше. Данные не потеряны.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Чего здесь нет намеренно</h2>
+  <p class="lead">
+    Ролей и разных кабинетов, сводных графиков, уведомлений, экрана сотрудника с именем и входом,
+    карты с геолокацией, цветных ярлыков «заполнено подозрительно быстро». Всё это сознательно оставлено
+    за пределами первой версии — причины записаны в журнале решений проекта.
+  </p>
+</div>
+</body>
+</html>
