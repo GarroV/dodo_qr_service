@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Заполнение чек-листа — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+  body { background: var(--canvas); }
+  .phones { display: flex; gap: var(--space-10); padding: var(--space-9); align-items: flex-start; flex-wrap: wrap; }
+  .phone { width: 375px; }
+  .phone__cap { margin-bottom: var(--space-5); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); }
+  .phone .fill { min-height: 720px; max-height: 720px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: var(--r-screen); box-shadow: var(--sh-xs); }
+  .back { padding: var(--space-7) var(--space-9) 0; }
+</style>
+</head>
+<body>
+<div class="back"><a href="../index.html">← Карта экранов</a> · экран сотрудника, ширина 375 px</div>
+<div class="phones">
+
+  <!-- 1. Заполнение в процессе -->
+  <div class="phone">
+    <div class="phone__cap">1 · Заполнение</div>
+    <div class="fill">
+      <div class="fill__head">
+        <div class="fill__station">Kitchen opening</div>
+        <div class="fill__where">Almaty, Abaya 44 · Kitchen · morning</div>
+        <div class="fill__progress">
+          <span class="fill__bar"><i style="width:43%"></i></span>
+          <span class="fill__count">3 of 7</span>
+        </div>
+      </div>
+
+      <div class="section__title">Oven and equipment</div>
+
+      <div class="item item--done">
+        <span class="item__box"></span>
+        <span class="item__text">Turn on the oven and the hood</span>
+      </div>
+
+      <div class="item item--done">
+        <span class="item__box"></span>
+        <span class="item__text">Measure the fryer temperature
+          <span class="item__hint">160–180 °C · recorded: 172</span>
+        </span>
+      </div>
+
+      <div class="item item--done">
+        <span class="item__box"></span>
+        <span class="item__text">Check that work surfaces are clean</span>
+      </div>
+
+      <div class="item">
+        <span class="item__box"></span>
+        <span class="item__text">Check labels on the sauces <span class="item__crit">!</span>
+          <span class="item__hint">Critical — a comment is required if it fails</span>
+        </span>
+      </div>
+
+      <div class="section__title">Refrigerators</div>
+
+      <div class="item">
+        <span class="item__box"></span>
+        <span class="item__text">Cold room temperature <span class="item__crit">!</span>
+          <span class="item__hint">+2…+4 °C</span>
+        </span>
+      </div>
+
+      <div class="item">
+        <span class="item__box"></span>
+        <span class="item__text">Remove expired prep</span>
+      </div>
+
+      <div class="fill__foot">
+        <button class="btn btn--primary btn--fill" disabled style="opacity:.45">4 items left</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Провал критичного пункта -->
+  <div class="phone">
+    <div class="phone__cap">2 · Критичный пункт не выполнен</div>
+    <div class="fill">
+      <div class="fill__head">
+        <div class="fill__station">Kitchen opening</div>
+        <div class="fill__where">Almaty, Abaya 44 · Kitchen · morning</div>
+        <div class="fill__progress">
+          <span class="fill__bar"><i style="width:86%"></i></span>
+          <span class="fill__count">6 of 7</span>
+        </div>
+      </div>
+
+      <div class="section__title">Refrigerators</div>
+
+      <div class="item item--failed">
+        <span class="item__box"></span>
+        <span class="item__text">Cold room temperature <span class="item__crit">!</span>
+          <span class="item__hint">+2…+4 °C · recorded: +9</span>
+        </span>
+      </div>
+
+      <div class="item__fail">
+        <div class="field">
+          <label class="field__label">What is wrong?</label>
+          <input class="input" value="Door seal is torn, called the technician" style="height:44px">
+          <span class="field__hint">A short note is enough — the manager will see it today.</span>
+        </div>
+      </div>
+
+      <div class="item">
+        <span class="item__box"></span>
+        <span class="item__text">Remove expired prep</span>
+      </div>
+
+      <div class="fill__foot">
+        <button class="btn btn--primary btn--fill">Finish · 1 item left</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Ввод числа -->
+  <div class="phone">
+    <div class="phone__cap">3 · Числовой пункт</div>
+    <div class="fill">
+      <div class="fill__head">
+        <div class="fill__station">Kitchen opening</div>
+        <div class="fill__where">Almaty, Abaya 44 · Kitchen · morning</div>
+        <div class="fill__progress">
+          <span class="fill__bar"><i style="width:29%"></i></span>
+          <span class="fill__count">2 of 7</span>
+        </div>
+      </div>
+
+      <div class="section__title">Oven and equipment</div>
+
+      <div class="item item--done">
+        <span class="item__box"></span>
+        <span class="item__text">Turn on the oven and the hood</span>
+      </div>
+
+      <div class="item">
+        <span class="item__box"></span>
+        <span class="item__text">Measure the fryer temperature
+          <span class="item__hint">Expected 160–180 °C</span>
+        </span>
+      </div>
+      <div class="item__num">
+        <input class="input" value="172" inputmode="decimal">
+        <span class="meta">°C · within range</span>
+      </div>
+
+      <div class="item">
+        <span class="item__box"></span>
+        <span class="item__text">Check that work surfaces are clean</span>
+      </div>
+
+      <div class="fill__foot">
+        <button class="btn btn--primary btn--fill" disabled style="opacity:.45">5 items left</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
