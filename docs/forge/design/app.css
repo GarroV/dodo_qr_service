@@ -1,0 +1,251 @@
+/* ─────────────────────────────────────────────────────────────
+   dodo_qr_service — компоненты экранного эталона.
+   Токены берутся из reference/tokens.css (дизайн-система Dodo P&L,
+   направление «Реестр»). Здесь только компоненты этого продукта:
+   структура своя, визуальный язык общий (решение D013).
+   ───────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font: var(--w-regular) var(--fs-body)/var(--lh-body) var(--font-ui);
+}
+a { color: var(--accent); }
+h1, h2, h3 { margin: 0; font-weight: var(--w-semibold); }
+h1 { font-size: var(--fs-display); line-height: var(--lh-display); }
+h2 { font-size: var(--fs-title); line-height: var(--lh-title); }
+h3 { font-size: var(--fs-body); line-height: var(--lh-body); }
+:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+
+/* ── Каркас админки ──────────────────────────────────────── */
+.app { display: grid; grid-template-columns: 208px 1fr; min-height: 100vh; }
+
+.nav {
+  background: var(--surface);
+  border-right: 1px solid var(--line-strong);
+  padding: var(--space-7) 0;
+  display: flex; flex-direction: column; gap: var(--space-8);
+}
+.nav__brand {
+  padding: 0 var(--space-7);
+  font-size: var(--fs-title); font-weight: var(--w-semibold);
+  letter-spacing: -.01em;
+}
+.nav__brand span { color: var(--ink-3); font-weight: var(--w-regular); }
+.nav__group { display: flex; flex-direction: column; }
+.nav__label {
+  padding: 0 var(--space-7) var(--space-3);
+  font-size: var(--fs-micro); line-height: var(--lh-micro);
+  letter-spacing: var(--tracking-micro); text-transform: uppercase;
+  color: var(--ink-3); font-weight: var(--w-semibold);
+}
+.nav__item {
+  display: flex; align-items: center; gap: var(--space-5);
+  padding: var(--space-4) var(--space-7);
+  color: var(--ink-2); text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.nav__item:hover { background: var(--surface-3); color: var(--ink); }
+.nav__item--active {
+  background: var(--accent-soft); color: var(--accent);
+  border-left-color: var(--accent); font-weight: var(--w-medium);
+}
+.nav__foot { margin-top: auto; padding: 0 var(--space-7); color: var(--ink-3); font-size: var(--fs-meta); }
+
+.main { display: flex; flex-direction: column; min-width: 0; }
+.topbar {
+  display: flex; align-items: center; gap: var(--space-7);
+  padding: var(--space-7) var(--space-9);
+  background: var(--surface); border-bottom: 1px solid var(--line-strong);
+}
+.topbar__title { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.topbar__crumbs { font-size: var(--fs-meta); color: var(--ink-3); }
+.topbar__actions { margin-left: auto; display: flex; gap: var(--space-4); align-items: center; }
+.content { padding: var(--space-9); display: flex; flex-direction: column; gap: var(--space-8); }
+.content--narrow { max-width: 880px; }
+
+/* ── Кнопки ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-4);
+  height: var(--control-h); padding: 0 var(--space-6);
+  border: 1px solid var(--line-control); border-radius: var(--r-control);
+  background: var(--surface); color: var(--ink);
+  font: var(--w-medium) var(--fs-body)/1 var(--font-ui);
+  cursor: pointer; text-decoration: none;
+  transition: background var(--t-state) var(--ease), border-color var(--t-state) var(--ease);
+}
+.btn:hover { border-color: var(--line-control-2); background: var(--surface-2); }
+.btn--primary { background: var(--accent); border-color: var(--accent); color: var(--ink-inverse); }
+.btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn--ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+.btn--ghost:hover { background: var(--surface-3); color: var(--ink); }
+.btn--sm { height: var(--control-h-sm); padding: 0 var(--space-5); font-size: var(--fs-dense); }
+.btn--danger { color: var(--err); }
+.btn--danger:hover { background: var(--err-soft); border-color: var(--err-line); }
+
+/* ── Поля ────────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; gap: var(--space-3); }
+.field__label {
+  font-size: var(--fs-micro); line-height: var(--lh-micro);
+  letter-spacing: var(--tracking-micro); text-transform: uppercase;
+  color: var(--ink-3); font-weight: var(--w-semibold);
+}
+.field__hint { font-size: var(--fs-meta); color: var(--ink-3); }
+.input, .select {
+  height: var(--control-h); padding: 0 var(--space-5);
+  border: 1px solid var(--line-control); border-radius: var(--r-control);
+  background: var(--surface); color: var(--ink);
+  font: var(--w-regular) var(--fs-lead)/1 var(--font-ui);
+  width: 100%;
+}
+.input:focus, .select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-soft); outline: none; }
+.input--flush {
+  border-color: transparent; background: transparent; padding-left: var(--space-3);
+}
+.input--flush:hover { border-color: var(--line); }
+.select { appearance: none; padding-right: var(--space-8);
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 13px, calc(100% - 9px) 13px;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+.row { display: flex; gap: var(--space-6); }
+.row > * { flex: 1; min-width: 0; }
+
+/* ── Блоки и таблицы ─────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--r-block);
+  box-shadow: var(--sh-xs);
+}
+.card__head {
+  display: flex; align-items: center; gap: var(--space-6);
+  padding: var(--space-6) var(--space-7);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-3);
+  border-radius: var(--r-block) var(--r-block) 0 0;
+}
+.card__head .btn { margin-left: auto; }
+.card__body { padding: var(--space-7); }
+.card__body--flush { padding: 0; }
+
+.table { width: 100%; border-collapse: collapse; font-size: var(--fs-dense); line-height: var(--lh-dense); }
+.table th {
+  text-align: left; font-weight: var(--w-semibold); color: var(--ink-2);
+  background: var(--surface-3); border-bottom: 1px solid var(--line-strong);
+  padding: var(--space-4) var(--cell-pad-x); white-space: nowrap;
+  font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase;
+}
+.table td { padding: var(--space-5) var(--cell-pad-x); border-bottom: 1px solid var(--line); vertical-align: middle; }
+.table tbody tr:hover { background: var(--surface-2); }
+.table td.num { font: var(--num); text-align: right; }
+.table .cell-actions { text-align: right; white-space: nowrap; }
+
+/* ── Метки состояния ─────────────────────────────────────── */
+.tag {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  height: 20px; padding: 0 var(--space-4);
+  border-radius: var(--r-mark); border: 1px solid var(--line-strong);
+  background: var(--surface-2); color: var(--ink-2);
+  font-size: var(--fs-micro); font-weight: var(--w-semibold);
+  letter-spacing: var(--tracking-micro); text-transform: uppercase; white-space: nowrap;
+}
+.tag--ok { background: var(--ok-soft); border-color: var(--ok-line); color: var(--ok); }
+.tag--warn { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-ink); }
+.tag--err { background: var(--err-soft); border-color: var(--err-line); color: var(--err); }
+.tag--accent { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.tag--draft { background: var(--surface-3); color: var(--st-draft); }
+
+.meta { color: var(--ink-3); font-size: var(--fs-meta); }
+.muted { color: var(--ink-2); }
+.stack { display: flex; flex-direction: column; gap: var(--space-6); }
+.inline { display: flex; align-items: center; gap: var(--space-5); }
+.spacer { margin-left: auto; }
+
+/* ── Пустое состояние, загрузка, ошибка ──────────────────── */
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-5);
+  padding: var(--space-10) var(--space-8); text-align: center; color: var(--ink-2);
+}
+.empty__title { font-size: var(--fs-title); font-weight: var(--w-semibold); color: var(--ink); }
+.skeleton { background: var(--surface-3); border-radius: var(--r-mark); height: 12px; }
+.notice {
+  display: flex; gap: var(--space-5); padding: var(--space-6) var(--space-7);
+  border: 1px solid var(--line-strong); border-radius: var(--r-block);
+  background: var(--surface-2); font-size: var(--fs-dense);
+}
+.notice--warn { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-ink); }
+.notice--err { background: var(--err-soft); border-color: var(--err-line); color: var(--err); }
+
+/* ── Экран заполнения: другой характер, крупные касания ──── */
+.fill {
+  max-width: 420px; margin: 0 auto; min-height: 100vh;
+  background: var(--surface); display: flex; flex-direction: column;
+}
+.fill__head {
+  position: sticky; top: 0; z-index: 2;
+  padding: var(--space-7) var(--space-7) var(--space-6);
+  background: var(--surface); border-bottom: 1px solid var(--line-strong);
+}
+.fill__station { font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); }
+.fill__where { color: var(--ink-3); font-size: var(--fs-meta); margin-top: var(--space-2); }
+.fill__progress { margin-top: var(--space-6); display: flex; align-items: center; gap: var(--space-5); }
+.fill__bar { flex: 1; height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+.fill__bar i { display: block; height: 100%; background: var(--accent); }
+.fill__count { font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; }
+
+.section__title {
+  padding: var(--space-8) var(--space-7) var(--space-4);
+  font-size: var(--fs-micro); letter-spacing: var(--tracking-micro);
+  text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold);
+}
+.item {
+  display: flex; align-items: flex-start; gap: var(--space-6);
+  padding: var(--space-6) var(--space-7); min-height: var(--tap-min);
+  border-top: 1px solid var(--line); cursor: pointer;
+}
+.item:first-of-type { border-top: none; }
+.item__box {
+  flex: none; width: 26px; height: 26px; margin-top: 1px;
+  border: 1.5px solid var(--line-control-2); border-radius: var(--r-control);
+  background: var(--surface);
+}
+.item--done .item__box {
+  background: var(--ok); border-color: var(--ok);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+  background-size: 16px; background-position: center; background-repeat: no-repeat;
+}
+.item--failed .item__box { background: var(--err); border-color: var(--err); }
+.item__text { flex: 1; font-size: var(--fs-lead); line-height: 21px; }
+.item--done .item__text { color: var(--ink-2); }
+.item__hint { display: block; margin-top: var(--space-2); font-size: var(--fs-meta); color: var(--ink-3); }
+.item__crit { color: var(--warn-mark); font-weight: var(--w-bold); }
+.item__fail {
+  margin: 0 var(--space-7) var(--space-6); padding: var(--space-6);
+  background: var(--err-soft); border: 1px solid var(--err-line); border-radius: var(--r-block);
+}
+.item__num {
+  display: flex; align-items: center; gap: var(--space-4);
+  margin: 0 var(--space-7) var(--space-6);
+}
+.item__num .input { font: var(--w-medium) var(--fs-num-hero)/1 var(--font-num); height: 48px; text-align: center; max-width: 120px; }
+.fill__foot {
+  position: sticky; bottom: 0; margin-top: auto;
+  padding: var(--space-6) var(--space-7) var(--space-8);
+  background: var(--surface); border-top: 1px solid var(--line-strong);
+}
+.btn--fill { width: 100%; height: 52px; font-size: var(--fs-title); border-radius: var(--r-block); }
+
+/* ── Печатный лист QR ────────────────────────────────────── */
+.sheet {
+  width: 210mm; min-height: 297mm; margin: 0 auto; padding: 14mm;
+  background: #fff; box-shadow: var(--sh-xs);
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8mm; align-content: start;
+}
+.sticker {
+  border: 1px dashed var(--line-control-2); border-radius: var(--r-block);
+  padding: 8mm; text-align: center; display: flex; flex-direction: column; gap: var(--space-5); align-items: center;
+}
+.sticker__qr { width: 42mm; height: 42mm; background: var(--ink); border-radius: 2px; }
+.sticker__station { font-size: var(--fs-title); font-weight: var(--w-semibold); }

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор чек-листа — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+  .editor-item {
+    display: grid; grid-template-columns: 28px 1fr auto; gap: var(--space-5);
+    align-items: center; padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--line);
+  }
+  .editor-item:hover { background: var(--surface-2); }
+  .editor-item__ord { color: var(--ink-3); font-size: var(--fs-meta); text-align: right; }
+  .editor-item__ctl { display: flex; align-items: center; gap: var(--space-4); }
+  .editor-item__ctl .select { width: auto; height: var(--control-h-sm); font-size: var(--fs-dense); }
+  .editor-item--crit { background: var(--warn-soft); }
+  .editor-item--crit:hover { background: var(--origin-carried-hover); }
+  .editor-item__range { display: flex; align-items: center; gap: var(--space-3); color: var(--ink-3); font-size: var(--fs-meta); }
+  .editor-item__range .input { width: 62px; height: var(--control-h-sm); text-align: center; font: var(--num); }
+  .toggle { display: inline-flex; align-items: center; gap: var(--space-3); cursor: pointer; white-space: nowrap; }
+  .toggle__track { width: 30px; height: 17px; border-radius: 9px; background: var(--seg-track); position: relative; transition: background var(--t-state) var(--ease); }
+  .toggle__track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--surface); box-shadow: var(--sh-xs); transition: transform var(--t-state) var(--ease); }
+  .toggle--on .toggle__track { background: var(--warn-mark); }
+  .toggle--on .toggle__track::after { transform: translateX(13px); }
+  .toggle__label { font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); }
+  .toggle--on .toggle__label { color: var(--warn-ink); }
+  .sec { border: 1px solid var(--line-strong); border-radius: var(--r-block); background: var(--surface); box-shadow: var(--sh-xs); }
+  .sec + .sec { margin-top: var(--space-7); }
+  .sec__head { display: flex; align-items: center; gap: var(--space-5); padding: var(--space-5) var(--space-6); background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-radius: var(--r-block) var(--r-block) 0 0; }
+  .sec__title { font-size: var(--fs-body); font-weight: var(--w-semibold); border: 1px solid transparent; background: transparent; padding: var(--space-2) var(--space-3); border-radius: var(--r-control); font-family: var(--font-ui); color: var(--ink); }
+  .sec__title:hover { border-color: var(--line-control); background: var(--surface); }
+  .sec--linked { border-color: var(--reg-supp-line); }
+  .sec--linked .sec__head { background: var(--reg-supp-soft); border-bottom-color: var(--reg-supp-line); }
+  .sec__foot { padding: var(--space-4) var(--space-6); border-top: 1px solid var(--line); display: flex; gap: var(--space-4); }
+  .keys { display: flex; gap: var(--space-6); flex-wrap: wrap; align-items: center; color: var(--ink-3); font-size: var(--fs-meta); }
+  kbd { font: var(--w-medium) var(--fs-micro)/16px var(--font-num); background: var(--surface-3); border: 1px solid var(--line-control); border-bottom-width: 2px; border-radius: var(--r-mark); padding: 1px 5px; color: var(--ink-2); }
+  .side { position: sticky; top: var(--space-9); align-self: start; width: 268px; }
+  .layout { display: grid; grid-template-columns: 1fr 268px; gap: var(--space-8); align-items: start; }
+  .lib-item { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--line); font-size: var(--fs-dense); }
+  .lib-item:last-child { border-bottom: none; }
+  .lib-item__use { color: var(--ink-3); font-size: var(--fs-micro); }
+  .lib-item .btn { margin-left: auto; }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav__brand">Чек-листы <span>Dodo</span></div>
+    <div class="nav__group">
+      <div class="nav__label">Работа</div>
+      <a class="nav__item nav__item--active" href="templates.html">Чек-листы</a>
+      <a class="nav__item" href="library.html">Библиотека блоков</a>
+      <a class="nav__item" href="feed.html">Заполнения</a>
+    </div>
+    <div class="nav__group">
+      <div class="nav__label">Справочник</div>
+      <a class="nav__item" href="catalog.html">Страны и пиццерии</a>
+      <a class="nav__item" href="qr-sheet.html">QR-коды</a>
+    </div>
+    <div class="nav__foot">Вход выполнен<br>методист</div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__title">
+        <div class="topbar__crumbs"><a href="templates.html">Чек-листы</a> · Казахстан · Алматы, Абая 44 · Кухня</div>
+        <h1>Открытие кухни</h1>
+      </div>
+      <div class="topbar__actions">
+        <span class="tag tag--draft">Черновик</span>
+        <span class="meta">опубликована v2 · 14 августа</span>
+        <a class="btn" href="fill.html">Предпросмотр</a>
+        <button class="btn">Сохранить черновик</button>
+        <button class="btn btn--primary">Опубликовать v3</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="layout">
+        <div>
+          <!-- Свойства чек-листа -->
+          <div class="card" style="margin-bottom: var(--space-8)">
+            <div class="card__body">
+              <div class="row">
+                <div class="field">
+                  <label class="field__label">Название</label>
+                  <input class="input" value="Открытие кухни">
+                </div>
+                <div class="field">
+                  <label class="field__label">Станция</label>
+                  <select class="select"><option>Кухня</option><option>Касса</option><option>Упаковка</option></select>
+                </div>
+                <div class="field">
+                  <label class="field__label">Окно</label>
+                  <select class="select"><option>Утро, 06:00–11:00</option><option>Вечер, 20:00–00:00</option><option>Без ограничения</option></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Секция 1 -->
+          <section class="sec">
+            <div class="sec__head">
+              <input class="sec__title" value="Печь и оборудование">
+              <span class="meta">4 пункта</span>
+              <button class="btn btn--ghost btn--sm spacer">Свернуть</button>
+              <button class="btn btn--ghost btn--sm btn--danger">Удалить</button>
+            </div>
+
+            <div class="editor-item">
+              <div class="editor-item__ord">1</div>
+              <input class="input input--flush" value="Включить печь и вытяжку">
+              <div class="editor-item__ctl">
+                <select class="select"><option>Да / Нет</option><option>Число</option><option>Текст</option></select>
+                <span class="toggle"><span class="toggle__track"></span><span class="toggle__label">Критичный</span></span>
+                <button class="btn btn--ghost btn--sm btn--danger">×</button>
+              </div>
+            </div>
+
+            <div class="editor-item editor-item--crit">
+              <div class="editor-item__ord">2</div>
+              <input class="input input--flush" value="Замерить температуру фритюра">
+              <div class="editor-item__ctl">
+                <select class="select"><option selected>Число</option><option>Да / Нет</option><option>Текст</option></select>
+                <span class="editor-item__range">от <input class="input" value="160"> до <input class="input" value="180"> °C</span>
+                <span class="toggle toggle--on"><span class="toggle__track"></span><span class="toggle__label">Критичный</span></span>
+                <button class="btn btn--ghost btn--sm btn--danger">×</button>
+              </div>
+            </div>
+
+            <div class="editor-item">
+              <div class="editor-item__ord">3</div>
+              <input class="input input--flush" value="Проверить чистоту рабочих поверхностей">
+              <div class="editor-item__ctl">
+                <select class="select"><option>Да / Нет</option><option>Число</option><option>Текст</option></select>
+                <span class="toggle"><span class="toggle__track"></span><span class="toggle__label">Критичный</span></span>
+                <button class="btn btn--ghost btn--sm btn--danger">×</button>
+              </div>
+            </div>
+
+            <div class="editor-item" style="background: var(--surface-selected)">
+              <div class="editor-item__ord">4</div>
+              <input class="input input--flush" value="" placeholder="Текст пункта — Enter создаст следующий" autofocus>
+              <div class="editor-item__ctl">
+                <select class="select"><option>Да / Нет</option><option>Число</option><option>Текст</option></select>
+                <span class="toggle"><span class="toggle__track"></span><span class="toggle__label">Критичный</span></span>
+                <button class="btn btn--ghost btn--sm btn--danger">×</button>
+              </div>
+            </div>
+
+            <div class="sec__foot">
+              <button class="btn btn--sm">+ Пункт</button>
+              <button class="btn btn--sm">Вставить список из буфера</button>
+            </div>
+          </section>
+
+          <!-- Секция 2: вставленный блок из библиотеки -->
+          <section class="sec sec--linked">
+            <div class="sec__head">
+              <span class="tag" style="background: var(--reg-supp-soft); border-color: var(--reg-supp-line); color: var(--reg-supp)">Блок библиотеки</span>
+              <input class="sec__title" value="Холодильники" readonly>
+              <span class="meta">3 пункта · используется ещё в 6 чек-листах</span>
+              <a class="btn btn--ghost btn--sm spacer" href="library.html">Открыть блок</a>
+              <button class="btn btn--ghost btn--sm">Отвязать</button>
+            </div>
+
+            <div class="editor-item" style="opacity:.85">
+              <div class="editor-item__ord">5</div>
+              <input class="input input--flush" value="Проверить маркировку на соусах" readonly>
+              <div class="editor-item__ctl"><span class="tag">Да / Нет</span></div>
+            </div>
+            <div class="editor-item editor-item--crit" style="opacity:.85">
+              <div class="editor-item__ord">6</div>
+              <input class="input input--flush" value="Температура холодильной камеры" readonly>
+              <div class="editor-item__ctl"><span class="tag">Число · +2…+4 °C</span><span class="tag tag--warn">Критичный</span></div>
+            </div>
+            <div class="editor-item" style="opacity:.85">
+              <div class="editor-item__ord">7</div>
+              <input class="input input--flush" value="Убрать просроченные заготовки" readonly>
+              <div class="editor-item__ctl"><span class="tag">Да / Нет</span></div>
+            </div>
+
+            <div class="sec__foot">
+              <span class="meta">Пункты правятся в блоке — правка появится во всех черновиках, где он вставлен. Опубликованные версии не меняются.</span>
+            </div>
+          </section>
+
+          <div class="inline" style="margin-top: var(--space-8)">
+            <button class="btn">+ Секция</button>
+            <button class="btn">Вставить блок из библиотеки</button>
+            <span class="spacer keys">
+              <span><kbd>Enter</kbd> следующий пункт</span>
+              <span><kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> переставить</span>
+              <span><kbd>Cmd</kbd>+<kbd>V</kbd> список из буфера</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Правая колонка -->
+        <aside class="side stack">
+          <div class="card">
+            <div class="card__head"><h2>Версии</h2></div>
+            <div class="card__body stack" style="gap: var(--space-5)">
+              <div class="inline"><span class="tag tag--draft">Черновик</span><span class="meta">изменён только что</span></div>
+              <div class="inline"><span class="tag tag--ok">v2</span><span class="meta">14 августа · 128 заполнений</span></div>
+              <div class="inline"><span class="tag">v1</span><span class="meta">3 июля · 402 заполнения</span></div>
+              <p class="meta" style="margin:0">Публикация создаёт новую версию. Заполнения остаются привязаны к той, по которой заполнялись.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><h2>Библиотека</h2><a class="btn btn--ghost btn--sm" href="library.html">Вся</a></div>
+            <div class="card__body card__body--flush">
+              <div class="lib-item"><span>Холодильники</span><span class="lib-item__use">·&nbsp;7</span><button class="btn btn--sm" disabled>Вставлен</button></div>
+              <div class="lib-item"><span>Санитария зала</span><span class="lib-item__use">·&nbsp;4</span><button class="btn btn--sm">Вставить</button></div>
+              <div class="lib-item"><span>Закрытие кассы</span><span class="lib-item__use">·&nbsp;3</span><button class="btn btn--sm">Вставить</button></div>
+            </div>
+          </div>
+
+          <div class="notice">
+            <div>Чек-лист привязан к станции «Кухня» пиццерии «Алматы, Абая 44». QR этой станции откроет ту версию, что опубликована на момент сканирования.</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
