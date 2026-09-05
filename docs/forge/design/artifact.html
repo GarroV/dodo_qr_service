@@ -1,0 +1,1159 @@
+<title>Экраны чек-листов Dodo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   Страница вокруг макетов: темизируется под зрителя.
+   Сами макеты (.mock) держат светлую палитру продукта жёстко —
+   продукт задуман светлым, показывать его тёмным было бы враньём.
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --page-ground:   #EDEFF2;
+  --page-surface:  #FFFFFF;
+  --page-sunken:   #E4E8ED;
+  --page-ink:      #1B2028;
+  --page-ink-2:    #5C6672;
+  --page-ink-3:    #8B95A1;
+  --page-line:     #D9DEE4;
+  --page-line-2:   #C3CAD3;
+  --page-accent:   #1F4E9C;
+  --page-accent-2: #E8EEF8;
+  --page-warn:     #B26B00;
+  --page-warn-bg:  #FFF9EC;
+  --page-ok:       #10704A;
+  --page-err:      #A32B1E;
+
+  --f-ui: 'Golos Text', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-ground:   #10141A;
+    --page-surface:  #191F27;
+    --page-sunken:   #0B0E13;
+    --page-ink:      #E6EBF1;
+    --page-ink-2:    #A3AEBB;
+    --page-ink-3:    #78838F;
+    --page-line:     #29313B;
+    --page-line-2:   #3A434F;
+    --page-accent:   #7FA8E8;
+    --page-accent-2: #1A2740;
+    --page-warn:     #E0A03A;
+    --page-warn-bg:  #2A2418;
+    --page-ok:       #52B189;
+    --page-err:      #E4837A;
+  }
+}
+:root[data-theme="dark"] {
+  --page-ground:   #10141A;
+  --page-surface:  #191F27;
+  --page-sunken:   #0B0E13;
+  --page-ink:      #E6EBF1;
+  --page-ink-2:    #A3AEBB;
+  --page-ink-3:    #78838F;
+  --page-line:     #29313B;
+  --page-line-2:   #3A434F;
+  --page-accent:   #7FA8E8;
+  --page-accent-2: #1A2740;
+  --page-warn:     #E0A03A;
+  --page-warn-bg:  #2A2418;
+  --page-ok:       #52B189;
+  --page-err:      #E4837A;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--page-ground);
+  color: var(--page-ink);
+  font: 400 15px/1.6 var(--f-ui);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--page-accent); }
+h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; letter-spacing: -.01em; }
+h1 { font-size: 30px; line-height: 1.2; }
+h2 { font-size: 21px; line-height: 1.25; }
+h3 { font-size: 16px; line-height: 1.3; }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--page-accent); outline-offset: 2px; }
+
+.page { max-width: 1180px; margin: 0 auto; padding: 56px 28px 96px; }
+.prose { max-width: 64ch; color: var(--page-ink-2); display: flex; flex-direction: column; gap: 12px; }
+.eyebrow {
+  font: 600 11px/1.4 var(--f-ui); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--page-ink-3);
+}
+
+/* ── Шапка ────────────────────────────────────────────────── */
+.hero { display: flex; flex-direction: column; gap: 18px; padding-bottom: 34px; border-bottom: 1px solid var(--page-line); }
+.hero__meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--page-ink-3); }
+.hero__meta b { color: var(--page-ink-2); font-weight: 500; }
+.how {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px;
+  background: var(--page-line); border: 1px solid var(--page-line); border-radius: 6px; overflow: hidden;
+  margin-top: 8px;
+}
+.how__c { background: var(--page-surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+.how__t { font-weight: 600; font-size: 14px; }
+.how__d { font-size: 13px; line-height: 1.5; color: var(--page-ink-2); }
+
+/* ── Раздел и сцена ───────────────────────────────────────── */
+.part { margin-top: 68px; display: flex; flex-direction: column; gap: 10px; }
+.part__head { display: flex; flex-direction: column; gap: 8px; }
+
+.scene { margin-top: 30px; display: flex; flex-direction: column; gap: 14px; }
+.scene__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.scene__note { max-width: 68ch; font-size: 14px; line-height: 1.6; color: var(--page-ink-2); }
+.stage {
+  background: var(--page-sunken);
+  border: 1px solid var(--page-line); border-radius: 8px;
+  padding: 22px; overflow-x: auto;
+}
+.stage--tight { padding: 18px; }
+.stage__inner { display: flex; gap: 22px; align-items: flex-start; }
+.stage__inner--wide > * { min-width: 1080px; }
+
+/* ── Панель замечаний ─────────────────────────────────────── */
+.notes { display: flex; flex-direction: column; gap: 10px; }
+.notes__bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.note-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 12px; cursor: pointer;
+  background: var(--page-surface); color: var(--page-ink-2);
+  border: 1px solid var(--page-line-2); border-radius: 4px;
+  font: 500 13px/1 var(--f-ui);
+}
+.note-btn:hover { border-color: var(--page-accent); color: var(--page-accent); }
+.note-count { font: 500 11px/1 var(--f-mono); color: var(--page-ink-3); }
+.note-form { display: none; flex-direction: column; gap: 8px; max-width: 640px; }
+.note-form.open { display: flex; }
+.note-form input, .note-form textarea {
+  font: 400 14px/1.5 var(--f-ui); color: var(--page-ink);
+  background: var(--page-surface); border: 1px solid var(--page-line-2);
+  border-radius: 4px; padding: 9px 11px; width: 100%;
+}
+.note-form textarea { min-height: 76px; resize: vertical; }
+.note-form input:focus, .note-form textarea:focus { border-color: var(--page-accent); outline: none; }
+.note-form__row { display: flex; gap: 8px; align-items: center; }
+.note-send {
+  height: 32px; padding: 0 16px; cursor: pointer;
+  background: var(--page-accent); color: #fff; border: 1px solid var(--page-accent);
+  border-radius: 4px; font: 500 13px/1 var(--f-ui);
+}
+.note-send:disabled { opacity: .5; cursor: default; }
+.note-list { display: flex; flex-direction: column; gap: 8px; max-width: 760px; }
+.note {
+  background: var(--page-surface); border: 1px solid var(--page-line);
+  border-left: 2px solid var(--page-accent); border-radius: 4px;
+  padding: 10px 13px; font-size: 14px; line-height: 1.55;
+}
+.note__who { font: 600 12px/1.4 var(--f-ui); color: var(--page-ink-2); margin-bottom: 2px; }
+.note__who time { font: 400 11px/1 var(--f-mono); color: var(--page-ink-3); margin-left: 8px; }
+.notes__off { font-size: 13px; color: var(--page-ink-3); }
+
+/* ═══ МАКЕТЫ ПРОДУКТА ═══════════════════════════════════════
+   Светлая палитра задана внутри .mock и не зависит от темы
+   страницы: так выглядит сам продукт.                        */
+.mock {
+  --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7;
+  --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9;
+  --line:#E9ECEF; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+  --accent:#1F4E9C; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+  --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+  --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+  --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+  --lib:#6B4FA8; --lib-soft:#F1ECF9; --lib-line:#DCD0EE;
+  --sel:#F0F5FC; --seg:#E3E7EC;
+
+  color: var(--ink);
+  font: 400 13px/18px var(--f-ui);
+  background: var(--canvas);
+  border: 1px solid var(--line-strong); border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(20,26,34,.08);
+  overflow: hidden;
+  flex: none;
+}
+.mock a { color: var(--accent); }
+.mock h2 { font: 600 16px/22px var(--f-ui); letter-spacing: 0; }
+
+/* каркас админки */
+.m-app { display: grid; grid-template-columns: 190px 1fr; min-height: 560px; }
+.m-nav { background: var(--surface); border-right: 1px solid var(--line-strong); padding: 16px 0; display: flex; flex-direction: column; gap: 20px; }
+.m-brand { padding: 0 16px; font: 600 16px/22px var(--f-ui); }
+.m-brand span { color: var(--ink-3); font-weight: 400; }
+.m-navlabel { padding: 0 16px 6px; font: 600 10.5px/14px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.m-navitem { padding: 8px 16px; color: var(--ink-2); border-left: 2px solid transparent; }
+.m-navitem--on { background: var(--accent-soft); color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+.m-main { display: flex; flex-direction: column; min-width: 0; }
+.m-top { display: flex; align-items: center; gap: 16px; padding: 14px 22px; background: var(--surface); border-bottom: 1px solid var(--line-strong); }
+.m-crumbs { font-size: 11.5px; color: var(--ink-3); }
+.m-h1 { font: 600 20px/26px var(--f-ui); letter-spacing: -.01em; }
+.m-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.m-body { padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+
+/* элементы */
+.m-btn {
+  display: inline-flex; align-items: center; height: 32px; padding: 0 12px;
+  border: 1px solid var(--line-control); border-radius: 3px;
+  background: var(--surface); color: var(--ink); font: 500 13px/1 var(--f-ui); white-space: nowrap;
+}
+.m-btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.m-btn--ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+.m-btn--sm { height: 27px; padding: 0 10px; font-size: 12.5px; }
+.m-btn--danger { color: var(--err); }
+
+.m-card { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 4px; }
+.m-cardhead { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface-3); border-bottom: 1px solid var(--line); }
+.m-cardbody { padding: 16px; }
+.m-spacer { margin-left: auto; }
+
+.m-label { font: 600 10.5px/14px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.m-field { display: flex; flex-direction: column; gap: 6px; }
+.m-input {
+  height: 32px; padding: 0 10px; display: flex; align-items: center;
+  border: 1px solid var(--line-control); border-radius: 3px; background: var(--surface);
+  font-size: 14px; color: var(--ink);
+}
+.m-input--flush { border-color: transparent; background: transparent; padding-left: 6px; }
+.m-input--focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(31,78,156,.14); }
+.m-sel { position: relative; padding-right: 26px; }
+.m-sel::after { content: ""; position: absolute; right: 10px; top: 14px; border: 4px solid transparent; border-top-color: var(--ink-3); }
+.m-row { display: flex; gap: 12px; }
+.m-row > * { flex: 1; min-width: 0; }
+
+.m-table { width: 100%; border-collapse: collapse; font-size: 12.5px; line-height: 17px; }
+.m-table th {
+  text-align: left; padding: 8px; background: var(--surface-3);
+  border-bottom: 1px solid var(--line-strong);
+  font: 600 10.5px/14px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap;
+}
+.m-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.m-table tr:last-child td { border-bottom: none; }
+.m-num { font: 400 12.5px/17px var(--f-mono); font-variant-numeric: tabular-nums; }
+.m-right { text-align: right; white-space: nowrap; }
+.m-grp { background: var(--surface-2); font: 600 10.5px/14px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+.m-tag {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 2px;
+  border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink-2);
+  font: 600 10.5px/1 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+}
+.m-tag--ok { background: var(--ok-soft); border-color: var(--ok-line); color: var(--ok); }
+.m-tag--warn { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-ink); }
+.m-tag--err { background: var(--err-soft); border-color: var(--err-line); color: var(--err); }
+.m-tag--acc { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.m-tag--lib { background: var(--lib-soft); border-color: var(--lib-line); color: var(--lib); }
+.m-meta { color: var(--ink-3); font-size: 11.5px; }
+.m-note { padding: 12px 16px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface-2); font-size: 12.5px; line-height: 18px; }
+.m-note--warn { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-ink); }
+.m-note--err { background: var(--err-soft); border-color: var(--err-line); color: var(--err); }
+
+/* редактор */
+.m-sec { border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); }
+.m-sechead { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); }
+.m-sectitle { font-weight: 600; padding: 4px 6px; border: 1px solid transparent; border-radius: 3px; }
+.m-sec--lib { border-color: var(--lib-line); }
+.m-sec--lib .m-sechead { background: var(--lib-soft); border-bottom-color: var(--lib-line); }
+.m-item { display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: center; padding: 7px 12px; border-bottom: 1px solid var(--line); }
+.m-item:last-child { border-bottom: none; }
+.m-item--crit { background: var(--warn-soft); }
+.m-item--sel { background: var(--sel); }
+.m-ord { color: var(--ink-3); font-size: 11.5px; text-align: right; }
+.m-ctl { display: flex; align-items: center; gap: 8px; }
+.m-toggle { display: inline-flex; align-items: center; gap: 6px; }
+.m-track { width: 30px; height: 17px; border-radius: 9px; background: var(--seg); position: relative; }
+.m-track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(20,26,34,.2); }
+.m-toggle--on .m-track { background: var(--warn-mark); }
+.m-toggle--on .m-track::after { left: 15px; }
+.m-secfoot { padding: 8px 12px; border-top: 1px solid var(--line); display: flex; gap: 8px; }
+.m-keys { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; color: var(--ink-3); font-size: 11.5px; }
+.m-kbd { font: 500 10.5px/15px var(--f-mono); background: var(--surface-3); border: 1px solid var(--line-control); border-bottom-width: 2px; border-radius: 2px; padding: 0 5px; color: var(--ink-2); }
+
+/* телефон */
+.m-phone { width: 340px; display: flex; flex-direction: column; background: var(--surface); min-height: 600px; }
+.m-fhead { padding: 18px 18px 14px; border-bottom: 1px solid var(--line-strong); }
+.m-station { font: 600 20px/26px var(--f-ui); letter-spacing: -.01em; }
+.m-where { color: var(--ink-3); font-size: 11.5px; margin-top: 3px; }
+.m-prog { margin-top: 14px; display: flex; align-items: center; gap: 10px; }
+.m-bar { flex: 1; height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+.m-bar i { display: block; height: 100%; background: var(--accent); }
+.m-count { font: 400 11.5px/1 var(--f-mono); color: var(--ink-2); white-space: nowrap; }
+.m-sectionlabel { padding: 18px 18px 8px; font: 600 10.5px/14px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.m-check { display: flex; align-items: flex-start; gap: 12px; padding: 13px 18px; min-height: 44px; border-top: 1px solid var(--line); }
+.m-box { flex: none; width: 26px; height: 26px; border: 1.5px solid var(--line-control-2); border-radius: 3px; background: var(--surface); }
+.m-check--done .m-box {
+  background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/15px no-repeat;
+  border-color: var(--ok);
+}
+.m-check--fail .m-box {
+  background: var(--err) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E") center/15px no-repeat;
+  border-color: var(--err);
+}
+.m-ctext { flex: 1; font-size: 14px; line-height: 21px; }
+.m-check--done .m-ctext { color: var(--ink-2); }
+.m-chint { display: block; margin-top: 3px; font-size: 11.5px; color: var(--ink-3); }
+.m-crit { color: var(--warn-mark); font-weight: 700; }
+.m-failbox { margin: 0 18px 14px; padding: 12px; background: var(--err-soft); border: 1px solid var(--err-line); border-radius: 4px; }
+.m-numbox { margin: 0 18px 14px; display: flex; align-items: center; gap: 10px; }
+.m-bignum { font: 500 22px/1 var(--f-mono); height: 46px; display: flex; align-items: center; justify-content: center; width: 110px; border: 1px solid var(--line-control); border-radius: 3px; background: var(--surface); }
+.m-ffoot { margin-top: auto; padding: 14px 18px 20px; background: var(--surface); border-top: 1px solid var(--line-strong); }
+.m-bigbtn { display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 4px; background: var(--accent); color: #fff; font: 600 16px/1 var(--f-ui); }
+.m-bigbtn--off { background: var(--surface-3); color: var(--ink-3); border: 1px solid var(--line-control); }
+.m-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 40px 26px; text-align: center; }
+.m-big { font: 600 20px/26px var(--f-ui); }
+.m-ok-mark { width: 56px; height: 56px; border-radius: 50%; background: var(--ok-soft); border: 1px solid var(--ok-line);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310704A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 26px; background-position: center; background-repeat: no-repeat; }
+.m-skel { background: var(--surface-3); border-radius: 2px; height: 12px; }
+
+/* QR */
+.m-qr { background:
+    repeating-linear-gradient(90deg, #1B2028 0 4px, transparent 4px 8px),
+    repeating-linear-gradient(0deg, #1B2028 0 4px, transparent 4px 8px);
+  background-color: #fff; outline: 1px solid var(--line-strong); }
+.m-sheet { background: #fff; padding: 22px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.m-sticker { border: 1px dashed var(--line-control-2); border-radius: 4px; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.m-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 26px; text-align: center; color: var(--ink-2); }
+
+/* словарь */
+.vocab { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.sw { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--page-ink-2); }
+.sw__chip { height: 42px; border-radius: 4px; border: 1px solid var(--page-line-2); }
+.sw__hex { font: 400 11px/1 var(--f-mono); color: var(--page-ink-3); }
+.demo-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.foot { margin-top: 80px; padding-top: 28px; border-top: 1px solid var(--page-line); font-size: 13px; color: var(--page-ink-3); display: flex; flex-direction: column; gap: 8px; }
+
+@media (max-width: 720px) {
+  .page { padding: 36px 16px 72px; }
+  h1 { font-size: 25px; }
+  .stage { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">Экранный эталон · до начала разработки</div>
+    <h1>Чек-листы на кухне: как это будет выглядеть</h1>
+    <div class="prose">
+      <p>Сотрудник пиццерии сканирует QR-наклейку на станции и заполняет чек-лист с телефона — не входя в систему и ничего не выбирая. Методист заводит эти чек-листы в вебе и печатает наклейки. Управляющий видит, что и когда заполнено.</p>
+      <p>Ниже — все экраны будущего сервиса. Это не скриншоты работающего продукта: кнопки не нажимаются, данные вымышленные. А вот тексты настоящие — именно их увидят повар и методист, поэтому спорить с формулировками так же важно, как с расположением полей.</p>
+    </div>
+    <div class="hero__meta">
+      <span>Версия эталона <b>от 6 сентября 2026</b></span>
+      <span>Визуальный язык — <b>дизайн-система Dodo P&amp;L</b></span>
+      <span>Состояние — <b>черновик на сверку</b></span>
+    </div>
+    <div class="how">
+      <div class="how__c">
+        <div class="how__t">Смотрите как заказчик</div>
+        <div class="how__d">Не «красиво или нет», а «повар в 7 утра поймёт, что делать». Каждый экран подписан: что на нём важно и почему сделано именно так.</div>
+      </div>
+      <div class="how__c">
+        <div class="how__t">Замечание — кнопкой под экраном</div>
+        <div class="how__d">Пишите прямо здесь: замечание привязывается к конкретному экрану и видно всем, кто откроет страницу. Так они не потеряются в переписке.</div>
+      </div>
+      <div class="how__c">
+        <div class="how__t">Менять можно всё</div>
+        <div class="how__d">Пока это разметка, правка стоит минуты. После разработки та же правка стоит переделки экрана — поэтому сверка идёт сейчас.</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════ СОТРУДНИК ═══════════ -->
+  <section class="part">
+    <div class="part__head">
+      <div class="eyebrow">Роль 1 · Сотрудник на кухне</div>
+      <h2>Телефон, 20 секунд между делами, без входа в систему</h2>
+      <p class="prose">Интерфейс сотрудника намеренно не похож на админку: одна колонка, крупные касания, ничего лишнего. Язык подставляется по языку телефона — на макете английский, потому что так это увидит сотрудник в Казахстане или Узбекистане с английским телефоном.</p>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Заполнение</h3><span class="m-meta">открывается сразу после сканирования QR</span></div>
+      <p class="scene__note">Пункты идут сверху вниз, сгруппированные по секциям — сплошного полотна из тридцати строк не будет. Сверху видно, сколько осталось; кнопка внизу не работает, пока есть незакрытые пункты, и прямо на ней написано, сколько их. Восклицательный знак — критичный пункт: если он провален, потребуется объяснение.</p>
+      <div class="stage">
+        <div class="stage__inner">
+
+          <div class="mock m-phone">
+            <div class="m-fhead">
+              <div class="m-station">Kitchen opening</div>
+              <div class="m-where">Almaty, Abaya 44 · Kitchen · morning</div>
+              <div class="m-prog"><span class="m-bar"><i style="width:43%"></i></span><span class="m-count">3 of 7</span></div>
+            </div>
+            <div class="m-sectionlabel">Oven and equipment</div>
+            <div class="m-check m-check--done"><span class="m-box"></span><span class="m-ctext">Turn on the oven and the hood</span></div>
+            <div class="m-check m-check--done"><span class="m-box"></span><span class="m-ctext">Measure the fryer temperature<span class="m-chint">160–180 °C · recorded 172</span></span></div>
+            <div class="m-check m-check--done"><span class="m-box"></span><span class="m-ctext">Check that work surfaces are clean</span></div>
+            <div class="m-sectionlabel">Refrigerators</div>
+            <div class="m-check"><span class="m-box"></span><span class="m-ctext">Check labels on the sauces <span class="m-crit">!</span><span class="m-chint">Critical — a comment is required if it fails</span></span></div>
+            <div class="m-check"><span class="m-box"></span><span class="m-ctext">Cold room temperature <span class="m-crit">!</span><span class="m-chint">+2…+4 °C</span></span></div>
+            <div class="m-check"><span class="m-box"></span><span class="m-ctext">Remove expired prep</span></div>
+            <div class="m-ffoot"><div class="m-bigbtn m-bigbtn--off">4 items left</div></div>
+          </div>
+
+          <div class="mock m-phone">
+            <div class="m-fhead">
+              <div class="m-station">Kitchen opening</div>
+              <div class="m-where">Almaty, Abaya 44 · Kitchen · morning</div>
+              <div class="m-prog"><span class="m-bar"><i style="width:86%"></i></span><span class="m-count">6 of 7</span></div>
+            </div>
+            <div class="m-sectionlabel">Refrigerators</div>
+            <div class="m-check m-check--fail"><span class="m-box"></span><span class="m-ctext">Cold room temperature <span class="m-crit">!</span><span class="m-chint">+2…+4 °C · recorded +9</span></span></div>
+            <div class="m-failbox">
+              <div class="m-label" style="margin-bottom:6px">What is wrong?</div>
+              <div class="m-input m-input--focus" style="height:44px">Door seal is torn, called the technician</div>
+              <div class="m-meta" style="margin-top:6px">A short note is enough — the manager will see it today.</div>
+            </div>
+            <div class="m-check"><span class="m-box"></span><span class="m-ctext">Remove expired prep</span></div>
+            <div class="m-ffoot"><div class="m-bigbtn">Finish · 1 item left</div></div>
+          </div>
+
+          <div class="mock m-phone">
+            <div class="m-fhead">
+              <div class="m-station">Kitchen opening</div>
+              <div class="m-where">Almaty, Abaya 44 · Kitchen · morning</div>
+              <div class="m-prog"><span class="m-bar"><i style="width:29%"></i></span><span class="m-count">2 of 7</span></div>
+            </div>
+            <div class="m-sectionlabel">Oven and equipment</div>
+            <div class="m-check m-check--done"><span class="m-box"></span><span class="m-ctext">Turn on the oven and the hood</span></div>
+            <div class="m-check"><span class="m-box"></span><span class="m-ctext">Measure the fryer temperature<span class="m-chint">Expected 160–180 °C</span></span></div>
+            <div class="m-numbox"><div class="m-bignum m-input--focus">172</div><span class="m-meta">°C · within range</span></div>
+            <div class="m-check"><span class="m-box"></span><span class="m-ctext">Check that work surfaces are clean</span></div>
+            <div class="m-ffoot"><div class="m-bigbtn m-bigbtn--off">5 items left</div></div>
+          </div>
+
+        </div>
+      </div>
+      <div class="notes" data-screen="fill"></div>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Чем всё кончается</h3><span class="m-meta">три состояния, в которые сотрудник попадает чаще всего</span></div>
+      <p class="scene__note">Экран благодарности отдельно называет проваленный критичный пункт — сотрудник должен уйти со знанием, что сигнал ушёл. Ссылка перестаёт работать после перевыпуска кода: это единственная защита публичной ссылки, поэтому текст объясняет, что делать. При обрыве связи ответы остаются на экране — потерять заполненное нельзя.</p>
+      <div class="stage">
+        <div class="stage__inner">
+
+          <div class="mock m-phone" style="min-height:420px">
+            <div class="m-center">
+              <div class="m-ok-mark"></div>
+              <div class="m-big">Done, thank you</div>
+              <div class="m-meta">Kitchen · Almaty, Abaya 44<br>Sent at 09:15 · took 3 min 24 s</div>
+              <div class="m-note m-note--warn" style="text-align:left">1 critical item failed. The manager will see your comment today.</div>
+            </div>
+          </div>
+
+          <div class="mock m-phone" style="min-height:420px">
+            <div class="m-center">
+              <div class="m-big">This code no longer works</div>
+              <div class="m-meta">The sticker has been replaced. Ask your manager for the new one — the old code was revoked.</div>
+            </div>
+          </div>
+
+          <div class="mock m-phone" style="min-height:420px">
+            <div class="m-center">
+              <div class="m-big">Could not send</div>
+              <div class="m-meta">Your answers are kept on this screen. Move closer to the Wi-Fi and try again — nothing is lost.</div>
+              <div class="m-bigbtn" style="width:220px">Try again</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="notes" data-screen="fill-states"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════ МЕТОДИСТ ═══════════ -->
+  <section class="part">
+    <div class="part__head">
+      <div class="eyebrow">Роль 2 · Методист</div>
+      <h2>Компьютер, десятки чек-листов подряд</h2>
+      <p class="prose">Здесь плотность важнее воздуха: человек работает в этом экране часами и заводит чек-листы пачками. Главная задача редактора — чтобы чек-лист из двадцати пунктов заводился за минуты: пункты печатаются подряд, готовый список вставляется из буфера целиком, повторяющиеся куски берутся из библиотеки.</p>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Редактор чек-листа</h3><span class="m-tag m-tag--acc">главный экран продукта</span></div>
+      <p class="scene__note">Фиолетовая секция — блок из библиотеки: он заведён один раз и вставлен в семь чек-листов, правится в одном месте. Жёлтая строка — критичный пункт. Справа видно историю версий: публикация создаёт новую, а прежние заполнения остаются привязаны к той, по которой заполнялись. Внизу — клавиатурные сочетания, без них заведение превращается в мышиную возню.</p>
+      <div class="stage">
+        <div class="stage__inner stage__inner--wide">
+          <div class="mock">
+            <div class="m-app">
+              <div class="m-nav">
+                <div class="m-brand">Чек-листы <span>Dodo</span></div>
+                <div>
+                  <div class="m-navlabel">Работа</div>
+                  <div class="m-navitem m-navitem--on">Чек-листы</div>
+                  <div class="m-navitem">Библиотека блоков</div>
+                  <div class="m-navitem">Заполнения</div>
+                </div>
+                <div>
+                  <div class="m-navlabel">Справочник</div>
+                  <div class="m-navitem">Страны и пиццерии</div>
+                  <div class="m-navitem">QR-коды</div>
+                </div>
+              </div>
+              <div class="m-main">
+                <div class="m-top">
+                  <div>
+                    <div class="m-crumbs">Чек-листы · Казахстан · Алматы, Абая 44 · Кухня</div>
+                    <div class="m-h1">Открытие кухни</div>
+                  </div>
+                  <div class="m-actions">
+                    <span class="m-tag">Черновик</span>
+                    <span class="m-meta">опубликована v2 · 14 августа</span>
+                    <span class="m-btn">Предпросмотр</span>
+                    <span class="m-btn">Сохранить черновик</span>
+                    <span class="m-btn m-btn--primary">Опубликовать v3</span>
+                  </div>
+                </div>
+
+                <div class="m-body">
+                  <div style="display:grid; grid-template-columns: 1fr 250px; gap:18px; align-items:start">
+                    <div style="display:flex; flex-direction:column; gap:16px">
+
+                      <div class="m-card"><div class="m-cardbody">
+                        <div class="m-row">
+                          <div class="m-field"><span class="m-label">Название</span><div class="m-input">Открытие кухни</div></div>
+                          <div class="m-field"><span class="m-label">Станция</span><div class="m-input m-sel">Кухня</div></div>
+                          <div class="m-field"><span class="m-label">Окно</span><div class="m-input m-sel">Утро, 06:00–11:00</div></div>
+                        </div>
+                      </div></div>
+
+                      <div class="m-sec">
+                        <div class="m-sechead">
+                          <span class="m-sectitle">Печь и оборудование</span>
+                          <span class="m-meta">4 пункта</span>
+                          <span class="m-btn m-btn--ghost m-btn--sm m-spacer">Свернуть</span>
+                          <span class="m-btn m-btn--ghost m-btn--sm m-btn--danger">Удалить</span>
+                        </div>
+                        <div class="m-item">
+                          <span class="m-ord">1</span>
+                          <span class="m-input m-input--flush">Включить печь и вытяжку</span>
+                          <span class="m-ctl"><span class="m-input m-sel m-btn--sm" style="height:27px">Да / Нет</span><span class="m-toggle"><span class="m-track"></span><span class="m-label">Критичный</span></span></span>
+                        </div>
+                        <div class="m-item m-item--crit">
+                          <span class="m-ord">2</span>
+                          <span class="m-input m-input--flush">Замерить температуру фритюра</span>
+                          <span class="m-ctl">
+                            <span class="m-input m-sel" style="height:27px">Число</span>
+                            <span class="m-meta">от <span class="m-num">160</span> до <span class="m-num">180</span> °C</span>
+                            <span class="m-toggle m-toggle--on"><span class="m-track"></span><span class="m-label" style="color:var(--warn-ink)">Критичный</span></span>
+                          </span>
+                        </div>
+                        <div class="m-item">
+                          <span class="m-ord">3</span>
+                          <span class="m-input m-input--flush">Проверить чистоту рабочих поверхностей</span>
+                          <span class="m-ctl"><span class="m-input m-sel" style="height:27px">Да / Нет</span><span class="m-toggle"><span class="m-track"></span><span class="m-label">Критичный</span></span></span>
+                        </div>
+                        <div class="m-item m-item--sel">
+                          <span class="m-ord">4</span>
+                          <span class="m-input m-input--flush m-input--focus" style="color:var(--ink-3)">Текст пункта — Enter создаст следующий</span>
+                          <span class="m-ctl"><span class="m-input m-sel" style="height:27px">Да / Нет</span><span class="m-toggle"><span class="m-track"></span><span class="m-label">Критичный</span></span></span>
+                        </div>
+                        <div class="m-secfoot">
+                          <span class="m-btn m-btn--sm">+ Пункт</span>
+                          <span class="m-btn m-btn--sm">Вставить список из буфера</span>
+                        </div>
+                      </div>
+
+                      <div class="m-sec m-sec--lib">
+                        <div class="m-sechead">
+                          <span class="m-tag m-tag--lib">Блок библиотеки</span>
+                          <span class="m-sectitle">Холодильники</span>
+                          <span class="m-meta">3 пункта · используется ещё в 6 чек-листах</span>
+                          <span class="m-btn m-btn--ghost m-btn--sm m-spacer">Открыть блок</span>
+                          <span class="m-btn m-btn--ghost m-btn--sm">Отвязать</span>
+                        </div>
+                        <div class="m-item" style="opacity:.85">
+                          <span class="m-ord">5</span><span class="m-input m-input--flush">Проверить маркировку на соусах</span>
+                          <span class="m-ctl"><span class="m-tag">Да / Нет</span></span>
+                        </div>
+                        <div class="m-item m-item--crit" style="opacity:.85">
+                          <span class="m-ord">6</span><span class="m-input m-input--flush">Температура холодильной камеры</span>
+                          <span class="m-ctl"><span class="m-tag">Число · +2…+4 °C</span><span class="m-tag m-tag--warn">Критичный</span></span>
+                        </div>
+                        <div class="m-item" style="opacity:.85">
+                          <span class="m-ord">7</span><span class="m-input m-input--flush">Убрать просроченные заготовки</span>
+                          <span class="m-ctl"><span class="m-tag">Да / Нет</span></span>
+                        </div>
+                        <div class="m-secfoot"><span class="m-meta">Пункты правятся в блоке — правка появится во всех черновиках, где он вставлен. Опубликованные версии не меняются.</span></div>
+                      </div>
+
+                      <div style="display:flex; align-items:center; gap:10px">
+                        <span class="m-btn">+ Секция</span>
+                        <span class="m-btn">Вставить блок из библиотеки</span>
+                        <span class="m-keys m-spacer">
+                          <span><span class="m-kbd">Enter</span> следующий пункт</span>
+                          <span><span class="m-kbd">Alt</span>+<span class="m-kbd">↑↓</span> переставить</span>
+                          <span><span class="m-kbd">Cmd</span>+<span class="m-kbd">V</span> список из буфера</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:16px">
+                      <div class="m-card">
+                        <div class="m-cardhead"><h2>Версии</h2></div>
+                        <div class="m-cardbody" style="display:flex; flex-direction:column; gap:10px">
+                          <div style="display:flex; gap:8px; align-items:center"><span class="m-tag">Черновик</span><span class="m-meta">изменён только что</span></div>
+                          <div style="display:flex; gap:8px; align-items:center"><span class="m-tag m-tag--ok">v2</span><span class="m-meta">14 августа · 128 заполнений</span></div>
+                          <div style="display:flex; gap:8px; align-items:center"><span class="m-tag">v1</span><span class="m-meta">3 июля · 402 заполнения</span></div>
+                        </div>
+                      </div>
+                      <div class="m-card">
+                        <div class="m-cardhead"><h2>Библиотека</h2><span class="m-btn m-btn--ghost m-btn--sm m-spacer">Вся</span></div>
+                        <div>
+                          <div style="display:flex; align-items:center; gap:8px; padding:10px 16px; border-bottom:1px solid var(--line); font-size:12.5px">Холодильники <span class="m-meta">· 7</span><span class="m-btn m-btn--sm m-spacer" style="opacity:.5">Вставлен</span></div>
+                          <div style="display:flex; align-items:center; gap:8px; padding:10px 16px; border-bottom:1px solid var(--line); font-size:12.5px">Санитария зала <span class="m-meta">· 4</span><span class="m-btn m-btn--sm m-spacer">Вставить</span></div>
+                          <div style="display:flex; align-items:center; gap:8px; padding:10px 16px; font-size:12.5px">Закрытие кассы <span class="m-meta">· 3</span><span class="m-btn m-btn--sm m-spacer">Вставить</span></div>
+                        </div>
+                      </div>
+                      <div class="m-note">QR станции откроет ту версию, что опубликована на момент сканирования.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="editor"></div>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Библиотека блоков</h3></div>
+      <p class="scene__note">Это то, что превращает заведение чек-листов из копипасты в сборку. «Холодильники» описаны один раз и стоят в семи чек-листах разных пиццерий. Перед правкой видно, что она затронет: пять черновиков поменяются, две опубликованные версии останутся как есть до следующей публикации.</p>
+      <div class="stage">
+        <div class="stage__inner stage__inner--wide">
+          <div class="mock" style="padding:0">
+            <div class="m-body" style="background:var(--canvas)">
+              <div class="m-note">Блок заводится один раз и вставляется в любое число чек-листов. Правка приходит во все черновики, где он вставлен; опубликованные версии не меняются.</div>
+              <div style="display:grid; grid-template-columns:300px 1fr; gap:18px; align-items:start">
+                <div class="m-card">
+                  <div class="m-cardhead"><h2>Блоки</h2><span class="m-btn m-btn--sm m-btn--primary m-spacer">+ Новый</span></div>
+                  <div>
+                    <div style="padding:11px 16px; border-bottom:1px solid var(--line); display:flex; background:var(--accent-soft); color:var(--accent); font-weight:500">Холодильники <span class="m-spacer m-meta" style="color:var(--accent)">3 пункта · в 7</span></div>
+                    <div style="padding:11px 16px; border-bottom:1px solid var(--line); display:flex">Санитария зала <span class="m-spacer m-meta">5 пунктов · в 4</span></div>
+                    <div style="padding:11px 16px; border-bottom:1px solid var(--line); display:flex">Закрытие кассы <span class="m-spacer m-meta">4 пункта · в 3</span></div>
+                    <div style="padding:11px 16px; border-bottom:1px solid var(--line); display:flex">Приёмка поставки <span class="m-spacer m-meta">6 пунктов · в 2</span></div>
+                    <div style="padding:11px 16px; display:flex">Техника безопасности <span class="m-spacer m-meta" style="color:var(--ink-empty)">3 пункта · нигде</span></div>
+                  </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:16px">
+                  <div class="m-card">
+                    <div class="m-cardhead"><span class="m-input" style="width:240px">Холодильники</span><span class="m-btn m-btn--primary m-spacer">Сохранить блок</span></div>
+                    <div class="m-item"><span class="m-ord">1</span><span class="m-input m-input--flush">Проверить маркировку на соусах</span><span class="m-ctl"><span class="m-input m-sel" style="height:27px">Да / Нет</span></span></div>
+                    <div class="m-item m-item--crit"><span class="m-ord">2</span><span class="m-input m-input--flush">Температура холодильной камеры</span><span class="m-ctl"><span class="m-tag">Число · +2…+4 °C</span><span class="m-tag m-tag--warn">Критичный</span></span></div>
+                    <div class="m-item"><span class="m-ord">3</span><span class="m-input m-input--flush">Убрать просроченные заготовки</span><span class="m-ctl"><span class="m-input m-sel" style="height:27px">Да / Нет</span></span></div>
+                    <div class="m-secfoot"><span class="m-btn m-btn--sm">+ Пункт</span></div>
+                  </div>
+
+                  <div class="m-card">
+                    <div class="m-cardhead"><h2>Где используется</h2><span class="m-meta m-spacer">7 чек-листов</span></div>
+                    <div class="m-cardbody">
+                      <div style="display:flex; flex-wrap:wrap; gap:8px">
+                        <span class="m-tag m-tag--acc">Открытие кухни · Алматы</span>
+                        <span class="m-tag m-tag--acc">Закрытие кухни · Алматы</span>
+                        <span class="m-tag m-tag--acc">Открытие кухни · Астана</span>
+                        <span class="m-tag m-tag--acc">Закрытие кухни · Астана</span>
+                        <span class="m-tag m-tag--acc">Открытие упаковки · Астана</span>
+                        <span class="m-tag m-tag--acc">Приёмка · Алматы</span>
+                        <span class="m-tag m-tag--acc">Ночная проверка · Алматы</span>
+                      </div>
+                      <div class="m-meta" style="margin-top:12px">Правка затронет 5 черновиков. В двух чек-листах блок входит в опубликованные версии — они останутся как есть до следующей публикации.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="library"></div>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Список чек-листов</h3></div>
+      <p class="scene__note">Сгруппирован по пиццериям: методист работает не «вообще», а по конкретной точке. В строке сразу видно опубликованную версию, наличие незакрытого черновика и живость — сколько раз заполняли за неделю. Чек-лист, который никто не заполняет, виден без отчётов.</p>
+      <div class="stage">
+        <div class="stage__inner stage__inner--wide">
+          <div class="mock">
+            <div class="m-top">
+              <div><div class="m-crumbs">Казахстан</div><div class="m-h1">Чек-листы</div></div>
+              <div class="m-actions"><span class="m-btn">Дублировать выбранный</span><span class="m-btn m-btn--primary">+ Новый чек-лист</span></div>
+            </div>
+            <table class="m-table">
+              <thead><tr><th>Название</th><th>Станция</th><th>Окно</th><th>Версия</th><th>Пунктов</th><th>Заполнений за 7 дней</th><th></th></tr></thead>
+              <tbody>
+                <tr><td colspan="7" class="m-grp">Алматы, Абая 44</td></tr>
+                <tr><td>Открытие кухни</td><td>Кухня</td><td class="m-num">06:00–11:00</td><td><span class="m-tag m-tag--ok">v2</span> <span class="m-tag">черновик v3</span></td><td class="m-num">7</td><td class="m-num">38</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Править</span></td></tr>
+                <tr><td>Закрытие кухни</td><td>Кухня</td><td class="m-num">20:00–00:00</td><td><span class="m-tag m-tag--ok">v3</span></td><td class="m-num">11</td><td class="m-num">35</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Править</span></td></tr>
+                <tr><td>Открытие кассы</td><td>Касса</td><td class="m-num">06:00–11:00</td><td><span class="m-tag m-tag--ok">v1</span></td><td class="m-num">5</td><td class="m-num">36</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Править</span></td></tr>
+                <tr><td colspan="7" class="m-grp">Астана, Кабанбай 12</td></tr>
+                <tr><td>Открытие кухни</td><td>Кухня</td><td class="m-num">06:00–11:00</td><td><span class="m-tag m-tag--ok">v2</span></td><td class="m-num">7</td><td class="m-num">31</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Править</span></td></tr>
+                <tr><td>Открытие упаковки</td><td>Упаковка</td><td class="m-meta">без ограничения</td><td><span class="m-tag m-tag--ok">v1</span></td><td class="m-num">4</td><td class="m-num">28</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Править</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="templates"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════ УПРАВЛЯЮЩИЙ ═══════════ -->
+  <section class="part">
+    <div class="part__head">
+      <div class="eyebrow">Роль 3 · Управляющий</div>
+      <h2>Что происходит на точках</h2>
+      <p class="prose">Здесь сознательно нет цветных ярлыков «заполнено подозрительно быстро» и «заполнено вне пиццерии»: такие сигналы шумят на честных сотрудниках и молчат на остальных. Вместо оценок — факты: что заполнено, когда, сколько заняло и что именно пошло не так.</p>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Лента заполнений</h3></div>
+      <p class="scene__note">Три числа сверху — за выбранный день, а не «за всё время»: управляющий смотрит эту страницу утром и в конце смены. В ленте цветом отмечено только то, что требует внимания, — проваленные критичные пункты. Длительность заполнения показана как есть, без порогов и обвинений.</p>
+      <div class="stage">
+        <div class="stage__inner stage__inner--wide">
+          <div class="mock">
+            <div class="m-top">
+              <div><div class="m-crumbs">Казахстан · все пиццерии</div><div class="m-h1">Заполнения</div></div>
+              <div class="m-actions"><span class="m-meta">за 5 сентября</span></div>
+            </div>
+            <div class="m-body">
+              <div class="m-card"><div class="m-cardbody">
+                <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap">
+                  <div class="m-field" style="width:180px"><span class="m-label">Страна</span><div class="m-input m-sel">Казахстан</div></div>
+                  <div class="m-field" style="width:210px"><span class="m-label">Пиццерия</span><div class="m-input m-sel">Все</div></div>
+                  <div class="m-field" style="width:150px"><span class="m-label">Станция</span><div class="m-input m-sel">Все</div></div>
+                  <div class="m-field" style="width:150px"><span class="m-label">Период</span><div class="m-input m-sel">Сегодня</div></div>
+                  <span class="m-btn m-btn--ghost m-spacer">Сбросить</span>
+                </div>
+              </div></div>
+
+              <div class="m-card" style="display:grid; grid-template-columns:repeat(3,1fr)">
+                <div style="padding:18px"><div style="font:500 22px/1.1 var(--f-mono)">14</div><div class="m-meta" style="margin-top:4px">заполнений за сегодня</div></div>
+                <div style="padding:18px; border-left:1px solid var(--line)"><div style="font:500 22px/1.1 var(--f-mono); color:var(--err)">3</div><div class="m-meta" style="margin-top:4px">проваленных критичных пункта</div></div>
+                <div style="padding:18px; border-left:1px solid var(--line)"><div style="font:500 22px/1.1 var(--f-mono)">2:40</div><div class="m-meta" style="margin-top:4px">среднее время заполнения</div></div>
+              </div>
+
+              <div class="m-card">
+                <div class="m-cardhead"><h2>Лента</h2><span class="m-meta m-spacer">14 записей</span></div>
+                <table class="m-table">
+                  <thead><tr><th>Когда</th><th>Пиццерия</th><th>Станция</th><th>Чек-лист</th><th>Результат</th><th>Длительность</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td class="m-num">09:12</td><td>Алматы, Абая 44</td><td>Кухня</td><td>Открытие кухни <span class="m-meta">v2</span></td><td><span class="m-tag m-tag--err">1 критичный провален</span></td><td class="m-num m-right">3:24</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Открыть</span></td></tr>
+                    <tr><td class="m-num">09:04</td><td>Алматы, Абая 44</td><td>Касса</td><td>Открытие кассы <span class="m-meta">v1</span></td><td><span class="m-tag m-tag--ok">всё выполнено</span></td><td class="m-num m-right">1:12</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Открыть</span></td></tr>
+                    <tr><td class="m-num">08:51</td><td>Астана, Кабанбай 12</td><td>Кухня</td><td>Открытие кухни <span class="m-meta">v2</span></td><td><span class="m-tag m-tag--warn">2 пункта не выполнены</span></td><td class="m-num m-right">2:05</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Открыть</span></td></tr>
+                    <tr><td class="m-num">08:33</td><td>Астана, Кабанбай 12</td><td>Упаковка</td><td>Открытие упаковки <span class="m-meta">v1</span></td><td><span class="m-tag m-tag--ok">всё выполнено</span></td><td class="m-num m-right">0:48</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Открыть</span></td></tr>
+                    <tr><td class="m-num">вчера 21:40</td><td>Алматы, Абая 44</td><td>Кухня</td><td>Закрытие кухни <span class="m-meta">v3</span></td><td><span class="m-tag m-tag--ok">всё выполнено</span></td><td class="m-num m-right">4:02</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">Открыть</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="feed"></div>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Карточка заполнения</h3></div>
+      <p class="scene__note">Видно ответ по каждому пункту и время, когда его отметили. Комментарий к проваленному критичному пункту приведён дословно — это то, ради чего он спрашивается. Пункты показаны в той версии, которую видел сотрудник: если чек-лист потом переписали, карточка не поедет.</p>
+      <div class="stage">
+        <div class="stage__inner" style="justify-content:center">
+          <div class="mock" style="max-width:760px; width:100%">
+            <div class="m-top">
+              <div><div class="m-crumbs">Заполнения · 5 сентября, 09:12</div><div class="m-h1">Открытие кухни · Алматы, Абая 44</div></div>
+              <div class="m-actions"><span class="m-tag m-tag--err">1 критичный провален</span><span class="m-btn">Чек-лист v2</span></div>
+            </div>
+            <div class="m-body">
+              <div class="m-card" style="display:grid; grid-template-columns:repeat(4,1fr)">
+                <div style="padding:16px"><div style="font:600 16px/22px var(--f-ui)">09:12</div><div class="m-meta">начато</div></div>
+                <div style="padding:16px; border-left:1px solid var(--line)"><div style="font:600 16px/22px var(--f-ui)">09:15</div><div class="m-meta">отправлено</div></div>
+                <div style="padding:16px; border-left:1px solid var(--line)"><div style="font:600 16px/22px var(--f-ui)">3:24</div><div class="m-meta">длительность</div></div>
+                <div style="padding:16px; border-left:1px solid var(--line)"><div style="font:600 16px/22px var(--f-ui)">6 из 7</div><div class="m-meta">выполнено</div></div>
+              </div>
+
+              <div class="m-note">Показаны пункты в том виде, в котором их видел сотрудник — версия v2 от 14 августа. Более поздние правки чек-листа на эту карточку не влияют.</div>
+
+              <div class="m-card">
+                <div class="m-cardhead"><h2>Ответы</h2></div>
+                <div style="padding:10px 16px; background:var(--surface-2); border-bottom:1px solid var(--line)"><span class="m-label">Печь и оборудование</span></div>
+                <div class="m-item" style="grid-template-columns:20px 1fr auto auto"><span style="width:16px;height:16px;border-radius:2px;background:var(--ok)"></span><span>Включить печь и вытяжку</span><span class="m-num">да</span><span class="m-num m-meta">09:12</span></div>
+                <div class="m-item" style="grid-template-columns:20px 1fr auto auto"><span style="width:16px;height:16px;border-radius:2px;background:var(--ok)"></span><span>Замерить температуру фритюра <span class="m-meta">160–180 °C</span></span><span class="m-num">172</span><span class="m-num m-meta">09:13</span></div>
+                <div class="m-item" style="grid-template-columns:20px 1fr auto auto"><span style="width:16px;height:16px;border-radius:2px;background:var(--ok)"></span><span>Проверить чистоту рабочих поверхностей</span><span class="m-num">да</span><span class="m-num m-meta">09:13</span></div>
+                <div style="padding:10px 16px; background:var(--surface-2); border-bottom:1px solid var(--line); border-top:1px solid var(--line)"><span class="m-label">Холодильники</span> <span class="m-tag m-tag--lib" style="margin-left:8px">блок библиотеки</span></div>
+                <div class="m-item" style="grid-template-columns:20px 1fr auto auto"><span style="width:16px;height:16px;border-radius:2px;background:var(--ok)"></span><span>Проверить маркировку на соусах</span><span class="m-num">да</span><span class="m-num m-meta">09:14</span></div>
+                <div class="m-item" style="grid-template-columns:20px 1fr auto auto; background:var(--err-soft)">
+                  <span style="width:16px;height:16px;border-radius:2px;background:var(--err)"></span>
+                  <span>Температура холодильной камеры <span class="m-tag m-tag--warn">критичный</span> <span class="m-meta">+2…+4 °C</span></span>
+                  <span class="m-num" style="color:var(--err)">+9</span><span class="m-num m-meta">09:14</span>
+                </div>
+                <div style="padding:0 16px 12px"><div style="padding:10px 12px; background:var(--err-soft); border:1px solid var(--err-line); border-radius:4px; font-size:12.5px">«Порвано уплотнение двери, вызвал техника»</div></div>
+                <div class="m-item" style="grid-template-columns:20px 1fr auto auto"><span style="width:16px;height:16px;border-radius:2px;background:var(--ok)"></span><span>Убрать просроченные заготовки</span><span class="m-num">да</span><span class="m-num m-meta">09:15</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="submission"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════ НАСТРОЙКА ═══════════ -->
+  <section class="part">
+    <div class="part__head">
+      <div class="eyebrow">Настройка</div>
+      <h2>Справочник, QR-коды и вход</h2>
+      <p class="prose">Единственная защита публичной ссылки — неугадываемый код в ней и возможность перевыпустить его в любой момент. Поэтому QR принадлежит станции, а не чек-листу: наклейка печатается один раз и живёт годами, а какой чек-лист открыть — решает привязка и время суток.</p>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Страны, пиццерии, станции</h3></div>
+      <p class="scene__note">Три колонки читаются как путь: страна → пиццерия → её станции. Код станции виден здесь же, рядом кнопка перевыпуска. Станция без назначенного чек-листа помечена явно — иначе её QR откроется в пустоту.</p>
+      <div class="stage">
+        <div class="stage__inner stage__inner--wide">
+          <div class="mock">
+            <div class="m-top">
+              <div><div class="m-crumbs">Справочник</div><div class="m-h1">Страны и пиццерии</div></div>
+              <div class="m-actions"><span class="m-btn">QR-коды станций</span></div>
+            </div>
+            <div style="display:grid; grid-template-columns:200px 260px 1fr; min-height:300px">
+              <div style="border-right:1px solid var(--line)">
+                <div style="padding:10px 14px; background:var(--surface-3); border-bottom:1px solid var(--line-strong); display:flex"><span class="m-label">Страны</span><span class="m-btn m-btn--ghost m-btn--sm m-spacer">+</span></div>
+                <div style="padding:11px 14px; border-bottom:1px solid var(--line); background:var(--accent-soft); color:var(--accent); font-weight:500; display:flex">Казахстан <span class="m-spacer">2</span></div>
+                <div style="padding:11px 14px; border-bottom:1px solid var(--line); display:flex">Узбекистан <span class="m-spacer m-meta">1</span></div>
+                <div style="padding:11px 14px; display:flex">Сербия <span class="m-spacer m-meta">0</span></div>
+              </div>
+              <div style="border-right:1px solid var(--line)">
+                <div style="padding:10px 14px; background:var(--surface-3); border-bottom:1px solid var(--line-strong); display:flex"><span class="m-label">Пиццерии</span><span class="m-btn m-btn--ghost m-btn--sm m-spacer">+</span></div>
+                <div style="padding:11px 14px; border-bottom:1px solid var(--line); background:var(--accent-soft); color:var(--accent); font-weight:500; display:flex">Алматы, Абая 44 <span class="m-spacer">3</span></div>
+                <div style="padding:11px 14px; display:flex">Астана, Кабанбай 12 <span class="m-spacer m-meta">2</span></div>
+              </div>
+              <div>
+                <div style="padding:10px 14px; background:var(--surface-3); border-bottom:1px solid var(--line-strong); display:flex; align-items:center"><span class="m-label">Станции пиццерии «Алматы, Абая 44»</span><span class="m-btn m-btn--sm m-spacer">+ Станция</span></div>
+                <table class="m-table">
+                  <thead><tr><th>Станция</th><th>Чек-листы</th><th>Код QR</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td>Кухня</td><td>Открытие кухни, Закрытие кухни</td><td class="m-num">k7m2xq9p41</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">QR</span> <span class="m-btn m-btn--ghost m-btn--sm">Перевыпустить</span></td></tr>
+                    <tr><td>Касса</td><td>Открытие кассы</td><td class="m-num">b3n8wr5t62</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">QR</span> <span class="m-btn m-btn--ghost m-btn--sm">Перевыпустить</span></td></tr>
+                    <tr><td>Упаковка</td><td><span class="m-meta">чек-лист не назначен</span></td><td class="m-num">z9c4hd7v03</td><td class="m-right"><span class="m-btn m-btn--ghost m-btn--sm">QR</span> <span class="m-btn m-btn--ghost m-btn--sm">Перевыпустить</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="catalog"></div>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>QR-коды: печать и планшет</h3></div>
+      <p class="scene__note">Слева лист A4, который печатают и режут на наклейки: на каждой название станции и пиццерии, чтобы наклеили туда, куда нужно. Справа тот же код на экране планшета станции — для тех, кому наклейка не подходит. При перевыпуске кода планшет обновится сам, а вот наклейку придётся переклеить: об этом предупреждает отдельный экран подтверждения.</p>
+      <div class="stage">
+        <div class="stage__inner" style="flex-wrap:wrap">
+          <div class="mock" style="width:420px">
+            <div class="m-cardhead"><h2>Лист для печати</h2><span class="m-meta m-spacer">A4 · 3 станции</span></div>
+            <div class="m-sheet">
+              <div class="m-sticker"><div class="m-qr" style="width:100px;height:100px"></div><div style="font-weight:600;font-size:15px">Кухня</div><div class="m-meta">Алматы, Абая 44</div></div>
+              <div class="m-sticker"><div class="m-qr" style="width:100px;height:100px"></div><div style="font-weight:600;font-size:15px">Касса</div><div class="m-meta">Алматы, Абая 44</div></div>
+              <div class="m-sticker"><div class="m-qr" style="width:100px;height:100px"></div><div style="font-weight:600;font-size:15px">Упаковка</div><div class="m-meta">Алматы, Абая 44</div></div>
+              <div class="m-sticker" style="border-style:solid; border-color:var(--line); align-items:flex-start; text-align:left; justify-content:center">
+                <div class="m-meta">Отрежьте по пунктиру и наклейте на оборудование. Наклейка не меняется при смене чек-листа.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mock" style="width:380px">
+            <div class="m-cardhead"><h2>QR на экране планшета</h2><span class="m-btn m-btn--sm m-spacer">Во весь экран</span></div>
+            <div style="background:var(--surface); padding:30px; display:flex; flex-direction:column; align-items:center; gap:16px">
+              <div class="m-qr" style="width:170px;height:170px"></div>
+              <div style="font:600 20px/26px var(--f-ui)">Кухня</div>
+              <div class="m-meta">Алматы, Абая 44</div>
+            </div>
+            <div style="padding:16px; border-top:1px solid var(--line)">
+              <div class="m-note m-note--warn">Перевыпустить код станции «Кухня»? Старая наклейка перестанет работать сразу — сотрудник увидит «код больше не действует». Напечатайте и наклейте новую.</div>
+              <div style="display:flex; gap:8px; margin-top:12px"><span class="m-btn m-btn--primary">Перевыпустить и открыть печать</span><span class="m-btn m-btn--ghost">Отмена</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="qr"></div>
+    </div>
+
+    <div class="scene">
+      <div class="scene__head"><h3>Вход и пустые состояния</h3></div>
+      <p class="scene__note">Вход нужен только тем, кто заводит чек-листы, — на кухне его нет вовсе. Пустые экраны не оставляют человека наедине с пустотой: каждый говорит, что сделать следующим шагом.</p>
+      <div class="stage">
+        <div class="stage__inner" style="flex-wrap:wrap">
+          <div class="mock" style="width:320px">
+            <div style="padding:28px; display:flex; flex-direction:column; gap:16px; background:var(--surface)">
+              <div style="text-align:center; font:600 20px/26px var(--f-ui)">Чек-листы <span style="color:var(--ink-3); font-weight:400">Dodo</span></div>
+              <div class="m-field"><span class="m-label">Пароль</span><div class="m-input">••••••••••••</div></div>
+              <div class="m-btn m-btn--primary" style="justify-content:center">Войти</div>
+              <div class="m-meta" style="text-align:center">Сотрудникам на кухне вход не нужен: чек-лист открывается по QR-коду станции.</div>
+            </div>
+          </div>
+
+          <div class="mock" style="width:400px">
+            <div class="m-empty">
+              <div style="font:600 16px/22px var(--f-ui); color:var(--ink)">Чек-листов пока нет</div>
+              <div>Создайте первый — на это уходит пара минут: печатаете пункты подряд или вставляете готовый список из буфера.</div>
+              <div class="m-btn m-btn--primary">+ Новый чек-лист</div>
+            </div>
+          </div>
+
+          <div class="mock" style="width:400px">
+            <div class="m-empty">
+              <div style="font:600 16px/22px var(--f-ui); color:var(--ink)">Заполнений пока нет</div>
+              <div>Как только кто-то отсканирует QR станции и заполнит чек-лист, запись появится здесь.</div>
+              <div class="m-btn">Напечатать QR-коды</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="login"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════ СЛОВАРЬ ═══════════ -->
+  <section class="part">
+    <div class="part__head">
+      <div class="eyebrow">Основа</div>
+      <h2>Из чего собраны все экраны</h2>
+      <p class="prose">Цвет, кнопки и метки взяты из дизайн-системы сервиса Dodo P&amp;L — той же, на которой работает финансовый контур. Это осознанно: два внутренних инструмента должны выглядеть роднёй, а не случайными соседями.</p>
+    </div>
+
+    <div class="scene">
+      <div class="stage stage--tight">
+        <div class="mock" style="width:100%; padding:22px; display:flex; flex-direction:column; gap:24px">
+          <div>
+            <div class="m-label" style="margin-bottom:10px">Цвет и что он значит</div>
+            <div class="vocab">
+              <div class="sw"><span class="sw__chip" style="background:#1F4E9C"></span>Действие, ссылка, выбранное<span class="sw__hex">#1F4E9C</span></div>
+              <div class="sw"><span class="sw__chip" style="background:#10704A"></span>Выполнено<span class="sw__hex">#10704A</span></div>
+              <div class="sw"><span class="sw__chip" style="background:#A32B1E"></span>Провал, необратимое действие<span class="sw__hex">#A32B1E</span></div>
+              <div class="sw"><span class="sw__chip" style="background:#E0A03A"></span>Критичный пункт<span class="sw__hex">#E0A03A</span></div>
+              <div class="sw"><span class="sw__chip" style="background:#6B4FA8"></span>Блок из библиотеки<span class="sw__hex">#6B4FA8</span></div>
+              <div class="sw"><span class="sw__chip" style="background:#EDEFF2"></span>Фон приложения<span class="sw__hex">#EDEFF2</span></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="m-label" style="margin-bottom:10px">Кнопки</div>
+            <div class="demo-row">
+              <span class="m-btn m-btn--primary">Главное действие</span>
+              <span class="m-btn">Обычное</span>
+              <span class="m-btn m-btn--ghost">Второстепенное</span>
+              <span class="m-btn m-btn--danger">Опасное</span>
+              <span class="m-btn m-btn--sm">Мелкое</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="m-label" style="margin-bottom:10px">Метки состояния</div>
+            <div class="demo-row">
+              <span class="m-tag m-tag--ok">всё выполнено</span>
+              <span class="m-tag m-tag--warn">критичный</span>
+              <span class="m-tag m-tag--err">1 критичный провален</span>
+              <span class="m-tag m-tag--lib">блок библиотеки</span>
+              <span class="m-tag m-tag--acc">ссылка</span>
+              <span class="m-tag">черновик</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="m-label" style="margin-bottom:10px">Сообщения</div>
+            <div style="display:flex; flex-direction:column; gap:10px; max-width:620px">
+              <div class="m-note">Нейтральное пояснение: как устроено правило, которое неочевидно.</div>
+              <div class="m-note m-note--warn">Предупреждение перед действием, которое трудно отменить.</div>
+              <div class="m-note m-note--err">Ошибка: что случилось и что делать дальше. Данные не потеряны.</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="m-label" style="margin-bottom:10px">Шрифты</div>
+            <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:baseline">
+              <div><div style="font:600 22px/28px var(--f-ui)">Golos Text</div><div class="m-meta">заголовки, интерфейс, тексты пунктов</div></div>
+              <div><div style="font:500 22px/28px var(--f-mono)">IBM Plex Mono 09:12</div><div class="m-meta">время, коды станций, числовые значения</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" data-screen="vocab"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════ ГРАНИЦЫ ═══════════ -->
+  <section class="part">
+    <div class="part__head">
+      <div class="eyebrow">Границы первой версии</div>
+      <h2>Чего здесь нет намеренно</h2>
+      <p class="prose">Это не забытое, а отложенное — по каждому пункту есть решение с причиной. Если считаете, что без чего-то из этого продукт не взлетит, скажите: сейчас это дёшево вернуть.</p>
+    </div>
+    <div class="stage stage--tight" style="background:var(--page-surface)">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; width:100%">
+        <div><h3 style="margin-bottom:6px">Входа для сотрудника</h3><p style="font-size:14px; color:var(--page-ink-2)">Ни логина, ни PIN, ни выбора имени. Чек-лист открывается сразу после сканирования. Плата за это — записи без автора: видно, что заполнено, но не кем.</p></div>
+        <div><h3 style="margin-bottom:6px">Проверки местоположения</h3><p style="font-size:14px; color:var(--page-ink-2)">GPS в помещении с холодильными камерами врёт: честный сотрудник на кухне получит нарушение, а заполняющий из дома — чистые координаты.</p></div>
+        <div><h3 style="margin-bottom:6px">Ярлыков «прокликал за 10 секунд»</h3><p style="font-size:14px; color:var(--page-ink-2)">Порог ложно срабатывает на коротких чек-листах и обходится за минуту. Остаётся честная цифра длительности — выводы делает человек.</p></div>
+        <div><h3 style="margin-bottom:6px">Расписания смен</h3><p style="font-size:14px; color:var(--page-ink-2)">Календаря не будет. У чек-листа есть только окно времени, чтобы утром открывался утренний. Кто когда работает — управляющий и так знает.</p></div>
+        <div><h3 style="margin-bottom:6px">Ролей и разных кабинетов</h3><p style="font-size:14px; color:var(--page-ink-2)">В первой версии вошедший видит всё. Разделение «управляющая компания / страна / точка» — следующим шагом, структура данных к нему готова.</p></div>
+        <div><h3 style="margin-bottom:6px">Фотографий, офлайна, уведомлений</h3><p style="font-size:14px; color:var(--page-ink-2)">Фото в чек-листе нет. Офлайн не нужен — в пиццерии есть сеть. Уведомления о проваленных пунктах придут позже, отдельным шагом.</p></div>
+      </div>
+    </div>
+    <div class="notes" data-screen="scope" style="margin-top:14px"></div>
+  </section>
+
+  <footer class="foot">
+    <div>Экранный эталон системы цифровых чек-листов · внутренний проект команды международного направления.</div>
+    <div>Страница обновляется по мере правок — ссылка остаётся прежней. Замечания, оставленные здесь, видны всем и попадают в работу.</div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var NAMES = {
+    fill: "Заполнение", "fill-states": "Финальные экраны", editor: "Редактор чек-листа",
+    library: "Библиотека блоков", templates: "Список чек-листов", feed: "Лента заполнений",
+    submission: "Карточка заполнения", catalog: "Справочник", qr: "QR-коды",
+    login: "Вход и пустые состояния", vocab: "Основа", scope: "Границы первой версии"
+  };
+
+  var panels = [].slice.call(document.querySelectorAll(".notes"));
+  var store = null;
+  var byScreen = {};
+
+  function author() {
+    try { return localStorage.getItem("qr-notes-author") || ""; } catch (e) { return ""; }
+  }
+  function rememberAuthor(v) {
+    try { localStorage.setItem("qr-notes-author", v); } catch (e) { /* приватный режим — не беда */ }
+  }
+
+  function when(ts) {
+    if (!ts) return "";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) + ", " +
+           d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function build(panel) {
+    var screen = panel.getAttribute("data-screen");
+    panel.innerHTML =
+      '<div class="notes__bar">' +
+        '<button class="note-btn" type="button">Замечание к экрану</button>' +
+        '<span class="note-count"></span>' +
+      '</div>' +
+      '<form class="note-form">' +
+        '<input class="note-name" type="text" placeholder="Как вас зовут" maxlength="60">' +
+        '<textarea class="note-text" placeholder="Что здесь не так или чего не хватает" maxlength="1200"></textarea>' +
+        '<div class="note-form__row"><button class="note-send" type="submit">Отправить</button>' +
+        '<span class="notes__off note-status"></span></div>' +
+      '</form>' +
+      '<div class="note-list"></div>';
+
+    var btn = panel.querySelector(".note-btn");
+    var form = panel.querySelector(".note-form");
+    var name = panel.querySelector(".note-name");
+    var text = panel.querySelector(".note-text");
+    var send = panel.querySelector(".note-send");
+    var status = panel.querySelector(".note-status");
+
+    name.value = author();
+
+    btn.addEventListener("click", function () {
+      var open = form.classList.toggle("open");
+      if (open) (name.value ? text : name).focus();
+    });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var body = text.value.trim();
+      if (!body || !store) return;
+      send.disabled = true;
+      status.textContent = "Отправляю…";
+      var who = name.value.trim() || "Аноним";
+      rememberAuthor(who);
+      store.collection("feedback").add({
+        screen: screen, author: who, text: body, createdAt: Date.now()
+      }).then(function () {
+        text.value = "";
+        form.classList.remove("open");
+        status.textContent = "";
+        send.disabled = false;
+      }).catch(function (err) {
+        status.textContent = err && err.code === "rate_limited"
+          ? "Слишком часто — подождите немного."
+          : "Не отправилось. Попробуйте ещё раз.";
+        send.disabled = false;
+      });
+    });
+
+    byScreen[screen] = { list: panel.querySelector(".note-list"), count: panel.querySelector(".note-count") };
+  }
+
+  function render(docs) {
+    var grouped = {};
+    docs.forEach(function (snap) {
+      var d = snap.data() || {};
+      var s = typeof d.screen === "string" ? d.screen : "";
+      if (!byScreen[s]) return;
+      (grouped[s] = grouped[s] || []).push(d);
+    });
+
+    Object.keys(byScreen).forEach(function (s) {
+      var slot = byScreen[s];
+      var items = grouped[s] || [];
+      slot.count.textContent = items.length ? items.length + (items.length === 1 ? " замечание" : " замечаний") : "";
+      slot.list.textContent = "";
+      items.forEach(function (d) {
+        var el = document.createElement("div");
+        el.className = "note";
+        var head = document.createElement("div");
+        head.className = "note__who";
+        head.textContent = String(d.author || "Аноним");
+        var t = document.createElement("time");
+        t.textContent = when(d.createdAt);
+        head.appendChild(t);
+        var body = document.createElement("div");
+        body.textContent = String(d.text || "");
+        el.appendChild(head);
+        el.appendChild(body);
+        slot.list.appendChild(el);
+      });
+    });
+  }
+
+  function disable(message) {
+    panels.forEach(function (panel) {
+      panel.innerHTML = '<div class="notes__off">' + message + "</div>";
+    });
+  }
+
+  panels.forEach(build);
+
+  if (!window.claude || typeof window.claude.use !== "function") {
+    disable("Замечания можно оставить в комментариях к странице.");
+    return;
+  }
+
+  window.claude.use("db").then(function (db) {
+    if (!db) {
+      disable("Замечания можно оставить в комментариях к странице.");
+      return;
+    }
+    store = db;
+    db.collection("feedback").orderBy("createdAt", "desc").limit(300)
+      .onSnapshot(function (snap) { render(snap.docs); },
+                  function () { /* подписка сама восстановится */ });
+  }).catch(function () {
+    disable("Замечания можно оставить в комментариях к странице.");
+  });
+})();
+</script>
