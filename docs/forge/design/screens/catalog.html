@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Страны и пиццерии — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+
+  .tree { display: grid; grid-template-columns: 220px 300px 1fr; align-items: start; }
+  .col { border-right: 1px solid var(--line); min-height: 420px; }
+  .col:last-child { border-right: none; }
+  .col__head { padding: var(--space-5) var(--space-6); background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); display: flex; align-items: center; }
+  .col__head .btn { margin-left: auto; }
+  .li { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--line); cursor: pointer; }
+  .li:hover { background: var(--surface-2); }
+  .li--sel { background: var(--accent-soft); color: var(--accent); font-weight: var(--w-medium); }
+  .li__meta { margin-left: auto; color: var(--ink-3); font-size: var(--fs-meta); font-weight: var(--w-regular); }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav__brand">Чек-листы <span>Dodo</span></div>
+    <div class="nav__group">
+      <div class="nav__label">Работа</div>
+      <a class="nav__item" href="templates.html">Чек-листы</a>
+      <a class="nav__item" href="library.html">Библиотека блоков</a>
+      <a class="nav__item" href="feed.html">Заполнения</a>
+    </div>
+    <div class="nav__group">
+      <div class="nav__label">Справочник</div>
+      <a class="nav__item nav__item--active" href="catalog.html">Страны и пиццерии</a>
+      <a class="nav__item" href="qr-sheet.html">QR-коды</a>
+    </div>
+    <div class="nav__foot">Вход выполнен<br>методист</div>
+  </nav>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__title">
+        <div class="topbar__crumbs">Справочник</div>
+        <h1>Страны и пиццерии</h1>
+      </div>
+      <div class="topbar__actions"><a class="btn" href="qr-sheet.html">QR-коды станций</a></div>
+    </header>
+
+    <div class="content">
+      <div class="card">
+        <div class="tree">
+          <div class="col">
+            <div class="col__head">Страны <button class="btn btn--ghost btn--sm">+</button></div>
+            <div class="li li--sel">Казахстан <span class="li__meta">2</span></div>
+            <div class="li">Узбекистан <span class="li__meta">1</span></div>
+            <div class="li">Сербия <span class="li__meta">0</span></div>
+          </div>
+          <div class="col">
+            <div class="col__head">Пиццерии <button class="btn btn--ghost btn--sm">+</button></div>
+            <div class="li li--sel">Алматы, Абая 44 <span class="li__meta">3 станции</span></div>
+            <div class="li">Астана, Кабанбай 12 <span class="li__meta">2 станции</span></div>
+          </div>
+          <div class="col">
+            <div class="col__head">Станции пиццерии «Алматы, Абая 44» <button class="btn btn--sm">+ Станция</button></div>
+            <table class="table">
+              <thead><tr><th>Станция</th><th>Чек-листы</th><th>Код QR</th><th></th></tr></thead>
+              <tbody>
+                <tr><td>Кухня</td><td>Открытие кухни, Закрытие кухни</td><td class="num">k7m2xq9p41</td>
+                  <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="qr-sheet.html">QR</a><button class="btn btn--ghost btn--sm">Перевыпустить</button></td></tr>
+                <tr><td>Касса</td><td>Открытие кассы</td><td class="num">b3n8wr5t62</td>
+                  <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="qr-sheet.html">QR</a><button class="btn btn--ghost btn--sm">Перевыпустить</button></td></tr>
+                <tr><td>Упаковка</td><td><span class="meta">не назначен</span></td><td class="num">z9c4hd7v03</td>
+                  <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="qr-sheet.html">QR</a><button class="btn btn--ghost btn--sm">Перевыпустить</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card content--narrow">
+        <div class="card__head"><h2>Пиццерия «Алматы, Абая 44»</h2></div>
+        <div class="card__body stack">
+          <div class="row">
+            <div class="field"><label class="field__label">Название</label><input class="input" value="Алматы, Абая 44"></div>
+            <div class="field"><label class="field__label">Страна</label><select class="select"><option>Казахстан</option></select></div>
+            <div class="field"><label class="field__label">Часовой пояс</label><select class="select"><option>Asia/Almaty (UTC+5)</option></select></div>
+          </div>
+          <div class="inline"><button class="btn btn--primary">Сохранить</button><button class="btn btn--ghost btn--danger spacer">Удалить пиццерию</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

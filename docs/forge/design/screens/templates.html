@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Чек-листы — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+
+  .grp { font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); background: var(--surface-2); }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav__brand">Чек-листы <span>Dodo</span></div>
+    <div class="nav__group">
+      <div class="nav__label">Работа</div>
+      <a class="nav__item nav__item--active" href="templates.html">Чек-листы</a>
+      <a class="nav__item" href="library.html">Библиотека блоков</a>
+      <a class="nav__item" href="feed.html">Заполнения</a>
+    </div>
+    <div class="nav__group">
+      <div class="nav__label">Справочник</div>
+      <a class="nav__item" href="catalog.html">Страны и пиццерии</a>
+      <a class="nav__item" href="qr-sheet.html">QR-коды</a>
+    </div>
+    <div class="nav__foot">Вход выполнен<br>методист</div>
+  </nav>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__title">
+        <div class="topbar__crumbs">Казахстан</div>
+        <h1>Чек-листы</h1>
+      </div>
+      <div class="topbar__actions">
+        <button class="btn">Дублировать выбранный</button>
+        <button class="btn btn--primary">+ Новый чек-лист</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="card">
+        <div class="card__body">
+          <div class="inline">
+            <div class="field" style="min-width:180px"><label class="field__label">Страна</label><select class="select"><option>Казахстан</option><option>Узбекистан</option></select></div>
+            <div class="field" style="min-width:220px"><label class="field__label">Пиццерия</label><select class="select"><option>Все</option><option>Алматы, Абая 44</option><option>Астана, Кабанбай 12</option></select></div>
+            <div class="field" style="min-width:160px"><label class="field__label">Станция</label><select class="select"><option>Все</option><option>Кухня</option><option>Касса</option></select></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__body card__body--flush">
+          <table class="table">
+            <thead><tr><th>Название</th><th>Станция</th><th>Окно</th><th>Версия</th><th>Пунктов</th><th>Заполнений за 7 дней</th><th></th></tr></thead>
+            <tbody>
+              <tr><td colspan="7" class="grp">Алматы, Абая 44</td></tr>
+              <tr>
+                <td><a href="editor.html">Открытие кухни</a></td><td>Кухня</td><td>06:00–11:00</td>
+                <td><span class="tag tag--ok">v2</span> <span class="tag tag--draft">черновик v3</span></td>
+                <td class="num">7</td><td class="num">38</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="editor.html">Править</a></td>
+              </tr>
+              <tr>
+                <td><a href="editor.html">Закрытие кухни</a></td><td>Кухня</td><td>20:00–00:00</td>
+                <td><span class="tag tag--ok">v3</span></td>
+                <td class="num">11</td><td class="num">35</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="editor.html">Править</a></td>
+              </tr>
+              <tr>
+                <td><a href="editor.html">Открытие кассы</a></td><td>Касса</td><td>06:00–11:00</td>
+                <td><span class="tag tag--ok">v1</span></td>
+                <td class="num">5</td><td class="num">36</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="editor.html">Править</a></td>
+              </tr>
+              <tr><td colspan="7" class="grp">Астана, Кабанбай 12</td></tr>
+              <tr>
+                <td><a href="editor.html">Открытие кухни</a></td><td>Кухня</td><td>06:00–11:00</td>
+                <td><span class="tag tag--ok">v2</span></td>
+                <td class="num">7</td><td class="num">31</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="editor.html">Править</a></td>
+              </tr>
+              <tr>
+                <td><a href="editor.html">Открытие упаковки</a></td><td>Упаковка</td><td>без ограничения</td>
+                <td><span class="tag tag--ok">v1</span></td>
+                <td class="num">4</td><td class="num">28</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="editor.html">Править</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

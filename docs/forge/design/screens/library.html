@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Библиотека блоков — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+
+  .split { display: grid; grid-template-columns: 320px 1fr; align-items: start; gap: var(--space-8); }
+  .li { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--line); cursor: pointer; }
+  .li:hover { background: var(--surface-2); }
+  .li--sel { background: var(--accent-soft); color: var(--accent); font-weight: var(--w-medium); }
+  .li__meta { margin-left: auto; color: var(--ink-3); font-size: var(--fs-meta); font-weight: var(--w-regular); }
+  .editor-item { display: grid; grid-template-columns: 28px 1fr auto; gap: var(--space-5); align-items: center; padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--line); }
+  .editor-item__ord { color: var(--ink-3); font-size: var(--fs-meta); text-align: right; }
+  .used { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav__brand">Чек-листы <span>Dodo</span></div>
+    <div class="nav__group">
+      <div class="nav__label">Работа</div>
+      <a class="nav__item" href="templates.html">Чек-листы</a>
+      <a class="nav__item nav__item--active" href="library.html">Библиотека блоков</a>
+      <a class="nav__item" href="feed.html">Заполнения</a>
+    </div>
+    <div class="nav__group">
+      <div class="nav__label">Справочник</div>
+      <a class="nav__item" href="catalog.html">Страны и пиццерии</a>
+      <a class="nav__item" href="qr-sheet.html">QR-коды</a>
+    </div>
+    <div class="nav__foot">Вход выполнен<br>методист</div>
+  </nav>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__title">
+        <div class="topbar__crumbs">Казахстан</div>
+        <h1>Библиотека блоков</h1>
+      </div>
+      <div class="topbar__actions"><button class="btn btn--primary">+ Новый блок</button></div>
+    </header>
+
+    <div class="content">
+      <div class="notice">
+        <div>Блок заводится один раз и вставляется в любое число чек-листов. Правка блока приходит во все черновики, где он вставлен; уже опубликованные версии чек-листов не меняются.</div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <div class="card__head"><h2>Блоки</h2></div>
+          <div class="card__body card__body--flush">
+            <div class="li li--sel">Холодильники <span class="li__meta">3 пункта · в 7</span></div>
+            <div class="li">Санитария зала <span class="li__meta">5 пунктов · в 4</span></div>
+            <div class="li">Закрытие кассы <span class="li__meta">4 пункта · в 3</span></div>
+            <div class="li">Приёмка поставки <span class="li__meta">6 пунктов · в 2</span></div>
+            <div class="li">Техника безопасности <span class="li__meta">3 пункта · <span style="color:var(--ink-empty)">нигде</span></span></div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="card">
+            <div class="card__head">
+              <input class="input" value="Холодильники" style="max-width:280px">
+              <button class="btn btn--primary spacer">Сохранить блок</button>
+            </div>
+            <div class="card__body card__body--flush">
+              <div class="editor-item">
+                <div class="editor-item__ord">1</div>
+                <input class="input input--flush" value="Проверить маркировку на соусах">
+                <div class="inline"><select class="select btn--sm" style="height:var(--control-h-sm)"><option>Да / Нет</option><option>Число</option><option>Текст</option></select><button class="btn btn--ghost btn--sm btn--danger">×</button></div>
+              </div>
+              <div class="editor-item" style="background: var(--warn-soft)">
+                <div class="editor-item__ord">2</div>
+                <input class="input input--flush" value="Температура холодильной камеры">
+                <div class="inline"><span class="tag">Число · +2…+4 °C</span><span class="tag tag--warn">Критичный</span><button class="btn btn--ghost btn--sm btn--danger">×</button></div>
+              </div>
+              <div class="editor-item">
+                <div class="editor-item__ord">3</div>
+                <input class="input input--flush" value="Убрать просроченные заготовки">
+                <div class="inline"><select class="select" style="height:var(--control-h-sm)"><option>Да / Нет</option><option>Число</option><option>Текст</option></select><button class="btn btn--ghost btn--sm btn--danger">×</button></div>
+              </div>
+              <div style="padding: var(--space-4) var(--space-6)"><button class="btn btn--sm">+ Пункт</button></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><h2>Где используется</h2><span class="meta spacer">7 чек-листов</span></div>
+            <div class="card__body">
+              <div class="used">
+                <a class="tag tag--accent" href="editor.html">Открытие кухни · Алматы</a>
+                <a class="tag tag--accent" href="editor.html">Закрытие кухни · Алматы</a>
+                <a class="tag tag--accent" href="editor.html">Открытие кухни · Астана</a>
+                <a class="tag tag--accent" href="editor.html">Закрытие кухни · Астана</a>
+                <a class="tag tag--accent" href="editor.html">Открытие упаковки · Астана</a>
+                <a class="tag tag--accent" href="editor.html">Приёмка · Алматы</a>
+                <a class="tag tag--accent" href="editor.html">Ночная проверка · Алматы</a>
+              </div>
+              <p class="meta" style="margin: var(--space-6) 0 0">Правка затронет 5 черновиков. В двух чек-листах блок входит в опубликованные версии — они останутся как есть до следующей публикации.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
