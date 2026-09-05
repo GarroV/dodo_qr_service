@@ -297,3 +297,160 @@ Postgres + миграции + тесты". Прямого попадания (п
 
 ---
 
+## 5. Схемы версионируемых форм в PostgreSQL/JSONB — реальные примеры кода
+
+Искал через `gh search code` по паттернам `pgTable`+`jsonb`+`version` и
+`checklist`+`version`+`jsonb`. Нашлись четыре живых репозитория с разным,
+но пересекающимся решением ровно нашей задачи (версия чек-листа не
+мутирует, заполнение ссылается на зафиксированный снимок). Все файлы
+ниже прочитаны как минимум в релевантном фрагменте (указано, что именно).
+
+### Вариант А: одна таблица "шаблон", версия — целочисленная колонка, партиционный уникальный индекс на "активную" версию
+
+`Stephen-C-Noh/mat-inspect` — https://github.com/Stephen-C-Noh/mat-inspect/blob/main/db/schema/checklist-templates.ts
+(лицензия репозитория — Other/нестандартная, GitHub не распознал явно;
+2 звезды, пуш 2026-08-20 — маленький личный проект, но схема читается
+как продуманная). Прочитан файл целиком. Ключевая конструкция (Drizzle):
+
+```ts
+export const checklistTemplates = pgTable('checklist_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  equipmentType: equipmentTypeEnum('equipment_type').notNull(),
+  version: integer('version').notNull(),
+  isActive: boolean('is_active').notNull().default(false),
+  effectiveFrom: timestamp('effective_from', { withTimezone: true }).notNull().defaultNow(),
+  items: jsonb('items').$type<ChecklistItemRecord[]>().notNull(), // весь чек-лист одним jsonb-массивом
+  createdBy: uuid('created_by').notNull().references(() => users.id),
+  reviewedBy: uuid('reviewed_by').references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex('checklist_templates_one_active_per_type')
+    .on(table.equipmentType).where(sql`${table.isActive} = true`), // партиционный уникальный индекс — только одна активная версия на тип
+  uniqueIndex('checklist_templates_type_version').on(table.equipmentType, table.version),
+]);
+```
+
+Комментарий в коде поясняет корректность: "переактивация старой версии
+безопасна — в одной транзакции сначала снимается активность с текущей
+строки, потом ставится на целевую, поэтому индекс никогда не видит две
+активные строки одновременно". Каждая публикация — новая строка, старые
+не трогаются (то, что нам и нужно для "правка не меняет исторические
+заполнения").
+
+### Вариант Б: родитель + версии отдельной таблицей, состояние черновик/финал
+
+`chrisxvin/checklist` — https://github.com/chrisxvin/checklist/blob/main/src/lib/server/db/proc.checklist.ts
+(MIT, пуш 2026-08-16, 0 звёзд — маленький personal-проект, но логика
+показательная). Прочитан файл целиком (SQL-процедуры на postgres.js,
+не Drizzle, но схема таблиц ясна из запросов): таблица `checklist`
+(родитель: `slug`, `current_version`, `drafting: boolean`) + таблица
+`checklist_version` (`list_id`, `version`, `steps jsonb`). Механика:
+
+- Если чек-лист уже финализирован (`drafting = false`) и его открывают
+  на редактирование — **создаётся новая строка** в `checklist_version`
+  копированием `steps` предыдущей версии, и `checklist.current_version`
+  переключается на неё:
+  ```sql
+  INSERT INTO checklist_version (list_id, version, steps)
+  VALUES (${listId}, ${newVer}, (SELECT steps FROM checklist_version WHERE list_id = ${listId} AND version = ${row.version}))
+  ```
+- Пока черновик (`drafting = true`) — редактирование делает `UPDATE`
+  той же строки версии (`steps = ...`), без размножения версий на
+  каждое нажатие клавиши.
+- `finalize(listId)` переключает `drafting` в false — версия
+  "замораживается", последующая правка снова создаст новую версию.
+
+Это отвечает прямо на требование "публикация неизменяемых версий":
+пока не опубликовано — мутируем текущий черновик; опубликовали —
+следующая правка форкает новую версию, старая остаётся как есть для
+уже сделанных заполнений.
+
+### Вариант В: живая таблица + отдельная append-only таблица снимков
+
+`talkpush-apacse/UAT` — https://github.com/talkpush-apacse/UAT/blob/main/src/lib/actions/checklist.ts
+(лицензия не указана в репозитории — код можно смотреть как референс,
+но не копировать дословно; пуш 2026-08-22, 0 звёзд). Прочитан
+релевантный фрагмент файла (функция `importChecklist`). Паттерн другой:
+основная таблица `checklist_items` **мутируется** напрямую (это не
+версионируемый источник правды), а перед каждой разрушающей операцией
+берётся автоматический снимок в `checklist_snapshots`:
+
+```ts
+await supabase.from('checklist_snapshots').insert({
+  project_id: projectId,
+  version_number: nextVersion,
+  label: 'Auto-save before import',
+  item_count: existingItems.length,
+  snapshot_data: existingItems, // весь массив пунктов как jsonb
+})
+```
+
+- **Отличие от вариантов А/Б**: здесь "источник правды" — мутируемая
+  таблица, а версии существуют только как резервные копии для отката,
+  не как основа для ссылки из заполнений. **Это не подходит** для
+  нашего требования (заполнение обязано ссылаться на неизменную
+  версию, а не полагаться на то, что снимок кто-то не удалит) — но
+  паттерн `snapshot_data jsonb` как способ хранить "весь чек-лист на
+  момент X" одной колонкой валиден и для нас (см. ниже, для таблицы
+  заполнений).
+
+### Вариант Г: библиотека переиспользуемых блоков через FK на отдельную таблицу
+
+`chaibuilder/core` — https://github.com/chaibuilder/core/blob/main/src/actions/drizzle/schema.ts
+(BSD-3-Clause, живой — пуш 2026-08-03, 474 звезды, open-source
+конструктор сайтов). Прочитан релевантный фрагмент файла (таблицы
+`library_items`, `apps_pages_online`). Ключевая конструкция:
+
+```ts
+export const libraryItems = pgTable("library_items", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  library: uuid(), // FK → libraries.id — группировка библиотек
+  name: text(),
+  blocks: jsonb().default([]), // содержимое переиспользуемого блока
+  group: text().default('general'),
+}, (table) => [
+  foreignKey({ columns: [table.library], foreignColumns: [libraries.id], name: "library_items_library_fkey" }),
+]);
+```
+
+а страница (`app_pages_online`) хранит **свой** `blocks: jsonb` плюс
+`libRefId: uuid()` — указатель на исходный элемент библиотеки. Это
+прямое подтверждение паттерна "блок заводится один раз в отдельной
+таблице с jsonb-содержимым, вставляется в десятки страниц по ссылке
+(FK), правка блока — в одном месте (`library_items`), а конкретная
+страница держит собственную копию/ссылку для рендера" — ровно то, что
+нужно для нашей "библиотеки переиспользуемых блоков чек-листа".
+
+### Вывод — рекомендуемая схема для нашего продукта
+
+Ни один пример не переиспользуем как зависимость (это код чужих
+приложений, не библиотека), но **комбинация паттернов А+Г покрывает
+всю задачу**, и её можно взять как референс архитектуры:
+
+1. **`checklist_blocks`** (библиотека, паттерн Г из chaibuilder):
+   `id`, `title`, `items: jsonb` (пункты блока) — редактируется в одном
+   месте, ссылки из секций чек-листов идут по `block_id` (FK).
+2. **`checklists`** (семья/родитель) + **`checklist_versions`**
+   (паттерн А из mat-inspect + Б из chrisxvin/checklist): `checklist_id`,
+   `version: integer`, `is_published: boolean` с партиционным уникальным
+   индексом "одна опубликованная версия активна", `sections: jsonb`
+   (каждая секция — заголовок + список пунктов, пункты — либо инлайн,
+   либо `{ blockRef: block_id }` с зафиксированным на момент публикации
+   содержимым блока — снимок, а не живая ссылка, иначе правка библиотеки
+   задним числом изменит уже опубликованные версии, что запрещено
+   требованием). Публикация = INSERT новой строки версии, а не UPDATE.
+3. **`checklist_fills`** (заполнения, паттерн В из talkpush/UAT для
+   формы хранения): `checklist_version_id` (FK на зафиксированную
+   версию — не на "текущую" `checklists`), `answers: jsonb` (ответы по
+   пунктам) + `snapshot: jsonb` при желании держать полный текст
+   чек-листа денормализованно для быстрого показа истории без JOIN'а
+   через версию.
+
+Это стандартная связка "event-sourcing-lite" для форм (форк-на-публикацию
++ FK на зафиксированную версию из заполнения) — не нужно тянуть
+библиотеку, четырёх таблиц Drizzle с партиционным уникальным индексом
+достаточно, что подтверждается всеми четырьмя найденными живыми
+примерами.
+
+---
+

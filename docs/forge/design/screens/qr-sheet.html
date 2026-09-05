@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR-коды станций — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+  .qr-mock { background:
+      repeating-linear-gradient(90deg, var(--ink) 0 4px, transparent 4px 8px),
+      repeating-linear-gradient(0deg, var(--ink) 0 4px, transparent 4px 8px);
+    background-color: #fff; border: 4px solid #fff; outline: 1px solid var(--line-strong); }
+  .tablet { width: 420px; }
+  .tablet__screen { aspect-ratio: 4/3; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-screen); box-shadow: var(--sh-xs); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-7); padding: var(--space-9); }
+  .tablet__qr { width: 190px; height: 190px; }
+  .tablet__station { font-size: var(--fs-display); font-weight: var(--w-semibold); }
+  .two { display: grid; grid-template-columns: 1fr 460px; gap: var(--space-8); align-items: start; }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav__brand">Чек-листы <span>Dodo</span></div>
+    <div class="nav__group">
+      <div class="nav__label">Работа</div>
+      <a class="nav__item" href="templates.html">Чек-листы</a>
+      <a class="nav__item" href="library.html">Библиотека блоков</a>
+      <a class="nav__item" href="feed.html">Заполнения</a>
+    </div>
+    <div class="nav__group">
+      <div class="nav__label">Справочник</div>
+      <a class="nav__item" href="catalog.html">Страны и пиццерии</a>
+      <a class="nav__item nav__item--active" href="qr-sheet.html">QR-коды</a>
+    </div>
+    <div class="nav__foot">Вход выполнен<br>методист</div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__title">
+        <div class="topbar__crumbs">Казахстан · Алматы, Абая 44</div>
+        <h1>QR-коды станций</h1>
+      </div>
+      <div class="topbar__actions">
+        <button class="btn">Скачать PDF</button>
+        <button class="btn btn--primary">Печать</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="two">
+        <div class="stack">
+          <div class="notice">
+            <div>Наклейка печатается один раз и живёт годами: QR принадлежит станции, а не чек-листу. Меняете чек-лист — наклейку переклеивать не нужно. Перевыпуск кода ломает старые наклейки: печатайте новые.</div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><h2>Лист для печати</h2><span class="meta spacer">A4 · 3 станции</span></div>
+            <div class="card__body" style="background: var(--surface-2); display:flex; justify-content:center">
+              <div class="sheet" style="width: 100%; min-height: auto; box-shadow: none; padding: 10mm; gap: 6mm">
+                <div class="sticker">
+                  <div class="sticker__qr qr-mock" style="width:34mm;height:34mm"></div>
+                  <div class="sticker__station">Кухня</div>
+                  <div class="meta">Алматы, Абая 44 · отсканируйте камерой</div>
+                </div>
+                <div class="sticker">
+                  <div class="sticker__qr qr-mock" style="width:34mm;height:34mm"></div>
+                  <div class="sticker__station">Касса</div>
+                  <div class="meta">Алматы, Абая 44 · отсканируйте камерой</div>
+                </div>
+                <div class="sticker">
+                  <div class="sticker__qr qr-mock" style="width:34mm;height:34mm"></div>
+                  <div class="sticker__station">Упаковка</div>
+                  <div class="meta">Алматы, Абая 44 · отсканируйте камерой</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="card">
+            <div class="card__head"><h2>Станции</h2></div>
+            <div class="card__body card__body--flush">
+              <table class="table">
+                <thead><tr><th>Станция</th><th>Код</th><th>Выпущен</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td>Кухня</td><td class="num">k7m2xq9p41</td><td class="meta">3 июля</td><td class="cell-actions"><button class="btn btn--ghost btn--sm">Перевыпустить</button></td></tr>
+                  <tr><td>Касса</td><td class="num">b3n8wr5t62</td><td class="meta">3 июля</td><td class="cell-actions"><button class="btn btn--ghost btn--sm">Перевыпустить</button></td></tr>
+                  <tr><td>Упаковка</td><td class="num">z9c4hd7v03</td><td class="meta">28 августа</td><td class="cell-actions"><button class="btn btn--ghost btn--sm">Перевыпустить</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><h2>QR на экран планшета</h2><button class="btn btn--sm spacer">Открыть во весь экран</button></div>
+            <div class="card__body">
+              <div class="tablet">
+                <div class="tablet__screen">
+                  <div class="tablet__qr qr-mock"></div>
+                  <div class="tablet__station">Кухня</div>
+                  <div class="meta">Алматы, Абая 44</div>
+                </div>
+              </div>
+              <p class="meta" style="margin: var(--space-6) 0 0">Та же ссылка, что на наклейке. Планшет держит экран включённым; при перевыпуске кода картинка обновляется сама.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

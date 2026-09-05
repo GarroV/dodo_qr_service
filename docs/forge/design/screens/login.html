@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вход — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .login { width: 340px; }
+  .login__brand { font-size: var(--fs-display); font-weight: var(--w-semibold); text-align: center; margin-bottom: var(--space-8); }
+  .login__brand span { color: var(--ink-3); font-weight: var(--w-regular); }
+</style>
+</head>
+<body>
+<div class="login">
+  <div class="login__brand">Чек-листы <span>Dodo</span></div>
+  <div class="card">
+    <div class="card__body stack">
+      <div class="field">
+        <label class="field__label">Пароль</label>
+        <input class="input" type="password" value="············">
+      </div>
+      <button class="btn btn--primary" style="width:100%">Войти</button>
+      <p class="meta" style="margin:0; text-align:center">Сотрудникам на кухне вход не нужен: чек-лист открывается по QR-коду станции.</p>
+    </div>
+  </div>
+  <p class="meta" style="text-align:center; margin-top: var(--space-7)"><a href="../index.html">← Карта экранов</a></p>
+</div>
+</body>
+</html>

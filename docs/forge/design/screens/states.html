@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Состояния экранов — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+  .wrap { padding: var(--space-9); display: flex; flex-direction: column; gap: var(--space-10); }
+  .grid { display: flex; gap: var(--space-8); flex-wrap: wrap; align-items: flex-start; }
+  .cap { font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: var(--space-5); }
+  .box { width: 375px; }
+  .box .fill { min-height: 420px; border: 1px solid var(--line-strong); border-radius: var(--r-screen); box-shadow: var(--sh-xs); justify-content: center; }
+  .wide { width: 560px; }
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-6); padding: var(--space-10) var(--space-8); text-align: center; }
+  .big { font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); }
+  .ok-mark { width: 56px; height: 56px; border-radius: 50%; background: var(--ok-soft); border: 1px solid var(--ok-line); display:flex; align-items:center; justify-content:center; }
+  .ok-mark::after { content: ""; width: 26px; height: 26px; background: var(--ok);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><a href="../index.html">← Карта экранов</a></div>
+
+  <div>
+    <h1>Экран сотрудника — состояния</h1>
+    <p class="muted">Всё, что видит человек с телефона, кроме самого заполнения.</p>
+  </div>
+
+  <div class="grid">
+    <div class="box">
+      <div class="cap">Отправлено</div>
+      <div class="fill">
+        <div class="center">
+          <div class="ok-mark"></div>
+          <div class="big">Done, thank you</div>
+          <div class="muted">Kitchen · Almaty, Abaya 44<br>Sent at 09:15 · took 3:24</div>
+          <div class="notice notice--warn" style="text-align:left">1 critical item failed. The manager will see your comment today.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="cap">Ссылка недействительна</div>
+      <div class="fill">
+        <div class="center">
+          <div class="big">This code no longer works</div>
+          <div class="muted">The sticker has been replaced. Ask your manager for the new one — the old code was revoked.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="cap">Для станции нет чек-листа</div>
+      <div class="fill">
+        <div class="center">
+          <div class="big">Nothing to fill in right now</div>
+          <div class="muted">No checklist is assigned to this station for the current time of day.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="cap">Загрузка</div>
+      <div class="fill">
+        <div class="fill__head">
+          <div class="skeleton" style="width:60%; height:20px"></div>
+          <div class="skeleton" style="width:40%; height:12px; margin-top:8px"></div>
+        </div>
+        <div style="padding: var(--space-7); display:flex; flex-direction:column; gap:var(--space-7)">
+          <div class="skeleton" style="width:90%"></div>
+          <div class="skeleton" style="width:75%"></div>
+          <div class="skeleton" style="width:85%"></div>
+          <div class="skeleton" style="width:60%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="cap">Нет сети при отправке</div>
+      <div class="fill">
+        <div class="center">
+          <div class="big">Could not send</div>
+          <div class="muted">Your answers are kept on this screen. Move closer to the Wi-Fi and try again — nothing is lost.</div>
+          <button class="btn btn--primary btn--fill" style="max-width:280px">Try again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h1>Админка — состояния</h1>
+  </div>
+
+  <div class="grid">
+    <div class="wide">
+      <div class="cap">Пусто: ни одного чек-листа</div>
+      <div class="card">
+        <div class="empty">
+          <div class="empty__title">Чек-листов пока нет</div>
+          <div>Создайте первый — на это уходит пара минут: печатаете пункты подряд или вставляете готовый список из буфера.</div>
+          <button class="btn btn--primary">+ Новый чек-лист</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wide">
+      <div class="cap">Пусто: заполнений ещё не было</div>
+      <div class="card">
+        <div class="empty">
+          <div class="empty__title">Заполнений пока нет</div>
+          <div>Как только кто-то отсканирует QR станции и заполнит чек-лист, запись появится здесь.</div>
+          <a class="btn" href="qr-sheet.html">Напечатать QR-коды</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="wide">
+      <div class="cap">Загрузка списка</div>
+      <div class="card">
+        <div class="card__head"><h2>Лента</h2></div>
+        <div class="card__body stack">
+          <div class="skeleton" style="width:100%"></div>
+          <div class="skeleton" style="width:92%"></div>
+          <div class="skeleton" style="width:96%"></div>
+          <div class="skeleton" style="width:80%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wide">
+      <div class="cap">Ошибка сохранения</div>
+      <div class="card">
+        <div class="card__body stack">
+          <div class="notice notice--err">Не удалось сохранить чек-лист: сервер не ответил. Текст пунктов не потерян — он остался на экране. Попробуйте ещё раз.</div>
+          <div class="inline"><button class="btn btn--primary">Повторить</button><button class="btn btn--ghost">Скопировать пункты в буфер</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wide">
+      <div class="cap">Опасное действие: перевыпуск кода</div>
+      <div class="card">
+        <div class="card__head"><h2>Перевыпустить код станции «Кухня»?</h2></div>
+        <div class="card__body stack">
+          <div class="notice notice--warn">Старая наклейка перестанет работать сразу. Сотрудник, отсканировавший её, увидит «код больше не действует». Напечатайте и наклейте новую.</div>
+          <div class="inline"><button class="btn btn--primary">Перевыпустить и открыть печать</button><button class="btn btn--ghost">Отмена</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
