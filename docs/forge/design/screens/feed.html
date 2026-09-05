@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Заполнения — эталон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../reference/tokens.css">
+<link rel="stylesheet" href="../app.css">
+<style>
+  .filters { display: flex; gap: var(--space-5); align-items: flex-end; flex-wrap: wrap; }
+  .filters .field { min-width: 150px; }
+  .filters .spacer { margin-left: auto; }
+  .kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-7); }
+  .kpi__cell { padding: var(--space-7); }
+  .kpi__val { font: var(--w-semibold) var(--fs-num-hero)/1.1 var(--font-num); }
+  .kpi__cap { color: var(--ink-3); font-size: var(--fs-meta); margin-top: var(--space-3); }
+  .when { font: var(--num); color: var(--ink-2); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav__brand">Чек-листы <span>Dodo</span></div>
+    <div class="nav__group">
+      <div class="nav__label">Работа</div>
+      <a class="nav__item" href="templates.html">Чек-листы</a>
+      <a class="nav__item" href="library.html">Библиотека блоков</a>
+      <a class="nav__item nav__item--active" href="feed.html">Заполнения</a>
+    </div>
+    <div class="nav__group">
+      <div class="nav__label">Справочник</div>
+      <a class="nav__item" href="catalog.html">Страны и пиццерии</a>
+      <a class="nav__item" href="qr-sheet.html">QR-коды</a>
+    </div>
+    <div class="nav__foot">Вход выполнен<br>методист</div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__title">
+        <div class="topbar__crumbs">Казахстан · все пиццерии</div>
+        <h1>Заполнения</h1>
+      </div>
+      <div class="topbar__actions">
+        <span class="meta">за 5 сентября</span>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="card">
+        <div class="card__body">
+          <div class="filters">
+            <div class="field"><label class="field__label">Страна</label><select class="select"><option>Казахстан</option><option>Узбекистан</option><option>Все</option></select></div>
+            <div class="field"><label class="field__label">Пиццерия</label><select class="select"><option>Все</option><option>Алматы, Абая 44</option><option>Астана, Кабанбай 12</option></select></div>
+            <div class="field"><label class="field__label">Станция</label><select class="select"><option>Все</option><option>Кухня</option><option>Касса</option><option>Упаковка</option></select></div>
+            <div class="field"><label class="field__label">Период</label><select class="select"><option>Сегодня</option><option>7 дней</option><option>Месяц</option></select></div>
+            <button class="btn btn--ghost spacer">Сбросить</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="kpi">
+          <div class="kpi__cell"><div class="kpi__val">14</div><div class="kpi__cap">заполнений за сегодня</div></div>
+          <div class="kpi__cell" style="border-left: 1px solid var(--line)"><div class="kpi__val" style="color: var(--err)">3</div><div class="kpi__cap">проваленных критичных пункта</div></div>
+          <div class="kpi__cell" style="border-left: 1px solid var(--line)"><div class="kpi__val">2:40</div><div class="kpi__cap">среднее время заполнения</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><h2>Лента</h2><span class="meta spacer">14 записей</span></div>
+        <div class="card__body card__body--flush">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Когда</th><th>Пиццерия</th><th>Станция</th><th>Чек-лист</th>
+                <th>Результат</th><th>Длительность</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="when">09:12</td>
+                <td>Алматы, Абая 44</td><td>Кухня</td>
+                <td>Открытие кухни <span class="meta">v2</span></td>
+                <td><span class="tag tag--err">1 критичный провален</span></td>
+                <td class="num">3:24</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="submission.html">Открыть</a></td>
+              </tr>
+              <tr>
+                <td class="when">09:04</td>
+                <td>Алматы, Абая 44</td><td>Касса</td>
+                <td>Открытие кассы <span class="meta">v1</span></td>
+                <td><span class="tag tag--ok">Всё выполнено</span></td>
+                <td class="num">1:12</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="submission.html">Открыть</a></td>
+              </tr>
+              <tr>
+                <td class="when">08:51</td>
+                <td>Астана, Кабанбай 12</td><td>Кухня</td>
+                <td>Открытие кухни <span class="meta">v2</span></td>
+                <td><span class="tag tag--warn">2 пункта не выполнены</span></td>
+                <td class="num">2:05</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="submission.html">Открыть</a></td>
+              </tr>
+              <tr>
+                <td class="when">08:33</td>
+                <td>Астана, Кабанбай 12</td><td>Упаковка</td>
+                <td>Открытие упаковки <span class="meta">v1</span></td>
+                <td><span class="tag tag--ok">Всё выполнено</span></td>
+                <td class="num">0:48</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="submission.html">Открыть</a></td>
+              </tr>
+              <tr>
+                <td class="when">вчера 21:40</td>
+                <td>Алматы, Абая 44</td><td>Кухня</td>
+                <td>Закрытие кухни <span class="meta">v3</span></td>
+                <td><span class="tag tag--ok">Всё выполнено</span></td>
+                <td class="num">4:02</td>
+                <td class="cell-actions"><a class="btn btn--ghost btn--sm" href="submission.html">Открыть</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

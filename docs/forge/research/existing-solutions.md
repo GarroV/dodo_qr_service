@@ -243,3 +243,57 @@
 
 ---
 
+## 4. Шаблоны и стартовые наборы Next.js App Router + Drizzle + PostgreSQL
+
+Искал именно чистый минимальный старт "Next.js App Router + Drizzle +
+Postgres + миграции + тесты". Прямого попадания (популярный репозиторий
+ровно с таким узким набором, без лишнего) **не нашлось** — все найденные
+варианты либо генераторы стека, либо готовые шаблоны с довеском
+(auth-провайдеры, платежи, i18n), который придётся выпиливать.
+
+- **`create-t3-app`** — https://github.com/t3-oss/create-t3-app — MIT,
+  29108 звёзд, но **последний пуш 2025-12-13** (около 9 месяцев назад
+  на сегодня, 2026-09-06) — не мёртв, но не активно развивается. Прочитан
+  README: **Drizzle официально поддерживается как опция ORM** наравне с
+  Prisma (строка `- [Drizzle](https://orm.drizzle.team)` в списке технологий),
+  плюс Tailwind, TypeScript, NextAuth (последнее не нужно — у нас один
+  пароль на админку). CLI-генератор, а не форк-репозиторий — создаёт
+  Pages/App Router проект с нуля по выбранным опциям.
+- **`create-better-t-stack`** — https://github.com/AmanVarshney01/create-better-t-stack
+  — MIT, 5697 звёзд, очень живой (пуш 2026-09-02). Прочитан README
+  целиком. Философия прямо совпадает с нашей потребностью: "Roll your
+  own stack: you pick only the parts you need, nothing extra." Опции
+  включают Frontend: Next.js, Backend: "Self (fullstack web app)"
+  (то есть Next.js API routes/Server Actions без отдельного бэкенда),
+  ORM: Drizzle, БД: PostgreSQL, DB Setup: Neon/Supabase/Docker. **Тестов
+  как отдельного аддона в списке функций нет** (Addons: Turborepo, Nx,
+  PWA, Biome, Lefthook, Husky и др. — Vitest/Playwright не упомянуты) —
+  значит тестовый каркас всё равно придётся добавлять руками.
+- **`reliverse/relivator`** — https://github.com/reliverse/relivator —
+  MIT, 1558 звёзд, живой (пуш 2026-09-05). Прочитан README целиком.
+  Стек в точку (Next.js 15 + Drizzle + Postgres/Neon + Tailwind +
+  shadcn/ui), но это **готовый e-commerce шаблон** с better-auth,
+  UploadThing, Polar-платежами, i18n — существенно больше, чем нужно
+  (у нас нет ролей, нет платежей, нет каталога товаров), и работает
+  через `bun db:push` (синхронизация схемы), а не через версионированные
+  файлы миграций — не совпадает с требованием "миграции". **Не берём**
+  как основу, слишком много выпиливать.
+- Официального актуального примера от Vercel (`vercel/next.js/examples`)
+  или от самой команды Drizzle (`drizzle-team/drizzle-examples`) —
+  **не нашлось**: папки `examples` в `vercel/next.js` под drizzle нет
+  (проверено `gh api` по каталогу), а репозиторий
+  `drizzle-team/drizzle-examples` — **пустой** (0 звёзд, `pushed_at`
+  2024-04-12, содержимого нет).
+  - **Вывод**: **своё**, начиная с `create-better-t-stack`
+    как генератора первого коммита (Next.js + Drizzle + Postgres +
+    Tailwind, backend "Self", без Better Auth/Clerk — методист входит
+    по одному паролю, это не полноценная auth-система) — берём только
+    сгенерированный каркас (package.json, конфиги drizzle-kit, структура
+    app router), выкидываем то, что не выбрано на шаге CLI. Тесты
+    (Vitest для unit, Playwright/Testing Library для e2e) добавляем
+    сами — готового аддона под это ни у одного варианта нет. Файлы
+    миграций через `drizzle-kit generate` + `drizzle-kit migrate` (а не
+    `db:push`) — стандартный путь самого Drizzle, не специфика шаблона.
+
+---
+
