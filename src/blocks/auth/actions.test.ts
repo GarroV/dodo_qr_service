@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { signIn, signOut } from "./actions";
 import { hashPassword } from "./password";
+import { LOGIN_LIMITS, forgetAllLoginFailures } from "./rate-limit";
 import { SESSION_COOKIE_NAME, readSessionToken } from "./session";
 
 interface StoredCookie {
@@ -14,7 +15,14 @@ const jar = vi.hoisted(
   () => new Map<string, { value: string; options: Record<string, unknown> }>(),
 );
 
+// Заголовки запроса: из них берётся адрес клиента для счётчика попыток.
+const requestHeaders = vi.hoisted(() => new Map<string, string>());
+
 vi.mock("next/headers", () => ({
+  headers: () =>
+    Promise.resolve({
+      get: (name: string) => requestHeaders.get(name) ?? null,
+    }),
   cookies: () =>
     Promise.resolve({
       get: (name: string) => {
@@ -47,8 +55,14 @@ async function cheapHash(): Promise<string> {
   });
 }
 
+const CLIENT_HEADER = "x-forwarded-for";
+const CLIENT = "203.0.113.7";
+
 beforeEach(async () => {
   jar.clear();
+  forgetAllLoginFailures();
+  requestHeaders.clear();
+  requestHeaders.set(CLIENT_HEADER, CLIENT);
   process.env["ADMIN_PASSWORD_HASH"] = await cheapHash();
   process.env["SESSION_SECRET"] = SECRET;
 });
@@ -59,8 +73,8 @@ afterEach(() => {
 });
 
 describe("signIn", () => {
-  test("на верный пароль ставит подписанную куку и отвечает true", async () => {
-    await expect(signIn(PASSWORD)).resolves.toBe(true);
+  test("на верный пароль ставит подписанную куку и отвечает успехом", async () => {
+    await expect(signIn(PASSWORD)).resolves.toEqual({ status: "ok" });
 
     const cookie = sessionCookie();
     expect(cookie).toBeDefined();
@@ -79,8 +93,10 @@ describe("signIn", () => {
     expect(options?.["maxAge"]).toBe(30 * 24 * 60 * 60);
   });
 
-  test("на неверный пароль отвечает false и не ставит куку", async () => {
-    await expect(signIn("не тот пароль")).resolves.toBe(false);
+  test("на неверный пароль отвечает отказом и не ставит куку", async () => {
+    await expect(signIn("не тот пароль")).resolves.toEqual({
+      status: "rejected",
+    });
 
     expect(sessionCookie()).toBeUndefined();
   });
@@ -142,6 +158,73 @@ describe("signIn", () => {
       expect(message).not.toContain(SHORT_SECRET);
       expect(message).not.toContain(BROKEN_HASH);
     }
+  });
+});
+
+/** Тратит весь запас неудач текущего клиента. */
+async function exhaust(): Promise<void> {
+  for (
+    let attempt = 0;
+    attempt < LOGIN_LIMITS.perClient.maxFailures;
+    attempt++
+  ) {
+    await signIn("не тот пароль");
+  }
+}
+
+describe("ограничение частоты попыток", () => {
+  test("после предела неудач отказывает даже верному паролю", async () => {
+    await exhaust();
+
+    await expect(signIn(PASSWORD)).resolves.toMatchObject({
+      status: "throttled",
+    });
+    expect(sessionCookie()).toBeUndefined();
+  });
+
+  test("отказ называет, через сколько можно повторить", async () => {
+    await exhaust();
+
+    const result = await signIn(PASSWORD);
+
+    expect(result).toEqual({
+      status: "throttled",
+      retryAfterSeconds: LOGIN_LIMITS.perClient.windowSeconds,
+    });
+  });
+
+  test("перебор с одного адреса не закрывает вход с другого", async () => {
+    await exhaust();
+
+    requestHeaders.set(CLIENT_HEADER, "198.51.100.3");
+
+    await expect(signIn(PASSWORD)).resolves.toEqual({ status: "ok" });
+  });
+
+  test("удачный вход обнуляет счёт неудач", async () => {
+    for (
+      let attempt = 0;
+      attempt < LOGIN_LIMITS.perClient.maxFailures - 1;
+      attempt++
+    ) {
+      await signIn("не тот пароль");
+    }
+
+    await expect(signIn(PASSWORD)).resolves.toEqual({ status: "ok" });
+    await signIn("не тот пароль");
+
+    await expect(signIn(PASSWORD)).resolves.toEqual({ status: "ok" });
+  });
+
+  test("в списке адресов берётся первый — тот, что ближе к клиенту", async () => {
+    requestHeaders.set(CLIENT_HEADER, `${CLIENT}, 10.0.0.1, 10.0.0.2`);
+    await exhaust();
+
+    requestHeaders.set(CLIENT_HEADER, CLIENT);
+
+    await expect(signIn(PASSWORD)).resolves.toMatchObject({
+      status: "throttled",
+    });
   });
 });
 

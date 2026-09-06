@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { signIn } from "../actions";
@@ -8,9 +9,20 @@ import { ADMIN_HOME_PATH } from "../routes";
 /** Длиннее человек не набирает; ограничение отсекает попытку загрузить в поле мегабайт. */
 const MAX_PASSWORD_LENGTH = 512;
 
+const SECONDS_IN_MINUTE = 60;
+
 export interface LoginFormState {
   readonly failed: boolean;
+  /**
+   * Готовый текст отказа. `null` — показать общий «Неверный пароль».
+   *
+   * Текст собирается здесь, а не в форме: в него подставляется число минут, а форма —
+   * клиентский компонент без словаря (провайдера next-intl в разметке нет).
+   */
+  readonly message: string | null;
 }
+
+const REFUSED: LoginFormState = { failed: true, message: null };
 
 /**
  * Действие формы входа. Разбирает поле, отдаёт пароль блоку и на успехе уводит в админку.
@@ -30,12 +42,24 @@ export async function submitLogin(
     password.length === 0 ||
     password.length > MAX_PASSWORD_LENGTH
   ) {
-    return { failed: true };
+    return REFUSED;
   }
 
-  if (await signIn(password)) {
+  const result = await signIn(password);
+
+  if (result.status === "throttled") {
+    const t = await getTranslations("login");
+    return {
+      failed: true,
+      message: t("throttled", {
+        minutes: Math.ceil(result.retryAfterSeconds / SECONDS_IN_MINUTE),
+      }),
+    };
+  }
+
+  if (result.status === "ok") {
     redirect(ADMIN_HOME_PATH);
   }
 
-  return { failed: true };
+  return REFUSED;
 }

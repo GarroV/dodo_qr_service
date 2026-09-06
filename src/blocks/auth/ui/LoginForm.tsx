@@ -12,7 +12,7 @@ export interface LoginLabels {
   readonly kitchenHint: string;
 }
 
-const INITIAL_STATE: LoginFormState = { failed: false };
+const INITIAL_STATE: LoginFormState = { failed: false, message: null };
 
 const FIELD_ID = "admin-password";
 const ERROR_ID = "admin-password-error";
@@ -53,7 +53,7 @@ export function LoginForm({ labels }: { readonly labels: LoginLabels }) {
           data-testid="login-error"
           className="text-err m-0 rounded-[var(--r-control)] border border-[var(--err-line)] bg-[var(--err-soft)] px-[var(--space-5)] py-[var(--space-4)] text-[length:var(--fs-dense)] leading-[var(--lh-dense)]"
         >
-          {labels.failed}
+          {state.message ?? labels.failed}
         </p>
       ) : null}
 

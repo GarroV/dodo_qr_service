@@ -10,6 +10,8 @@ const LOGIN_PATH = "/admin/login";
 const ADMIN_PATH = "/admin";
 const SESSION_COOKIE = "dodo_qr_admin";
 const DAY_MS = 24 * 60 * 60 * 1000;
+// Столько неудач подряд с одного адреса терпит вход (src/blocks/auth/rate-limit.ts).
+const FAILURES_BEFORE_LOCK = 5;
 
 test.describe("вход в админку", () => {
   // Эталон входа написан по-русски, поэтому и браузер здесь русский.
@@ -153,6 +155,40 @@ test.describe("вход в админку", () => {
     await page.getByTestId("login-submit").click();
 
     await expect(page.getByTestId("admin-home")).toBeVisible();
+
+    await context.close();
+  });
+
+  test("перебор пароля упирается в предел и сообщает, когда повторить", async ({
+    browser,
+  }) => {
+    // Свой адрес в заголовке: счёт неудач ведётся по нему, и этот сценарий не запирает
+    // вход остальным, которые идут параллельно с тем же сервером.
+    const context = await browser.newContext({
+      locale: "ru-RU",
+      extraHTTPHeaders: { "x-forwarded-for": "203.0.113.77" },
+    });
+    const page = await context.newPage();
+
+    for (let attempt = 0; attempt < FAILURES_BEFORE_LOCK; attempt++) {
+      await page.goto(LOGIN_PATH);
+      await page.getByLabel("Пароль").fill("подобранный-пароль");
+      await page.getByTestId("login-submit").click();
+      await expect(page.getByTestId("login-error")).toBeVisible();
+    }
+
+    // Дальше не пускают даже с верным паролем — и говорят, через сколько повторить.
+    await page.goto(LOGIN_PATH);
+    await page.getByLabel("Пароль").fill(E2E_ADMIN_PASSWORD);
+    await page.getByTestId("login-submit").click();
+
+    await expect(page.getByTestId("login-error")).toHaveText(
+      "Слишком много попыток входа. Повторите через 15 минут.",
+    );
+    await expect(page).toHaveURL(new RegExp(`${LOGIN_PATH}$`));
+    expect((await context.cookies()).map((item) => item.name)).not.toContain(
+      SESSION_COOKIE,
+    );
 
     await context.close();
   });

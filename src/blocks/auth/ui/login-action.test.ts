@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { hashPassword } from "../password";
+import { LOGIN_LIMITS, forgetAllLoginFailures } from "../rate-limit";
 import { ADMIN_HOME_PATH, LOGIN_PATH } from "../routes";
 import { SESSION_COOKIE_NAME } from "../session";
 import { submitLogin } from "./login-action";
@@ -9,6 +10,7 @@ import { submitSignOut } from "./sign-out-action";
 const jar = vi.hoisted(() => new Map<string, string>());
 
 vi.mock("next/headers", () => ({
+  headers: () => Promise.resolve({ get: () => "203.0.113.7" }),
   cookies: () =>
     Promise.resolve({
       get: (name: string) => {
@@ -24,6 +26,16 @@ vi.mock("next/headers", () => ({
     }),
 }));
 
+// Тексты берутся из словаря next-intl; здесь важно, что действие подставляет в них
+// минуты ожидания, а не то, как звучит русская фраза, — это проверяют сквозные сценарии.
+vi.mock("next-intl/server", () => ({
+  getTranslations: () =>
+    Promise.resolve(
+      (key: string, values?: Record<string, unknown>) =>
+        `${key}:${String(values?.["minutes"])}`,
+    ),
+}));
+
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => {
     throw new Error(`NEXT_REDIRECT ${path}`);
@@ -31,7 +43,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 const PASSWORD = "пароль-методиста";
-const INITIAL = { failed: false };
+const INITIAL = { failed: false, message: null };
+const REFUSED = { failed: true, message: null };
 
 function formWith(password: FormDataEntryValue): FormData {
   const form = new FormData();
@@ -41,6 +54,7 @@ function formWith(password: FormDataEntryValue): FormData {
 
 beforeEach(async () => {
   jar.clear();
+  forgetAllLoginFailures();
   process.env["ADMIN_PASSWORD_HASH"] = await hashPassword(PASSWORD, {
     cost: 1024,
     blockSize: 8,
@@ -65,31 +79,29 @@ describe("submitLogin", () => {
   });
 
   test("на неверный пароль отвечает отказом и остаётся на форме", async () => {
-    await expect(submitLogin(INITIAL, formWith("не тот"))).resolves.toEqual({
-      failed: true,
-    });
+    await expect(submitLogin(INITIAL, formWith("не тот"))).resolves.toEqual(
+      REFUSED,
+    );
 
     expect(jar.get(SESSION_COOKIE_NAME)).toBeUndefined();
   });
 
   test("пустое поле — тот же отказ, без подробностей", async () => {
-    await expect(submitLogin(INITIAL, formWith(""))).resolves.toEqual({
-      failed: true,
-    });
+    await expect(submitLogin(INITIAL, formWith(""))).resolves.toEqual(REFUSED);
   });
 
   test("поля вообще нет — отказ, а не пятисотка", async () => {
-    await expect(submitLogin(INITIAL, new FormData())).resolves.toEqual({
-      failed: true,
-    });
+    await expect(submitLogin(INITIAL, new FormData())).resolves.toEqual(
+      REFUSED,
+    );
   });
 
   test("вместо строки пришёл файл — отказ на границе, до проверки пароля", async () => {
     const file = new File([PASSWORD], "password.txt", { type: "text/plain" });
 
-    await expect(submitLogin(INITIAL, formWith(file))).resolves.toEqual({
-      failed: true,
-    });
+    await expect(submitLogin(INITIAL, formWith(file))).resolves.toEqual(
+      REFUSED,
+    );
     expect(jar.get(SESSION_COOKIE_NAME)).toBeUndefined();
   });
 
@@ -98,9 +110,27 @@ describe("submitLogin", () => {
 
     await expect(
       submitLogin(INITIAL, formWith("я".repeat(100_000))),
-    ).resolves.toEqual({ failed: true });
+    ).resolves.toEqual(REFUSED);
 
     expect(performance.now() - started).toBeLessThan(50);
+  });
+});
+
+describe("отказ по частоте попыток", () => {
+  test("вместо общего «неверный пароль» показывает, когда можно повторить", async () => {
+    for (
+      let attempt = 0;
+      attempt < LOGIN_LIMITS.perClient.maxFailures;
+      attempt++
+    ) {
+      await submitLogin(INITIAL, formWith("не тот"));
+    }
+
+    const state = await submitLogin(INITIAL, formWith(PASSWORD));
+
+    // 15 минут окна: сообщение называет именно их, а не «попробуйте позже».
+    expect(state).toEqual({ failed: true, message: "throttled:15" });
+    expect(jar.get(SESSION_COOKIE_NAME)).toBeUndefined();
   });
 });
 
