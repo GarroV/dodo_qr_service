@@ -4,7 +4,7 @@
 import { asc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import type { LocalizedText } from "@/blocks/data";
-import { checklists, getDb, stations, stores } from "@/blocks/data";
+import { checklists, getDb, stations } from "@/blocks/data";
 
 import {
   CatalogError,
@@ -256,15 +256,4 @@ export async function listUnassignedChecklists(): Promise<StationChecklist[]> {
     .from(checklists)
     .where(isNull(checklists.stationId))
     .orderBy(asc(checklists.createdAt));
-}
-
-/** Пиццерия существует? Экран спрашивает это до того, как показать её станции. */
-export async function storeExists(storeId: string): Promise<boolean> {
-  if (!isUuid(storeId)) return false;
-
-  const [row] = await getDb()
-    .select({ id: stores.id })
-    .from(stores)
-    .where(eq(stores.id, storeId));
-  return row !== undefined;
 }
