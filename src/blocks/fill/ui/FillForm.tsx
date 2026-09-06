@@ -35,22 +35,29 @@ const TITLE_CLASS =
   "text-[length:var(--fs-display)] leading-[var(--lh-display)] font-semibold";
 const WHERE_CLASS =
   "mt-[var(--space-2)] text-[length:var(--fs-meta)] text-[var(--ink-3)]";
+// Заголовок секции — h2 ради доступности, но межстрочный интервал взят у эталона:
+// общее правило h2 в globals.css даёт 22px, у эталона это обычный div с базовыми 18px.
 const SECTION_TITLE_CLASS =
-  "px-[var(--space-7)] pt-[var(--space-8)] pb-[var(--space-4)] text-[length:var(--fs-micro)] leading-[var(--lh-micro)] font-semibold tracking-[var(--tracking-micro)] text-[var(--ink-3)] uppercase";
+  "px-[var(--space-7)] pt-[var(--space-8)] pb-[var(--space-4)] text-[length:var(--fs-micro)] leading-[var(--lh-body)] font-semibold tracking-[var(--tracking-micro)] text-[var(--ink-3)] uppercase";
 const ITEM_CLASS =
   "flex w-full min-h-[var(--tap-min)] items-start gap-[var(--space-6)] border-t border-[var(--line)] px-[var(--space-7)] py-[var(--space-6)] text-left";
+// Цвет фона задаётся ТОЛЬКО в `boxTone`: если оставить здесь `bg-surface`, две
+// утилиты фона спорят за одно свойство, и порядок решает не разметка, а порядок
+// правил в собранном CSS. Проверено в браузере — побеждал белый, отметка
+// выполненного пункта оставалась пустой рамкой, а белая галочка на белом фоне
+// не была видна вовсе.
 const BOX_CLASS =
-  "mt-[1px] h-[26px] w-[26px] flex-none rounded-[var(--r-control)] border-[1.5px] bg-surface bg-center bg-no-repeat";
+  "mt-[1px] h-[26px] w-[26px] flex-none rounded-[var(--r-control)] border-[1.5px] bg-center bg-no-repeat";
 const TEXT_CLASS =
   "flex-1 text-[length:var(--fs-lead)] leading-[21px] break-words";
 const HINT_CLASS =
-  "mt-[var(--space-2)] block text-[length:var(--fs-meta)] leading-[var(--lh-meta)] text-[var(--ink-3)]";
+  "mt-[var(--space-2)] block text-[length:var(--fs-meta)] text-[var(--ink-3)]";
 const INPUT_CLASS =
   "w-full rounded-[var(--r-control)] border border-[var(--line-control)] bg-surface px-[var(--space-5)] text-[length:var(--fs-lead)] text-ink focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--focus-soft)] focus:outline-none";
 const FOOT_CLASS =
   "sticky bottom-0 mt-auto border-t border-[var(--line-strong)] bg-surface px-[var(--space-7)] pt-[var(--space-6)] pb-[var(--space-8)]";
 const BUTTON_CLASS =
-  "h-[52px] w-full rounded-[var(--r-block)] border border-[var(--accent)] bg-accent text-[length:var(--fs-title)] font-medium text-[var(--ink-inverse)] disabled:cursor-not-allowed disabled:opacity-45";
+  "h-[52px] w-full rounded-[var(--r-block)] border border-[var(--accent)] bg-accent text-[length:var(--fs-title)] leading-none font-medium text-[var(--ink-inverse)] disabled:cursor-not-allowed disabled:opacity-45";
 const NOTICE_ERR_CLASS =
   "mb-[var(--space-6)] rounded-[var(--r-block)] border border-[var(--err-line)] bg-[var(--err-soft)] px-[var(--space-7)] py-[var(--space-6)] text-[length:var(--fs-dense)] leading-[var(--lh-dense)] text-err";
 
@@ -85,10 +92,10 @@ type Translate = ReturnType<typeof useTranslations>;
 
 function boxTone(state: "unanswered" | "yes" | "no"): string {
   if (state === "yes") {
-    return "border-[var(--ok)] bg-[var(--ok)] bg-[length:16px]";
+    return "border-[var(--ok)] bg-[var(--ok)] bg-[length:16px_16px]";
   }
   if (state === "no") return "border-[var(--err)] bg-[var(--err)]";
-  return "border-[var(--line-control-2)]";
+  return "border-[var(--line-control-2)] bg-surface";
 }
 
 /** Один шаг по кругу: не отвечено → выполнено → не выполнено → не отвечено. */

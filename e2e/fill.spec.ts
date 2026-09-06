@@ -1,0 +1,337 @@
+import { expect, test, type Page } from "@playwright/test";
+
+import { stationScanUrl } from "../src/blocks/qr/scan-url";
+import {
+  lastSubmission,
+  publishNextVersion,
+  seedFillStand,
+} from "./fill-fixtures";
+import { E2E_PUBLIC_BASE_URL } from "./public-base-url";
+
+/**
+ * Сквозной путь продукта: человек отсканировал наклейку — заполнил — попало в базу.
+ * Это критический путь, который по стандарту тестирования проекта не выходит без
+ * сценария в настоящем браузере.
+ */
+
+const PHONE = { width: 375, height: 760 } as const;
+const TAP_MIN = 44;
+
+/** Путь из напечатанной наклейки. Маршрут обязан совпасть с тем, что печатает блок `qr`. */
+function stickerPath(code: string): string {
+  return new URL(stationScanUrl(E2E_PUBLIC_BASE_URL, code)).pathname;
+}
+
+async function answerBool(page: Page, itemId: string): Promise<void> {
+  await page
+    .locator(`[data-testid="fill-item"][data-item-id="${itemId}"]`)
+    .tap();
+}
+
+interface Violation {
+  readonly directive: string;
+  readonly blocked: string;
+}
+
+async function watchViolations(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const collected: Violation[] = [];
+    Object.defineProperty(globalThis, "__cspViolations", {
+      value: collected,
+      writable: false,
+    });
+    document.addEventListener("securitypolicyviolation", (event) => {
+      collected.push({
+        directive: event.violatedDirective,
+        blocked: event.blockedURI,
+      });
+    });
+  });
+}
+
+test.describe("экран заполнения по QR", () => {
+  // Телефон на кухне, а не рабочий стол: экран проверяется на настоящих касаниях.
+  test.use({
+    viewport: PHONE,
+    hasTouch: true,
+    isMobile: true,
+    locale: "en-GB",
+  });
+
+  test("наклейка ведёт на экран заполнения: маршрут совпадает с напечатанным адресом", async ({
+    page,
+  }) => {
+    // Наклейка живёт годами: разъехавшийся маршрут означает переклейку по всей сети.
+    const stand = await seedFillStand("маршрут");
+
+    await page.goto(stickerPath(stand.code));
+
+    await expect(page.getByTestId("fill-screen")).toBeVisible();
+    await expect(page.getByText("Kitchen opening")).toBeVisible();
+    await expect(page.getByText(stand.storeName)).toBeVisible();
+  });
+
+  test("сотрудник заполняет и отправляет, заполнение появляется в базе со снимком", async ({
+    page,
+  }) => {
+    // Arrange
+    const stand = await seedFillStand("сквозной");
+    await page.goto(stickerPath(stand.code));
+
+    // Act
+    await answerBool(page, "i-oven");
+    await page.getByTestId("fill-number").fill("172");
+    await answerBool(page, "i-sauce");
+    await page.getByTestId("fill-text").fill("смена спокойная");
+    await expect(page.getByTestId("fill-submit")).toBeEnabled();
+    await page.getByTestId("fill-submit").tap();
+
+    // Assert: экран сказал «отправлено», и запись действительно легла в базу.
+    await expect(page.getByTestId("fill-sent")).toBeVisible();
+
+    const stored = await lastSubmission(stand.stationId);
+    expect(stored?.versionId).toBe(stand.versionId);
+    expect(stored?.answers.map((answer) => answer.itemId).sort()).toStrictEqual(
+      ["i-fry", "i-note", "i-oven", "i-sauce"],
+    );
+    // Снимок пунктов — вторая опора истории (D002): он обязан лежать в самой записи.
+    expect(stored?.snapshotItemIds).toStrictEqual([
+      "i-oven",
+      "i-fry",
+      "i-sauce",
+      "i-note",
+    ]);
+  });
+
+  test("заполнение уходит на ту версию, что была отдана, даже если опубликовали новую", async ({
+    page,
+  }) => {
+    // Arrange: сотрудник открыл экран и начал заполнять.
+    const stand = await seedFillStand("гонка");
+    await page.goto(stickerPath(stand.code));
+    await answerBool(page, "i-oven");
+    await page.getByTestId("fill-number").fill("172");
+
+    // Пока он заполнял, методист опубликовал следующую версию.
+    const next = await publishNextVersion(stand.stationId);
+    expect(next).not.toBe(stand.versionId);
+
+    // Act
+    await answerBool(page, "i-sauce");
+    await page.getByTestId("fill-text").fill("готово");
+    await page.getByTestId("fill-submit").tap();
+    await expect(page.getByTestId("fill-sent")).toBeVisible();
+
+    // Assert
+    const stored = await lastSubmission(stand.stationId);
+    expect(stored?.versionId).toBe(stand.versionId);
+    expect(stored?.snapshotItemIds).toContain("i-oven");
+  });
+
+  test("проваленный критичный пункт требует комментарий сразу под собой", async ({
+    page,
+  }) => {
+    // Arrange
+    const stand = await seedFillStand("критичный");
+    await page.goto(stickerPath(stand.code));
+    await answerBool(page, "i-oven");
+    await page.getByTestId("fill-number").fill("172");
+    await page.getByTestId("fill-text").fill("заметка");
+
+    // Act: второе касание переводит пункт в «не выполнено».
+    await answerBool(page, "i-sauce");
+    await answerBool(page, "i-sauce");
+
+    // Assert: поле комментария появилось под самим пунктом, отдельного экрана нет (D018).
+    const item = page.locator(
+      '[data-testid="fill-item"][data-item-id="i-sauce"]',
+    );
+    const comment = page.locator(
+      '[data-testid="fill-comment"][data-item-id="i-sauce"]',
+    );
+    await expect(comment).toBeVisible();
+    const itemBox = await item.boundingBox();
+    const commentBox = await comment.boundingBox();
+    expect(commentBox?.y ?? 0).toBeGreaterThan(itemBox?.y ?? 0);
+
+    // Без комментария кнопка не пускает, хотя все пункты отвечены.
+    await expect(page.getByTestId("fill-count")).toHaveText("4 of 4");
+    await expect(page.getByTestId("fill-submit")).toBeDisabled();
+
+    await comment.fill("нет наклеек на двух соусах");
+    await expect(page.getByTestId("fill-submit")).toBeEnabled();
+    await page.getByTestId("fill-submit").tap();
+    await expect(page.getByTestId("fill-sent")).toBeVisible();
+
+    const stored = await lastSubmission(stand.stationId);
+    expect(
+      stored?.answers.find((answer) => answer.itemId === "i-sauce")?.comment,
+    ).toBe("нет наклеек на двух соусах");
+  });
+
+  test("экран живёт на 375 px: нет горизонтальной прокрутки, зоны нажатия от 44 px", async ({
+    page,
+  }) => {
+    const stand = await seedFillStand("ширина");
+    await page.goto(stickerPath(stand.code));
+
+    const overflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+
+    const heights = await page
+      .locator('[data-testid="fill-item"], [data-testid="fill-submit"], input')
+      .evaluateAll((nodes) =>
+        nodes.map((node) => Math.round(node.getBoundingClientRect().height)),
+      );
+    expect(heights.length).toBeGreaterThan(0);
+    for (const height of heights)
+      expect(height).toBeGreaterThanOrEqual(TAP_MIN);
+  });
+
+  test("обрыв связи при отправке не теряет введённое", async ({ page }) => {
+    // Arrange
+    const stand = await seedFillStand("обрыв");
+    await page.goto(stickerPath(stand.code));
+    await answerBool(page, "i-oven");
+    await page.getByTestId("fill-number").fill("172");
+    await answerBool(page, "i-sauce");
+    await page.getByTestId("fill-text").fill("не потерять это");
+
+    // Act: связь рвётся ровно на отправке.
+    await page.route("**/s/**", async (route) => {
+      if (route.request().method() === "POST") await route.abort("failed");
+      else await route.continue();
+    });
+    await page.getByTestId("fill-submit").tap();
+
+    // Assert: экран прежний, ответы на месте, кнопка предлагает повторить.
+    await expect(page.getByTestId("fill-notice")).toBeVisible();
+    await expect(page.getByTestId("fill-screen")).toBeVisible();
+    await expect(page.getByTestId("fill-count")).toHaveText("4 of 4");
+    await expect(page.getByTestId("fill-text")).toHaveValue("не потерять это");
+
+    // Связь вернулась — повтор доходит, ничего вводить заново не пришлось.
+    await page.unroute("**/s/**");
+    await page.getByTestId("fill-submit").tap();
+    await expect(page.getByTestId("fill-sent")).toBeVisible();
+    expect(await lastSubmission(stand.stationId)).not.toBeNull();
+  });
+});
+
+test.describe("публичный маршрут: отказы и защита", () => {
+  test.use({
+    viewport: PHONE,
+    hasTouch: true,
+    isMobile: true,
+    locale: "en-GB",
+  });
+
+  test("перебор кодов не отдаёт ничего, кроме отказа", async ({ page }) => {
+    // Опора критерия готовности 8: живая станция рядом, но подобранные коды
+    // не должны выдать ни её названия, ни чек-листа, ни даже другого кода ответа.
+    const stand = await seedFillStand("перебор");
+    const statuses: number[] = [];
+
+    for (let index = 0; index < 5; index += 1) {
+      const response = await page.goto(
+        `/s/guess${String(index).padStart(5, "0")}`,
+      );
+      statuses.push(response?.status() ?? 0);
+      await expect(page.getByTestId("fill-invalid")).toBeVisible();
+
+      const body = await page.content();
+      expect(body).not.toContain(stand.storeName);
+      expect(body).not.toContain(stand.stationName);
+      expect(body).not.toContain(stand.code);
+      expect(body).not.toContain("Kitchen opening");
+    }
+
+    // Код ответа тоже одинаковый: разный сам по себе рассказал бы, какой код существует.
+    const live = await page.goto(`/s/${stand.code}`);
+    expect(new Set(statuses)).toStrictEqual(new Set([live?.status() ?? 0]));
+  });
+
+  test("для станции нет подходящего чек-листа — это отдельное состояние, без данных", async ({
+    page,
+  }) => {
+    // Окно чек-листа заведомо мимо: станция настоящая, а заполнять сейчас нечего.
+    const stand = await seedFillStand("вне окна", {
+      windowStart: "03:00:00",
+      windowEnd: "03:01:00",
+    });
+
+    await page.goto(`/s/${stand.code}`);
+
+    await expect(page.getByTestId("fill-none")).toBeVisible();
+    const body = await page.content();
+    expect(body).not.toContain("Kitchen opening");
+    expect(body).not.toContain(stand.storeName);
+  });
+
+  test("строгая политика скриптов: одноразовый ключ вместо unsafe-inline", async ({
+    page,
+  }) => {
+    const stand = await seedFillStand("политика");
+    await watchViolations(page);
+
+    const response = await page.goto(`/s/${stand.code}`);
+    const policy = response?.headers()["content-security-policy"] ?? "";
+
+    // Публичный маршрут — единственный адрес, открытый интернету: инлайновый скрипт
+    // на нём не должен исполняться только потому, что он инлайновый.
+    expect(policy).toMatch(/script-src 'nonce-[^']+' 'strict-dynamic'/);
+    expect(policy).not.toContain("script-src 'self' 'unsafe-inline'");
+    expect(policy).toContain("frame-ancestors 'none'");
+    expect(response?.headers()["x-frame-options"]).toBe("DENY");
+
+    // Ключ обязан быть свой на каждый ответ: постоянный ключ не защищает ни от чего.
+    const again = await page.goto(`/s/${stand.code}`);
+    expect(again?.headers()["content-security-policy"]).not.toBe(policy);
+
+    // И политика не должна ломать собственный экран.
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.getByTestId("fill-screen")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () =>
+          (globalThis as unknown as { __cspViolations: Violation[] })
+            .__cspViolations,
+      ),
+    ).toEqual([]);
+  });
+});
+
+test.describe("язык экрана заполнения", () => {
+  test.use({ viewport: PHONE, hasTouch: true, isMobile: true });
+
+  test("телефон на английском — экран английский", async ({ browser }) => {
+    const stand = await seedFillStand("англ", { countryLocale: "ru" });
+    const context = await browser.newContext({ locale: "en-GB" });
+    const page = await context.newPage();
+
+    await page.goto(`/s/${stand.code}`);
+
+    await expect(page.getByText("Kitchen opening")).toBeVisible();
+    await context.close();
+  });
+
+  test("язык телефона не поддержан — берётся язык страны, а не язык продукта", async ({
+    browser,
+  }) => {
+    // Казахский телефон в казахстанской пиццерии: продукт по-казахски не говорит,
+    // и показать надо русский (язык страны), а не английский по умолчанию.
+    const stand = await seedFillStand("казах", { countryLocale: "ru" });
+    const context = await browser.newContext({ locale: "kk-KZ" });
+    const page = await context.newPage();
+
+    await page.goto(`/s/${stand.code}`);
+
+    await expect(page.getByText("Открытие кухни")).toBeVisible();
+    await expect(page.locator('[lang="ru"]')).toBeVisible();
+    await context.close();
+  });
+});
