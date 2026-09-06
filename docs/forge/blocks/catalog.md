@@ -9,7 +9,7 @@
 ## API-контракт
 
 ```ts
-listCountries(); createCountry({ id, name, defaultLanguage })
+listCountries(); createCountry({ id, name, locale })
 listStores(countryId); createStore({ countryId, name, timezone }); updateStore(...)
 listStations(storeId); createStation({ storeId, name })
 reissueStationCode(stationId): Promise<{ code: string; issuedAt: Date }>
