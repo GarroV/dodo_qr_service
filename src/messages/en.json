@@ -124,7 +124,8 @@
       "qr": "QR codes",
       "signedIn": "Signed in",
       "role": "methodologist",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "soon": "Section is not ready yet"
     },
     "list": {
       "title": "Checklists",

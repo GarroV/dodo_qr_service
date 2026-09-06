@@ -144,18 +144,25 @@ export async function submitPublish(
   }
 }
 
-/** Дублирование со списка чек-листов. Успех открывает копию в редакторе. */
-export async function submitDuplicate(
-  _previous: EditorActionState,
-  form: FormData,
-): Promise<EditorActionState> {
+/**
+ * Дублирование со списка чек-листов: обычное действие формы, без состояния. Успех
+ * открывает копию в редакторе — методист попадает сразу туда, где будет её править.
+ *
+ * Отказ разбора здесь означает одно: исходный чек-лист исчез, пока список был открыт.
+ * Тогда возвращаемся в список — он перечитается и покажет, что есть на самом деле.
+ * Всё остальное пробрасывается: молча проглоченный сбой хуже страницы с ошибкой.
+ */
+export async function submitDuplicate(form: FormData): Promise<void> {
   await requireAdmin();
 
   let copyId: string;
   try {
     copyId = await duplicateChecklist(text(form, "checklistId"));
   } catch (error) {
-    return failure(error);
+    if (!(error instanceof EditorInputError)) throw error;
+    console.error("Редактор: дублирование не состоялось", error);
+    revalidatePath(CHECKLISTS_PATH);
+    redirect(CHECKLISTS_PATH);
   }
 
   revalidatePath(CHECKLISTS_PATH);
