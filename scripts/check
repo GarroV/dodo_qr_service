@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Единая команда прогона проекта. Её зовут приёмка блока, хук pre-push и CI —
+# три отдельных списка команд разъезжаются, один не разъезжается.
+# Падает, когда инструмента нет: молча пропущенный гейт неотличим от пройденного.
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+mkdir -p reports
+
+FAILED=()
+run() {
+  local name="$1"; shift
+  printf '\n\033[1m▸ %s\033[0m\n' "$name"
+  if ! "$@"; then FAILED+=("$name"); fi
+}
+need() {
+  if ! command -v "$1" >/dev/null 2>&1 && ! [ -x "node_modules/.bin/$1" ]; then
+    printf '\033[31mНЕТ ИНСТРУМЕНТА: %s\033[0m — проверка не выполнена, это провал, а не пропуск\n' "$1"
+    FAILED+=("$1: инструмент отсутствует")
+    return 1
+  fi
+}
+
+need npx || exit 1
+
+run "формат"           npx --no-install prettier --check .
+run "линт с типами"    npx --no-install eslint .
+run "типы"             bash -c 'npx --no-install next typegen && npx --no-install tsc --noEmit'
+run "тесты"            npx --no-install vitest run --coverage --reporter=junit --outputFile=reports/vitest.junit.xml
+run "мёртвый код"      npx --no-install knip
+run "границы модулей"  npx --no-install depcruise src
+
+if [ ${#FAILED[@]} -gt 0 ]; then
+  printf '\n\033[31mПРОВАЛ (%d): %s\033[0m\n' "${#FAILED[@]}" "${FAILED[*]}"
+  exit 1
+fi
+printf '\n\033[32mВСЕ ПРОВЕРКИ ПРОЙДЕНЫ\033[0m · отчёты в reports/\n'

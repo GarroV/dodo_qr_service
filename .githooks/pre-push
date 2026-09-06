@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Включается один раз: git config core.hooksPath .githooks
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+if [ ! -x "$ROOT/scripts/check" ]; then
+  echo "pre-push: нет scripts/check — пуш остановлен" >&2
+  exit 1
+fi
+exec "$ROOT/scripts/check"
