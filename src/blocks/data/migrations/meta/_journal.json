@@ -15,6 +15,13 @@
       "when": 1788688184347,
       "tag": "0001_version_station",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788688382341,
+      "tag": "0002_window_not_empty",
+      "breakpoints": true
     }
   ]
 }

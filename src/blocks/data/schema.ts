@@ -93,7 +93,13 @@ export const checklists = pgTable(
     windowEnd: time("window_end").notNull(),
     createdAt: serverTimestamp(CREATED_AT),
   },
-  (table) => [index("checklists_station_idx").on(table.stationId)],
+  (table) => [
+    index("checklists_station_idx").on(table.stationId),
+    // Равные границы делают условие выбора версии всегда ложным: чек-лист не открылся бы
+    // ни на одной станции и ни в одну минуту, молча. Конец раньше начала — наоборот,
+    // нормальное окно через полночь (22:00–02:00), и запрещать его нельзя.
+    check("checklists_window_not_empty", sql`window_start <> window_end`),
+  ],
 );
 
 export const checklistVersions = pgTable(

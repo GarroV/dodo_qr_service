@@ -165,6 +165,36 @@ describe("номер версии и признак публикации сог�
   });
 });
 
+describe("окно времени чек-листа", () => {
+  test("равные границы окна база не принимает: такой чек-лист не отдался бы никогда", async () => {
+    // window_start = window_end делает условие выбора версии всегда ложным, и чек-лист
+    // молча не открывается ни на одной станции. Отказ базы вместо недели поисков.
+    const code = await dbErrorCode(
+      db.insert(checklists).values({
+        stationId: null,
+        title: { ru: "Окно в ноль", en: "Zero window" },
+        windowStart: "08:00:00",
+        windowEnd: "08:00:00",
+      }),
+    );
+
+    expect(code).toBe(PG_CHECK_VIOLATION);
+  });
+
+  test("окно через полночь остаётся разрешённым", async () => {
+    // Ограничение запрещает только равные границы: 22:00–02:00 — обычное окно
+    // вечерней смены, и запретить конец раньше начала было бы поломкой продукта.
+    await expect(
+      db.insert(checklists).values({
+        stationId: null,
+        title: { ru: "Ночное окно", en: "Night window" },
+        windowStart: "22:00:00",
+        windowEnd: "02:00:00",
+      }),
+    ).resolves.not.toThrow();
+  });
+});
+
 describe("справочник и история защищены от каскадного удаления", () => {
   test("страну с пиццериями удалить нельзя", async () => {
     const fixture = await createStation();
