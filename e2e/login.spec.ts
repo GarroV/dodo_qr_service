@@ -139,6 +139,24 @@ test.describe("вход в админку", () => {
     ).toBeVisible();
   });
 
+  test("форма входа работает с выключенным JavaScript", async ({ browser }) => {
+    // Действие серверное, поэтому вход не должен зависеть от того, доехали ли скрипты:
+    // это же свойство держит форму рабочей на слабой связи в пиццерии.
+    const context = await browser.newContext({
+      locale: "ru-RU",
+      javaScriptEnabled: false,
+    });
+    const page = await context.newPage();
+
+    await page.goto(LOGIN_PATH);
+    await page.getByLabel("Пароль").fill(E2E_ADMIN_PASSWORD);
+    await page.getByTestId("login-submit").click();
+
+    await expect(page.getByTestId("admin-home")).toBeVisible();
+
+    await context.close();
+  });
+
   test("на английском телефоне экран входа английский", async ({ browser }) => {
     const context = await browser.newContext({ locale: "en-US" });
     const page = await context.newPage();
