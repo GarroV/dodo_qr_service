@@ -15,13 +15,13 @@ stage: the number of the wave in which the task is done (1, 2, 3…), or "—" i
 | T005 | core | T004 | done | Проверить каждую из шести проверок на испорченной копии: неформатированный файл, нарушение линта, ошибка типов, падающий тест, неиспользуемый экспорт, импорт мимо графа — каждая падает и печатает причину | — | 1 |
 | T006 | core | T004 | done | Поставить хук .githooks/pre-push, включить core.hooksPath; хук падает, когда инструмента нет, и останавливает пуш при красной проверке | — | 1 |
 | T007 | core | T001 | done | Смоук связок из рисков: Tailwind 4 с токеном из `@theme inline` под Turbopack и next-intl с выбором языка по заголовку браузера без cookie | — | 1 |
-| T008 | data | T002,T003 | todo | Схема Drizzle: countries, stores, stations, checklists, checklist_versions, blocks, submissions; типы Item, Section, Answer через .$type<T>() | — | 1 |
-| T009 | data | T008 | todo | Миграции применяются с нуля и откатываются; частичный уникальный индекс «одна опубликованная версия на чек-лист» | — | 1 |
-| T010 | data | T009 | todo | publishVersion: публикация вставляет строку версии и не трогает предыдущую — тест сравнивает содержимое прежней версии до и после | — | 1 |
-| T011 | data | T009 | todo | getPublishedVersionForStation(stationCode, at): утренний чек-лист в 09:00, вечерний в 21:00, null в 15:00 без подходящего окна, null на неизвестном коде | — | 1 |
-| T012 | data | T009 | todo | saveSubmission, listSubmissions, getSubmission; серверные отметки времени берутся из базы, а не от клиента | — | 1 |
-| T013 | auth | T001 | todo | Вход в админку: хэш пароля из ADMIN_PASSWORD_HASH, сравнение постоянного времени, подписанная httpOnly-cookie на 30 дней | — | 1 |
-| T014 | auth | T013 | todo | requireAdmin() и защита всех маршрутов /admin/*; сквозной тест: без сессии ни один экран админки не отдаёт данные | — | 1 |
+| T008 | data | T002,T003 | in_progress | Схема Drizzle: countries, stores, stations, checklists, checklist_versions, blocks, submissions; типы Item, Section, Answer через .$type<T>() | — | 1 |
+| T009 | data | T008 | in_progress | Миграции применяются с нуля и откатываются; частичный уникальный индекс «одна опубликованная версия на чек-лист» | — | 1 |
+| T010 | data | T009 | in_progress | publishVersion: публикация вставляет строку версии и не трогает предыдущую — тест сравнивает содержимое прежней версии до и после | — | 1 |
+| T011 | data | T009 | in_progress | getPublishedVersionForStation(stationCode, at): утренний чек-лист в 09:00, вечерний в 21:00, null в 15:00 без подходящего окна, null на неизвестном коде | — | 1 |
+| T012 | data | T009 | in_progress | saveSubmission, listSubmissions, getSubmission; серверные отметки времени берутся из базы, а не от клиента | — | 1 |
+| T013 | auth | T001 | in_progress | Вход в админку: хэш пароля из ADMIN_PASSWORD_HASH, сравнение постоянного времени, подписанная httpOnly-cookie на 30 дней | — | 1 |
+| T014 | auth | T013 | in_progress | requireAdmin() и защита всех маршрутов /admin/*; сквозной тест: без сессии ни один экран админки не отдаёт данные | — | 1 |
 | T015 | catalog | T012,T014 | todo | Справочник стран, пиццерий и станций: создание, правка, удаление с подтверждением и без висячих станций | — | 1 |
 | T016 | catalog | T015 | todo | Код станции: 10 символов криптографически случайно, без похожих знаков; перевыпуск ломает старый код сразу | — | 1 |
 | T017 | catalog | T015 | todo | Привязка чек-листа к станции; станция без назначенного чек-листа помечена явно | — | 1 |
