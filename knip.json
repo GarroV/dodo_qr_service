@@ -1,6 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/app/**/{page,layout,route,not-found,error}.tsx", "scripts/*"],
+  "entry": [
+    "src/app/**/{page,layout,route,not-found,error}.tsx",
+    "scripts/*",
+    "src/blocks/*/index.ts"
+  ],
   "project": ["src/**/*.{ts,tsx}"],
   "ignoreDependencies": ["tailwindcss", "dependency-cruiser"]
 }
