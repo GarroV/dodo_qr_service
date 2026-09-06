@@ -9,60 +9,30 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/blocks/auth/guard";
-import type { Section } from "@/blocks/data";
 
+import {
+  checklistInputFrom,
+  failureState,
+  formText,
+  sectionsFrom,
+} from "./action-input";
 import type { EditorActionState } from "./action-state";
-import { saveDraft, updateChecklist, createChecklist } from "./drafts";
+import { createChecklist, saveDraft, updateChecklist } from "./drafts";
 import { duplicateChecklist } from "./duplicate";
 import { publish } from "./publish";
 import { CHECKLISTS_PATH, checklistPath } from "./routes";
-import type { EditorErrorCode } from "./validation";
-import { EditorInputError, LIMITS, parseSections } from "./validation";
+import { EditorInputError } from "./validation";
 
-const LIMIT_BY_CODE: Partial<Record<EditorErrorCode, number>> = {
-  tooManySections: LIMITS.sections,
-  tooManyItems: LIMITS.items,
-  textTooLong: LIMITS.textLength,
-};
-
+/**
+ * Отказ для экрана. Разбор и выбор кода живут в `action-input.ts` и покрыты тестами;
+ * здесь остаётся то, чего в чистой функции быть не может, — запись в журнал сервера.
+ * Молча проглоченный сбой означал бы, что методист считает работу сохранённой.
+ */
 function failure(error: unknown): EditorActionState {
-  if (error instanceof EditorInputError) {
-    const limit = LIMIT_BY_CODE[error.code];
-    return {
-      status: "failed",
-      errorCode: error.code,
-      ...(limit === undefined ? {} : { limit }),
-    };
+  if (!(error instanceof EditorInputError)) {
+    console.error("Редактор: непредвиденный сбой действия", error);
   }
-  // Сбой, которого мы не предусмотрели: в браузер уходит общее сообщение, подробности —
-  // в журнал сервера. Молча проглотить его нельзя: методист решит, что всё сохранилось.
-  console.error("Редактор: непредвиденный сбой действия", error);
-  return { status: "failed", errorCode: "unknown" };
-}
-
-function text(form: FormData, field: string): string {
-  const value = form.get(field);
-  return typeof value === "string" ? value : "";
-}
-
-function sectionsFrom(form: FormData): Section[] {
-  const raw = text(form, "sections");
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    throw new EditorInputError("badFormat", "Разметка пришла не как JSON");
-  }
-  return parseSections(parsed);
-}
-
-function stationFrom(form: FormData): string | null {
-  const value = text(form, "stationId");
-  return value === "" ? null : value;
-}
-
-function windowFrom(form: FormData): { start: string; end: string } {
-  return { start: text(form, "windowStart"), end: text(form, "windowEnd") };
+  return failureState(error);
 }
 
 /** Заведение чек-листа с экрана «Новый чек-лист». Успех уводит сразу в редактор. */
@@ -74,11 +44,7 @@ export async function submitCreateChecklist(
 
   let checklistId: string;
   try {
-    checklistId = await createChecklist({
-      stationId: stationFrom(form),
-      title: { [text(form, "locale")]: text(form, "title") },
-      window: windowFrom(form),
-    });
+    checklistId = await createChecklist(checklistInputFrom(form));
   } catch (error) {
     return failure(error);
   }
@@ -97,13 +63,9 @@ export async function submitSaveDraft(
   await requireAdmin();
 
   try {
-    const checklistId = text(form, "checklistId");
+    const checklistId = formText(form, "checklistId");
     const sections = sectionsFrom(form);
-    await updateChecklist(checklistId, {
-      stationId: stationFrom(form),
-      title: { [text(form, "locale")]: text(form, "title") },
-      window: windowFrom(form),
-    });
+    await updateChecklist(checklistId, checklistInputFrom(form));
     await saveDraft(checklistId, sections);
     revalidatePath(checklistPath(checklistId));
     return { status: "saved" };
@@ -123,13 +85,9 @@ export async function submitPublish(
   await requireAdmin();
 
   try {
-    const checklistId = text(form, "checklistId");
+    const checklistId = formText(form, "checklistId");
     const sections = sectionsFrom(form);
-    await updateChecklist(checklistId, {
-      stationId: stationFrom(form),
-      title: { [text(form, "locale")]: text(form, "title") },
-      window: windowFrom(form),
-    });
+    await updateChecklist(checklistId, checklistInputFrom(form));
     await saveDraft(checklistId, sections);
     const version = await publish(checklistId);
     revalidatePath(checklistPath(checklistId));
@@ -157,7 +115,7 @@ export async function submitDuplicate(form: FormData): Promise<void> {
 
   let copyId: string;
   try {
-    copyId = await duplicateChecklist(text(form, "checklistId"));
+    copyId = await duplicateChecklist(formText(form, "checklistId"));
   } catch (error) {
     if (!(error instanceof EditorInputError)) throw error;
     console.error("Редактор: дублирование не состоялось", error);
