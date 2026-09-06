@@ -23,11 +23,13 @@ need() {
 need npx || exit 1
 
 run "формат"           npx --no-install prettier --check .
-run "линт с типами"    npx --no-install eslint .
+# Типы генерируются раньше линта: линт с типами опирается на определения маршрутов от next typegen.
 run "типы"             bash -c 'npx --no-install next typegen && npx --no-install tsc --noEmit'
+run "линт с типами"    npx --no-install eslint .
 run "тесты"            npx --no-install vitest run --coverage --reporter=junit --outputFile=reports/vitest.junit.xml
 run "мёртвый код"      npx --no-install knip
 run "границы модулей"  npx --no-install depcruise src
+run "сквозные сценарии" npx --no-install playwright test
 
 if [ ${#FAILED[@]} -gt 0 ]; then
   printf '\n\033[31mПРОВАЛ (%d): %s\033[0m\n' "${#FAILED[@]}" "${FAILED[*]}"

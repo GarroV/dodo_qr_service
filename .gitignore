@@ -7,3 +7,9 @@ build/
 coverage/
 .DS_Store
 reports/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# Генерируется next typegen и переписывается при каждом dev/build
+next-env.d.ts

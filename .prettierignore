@@ -1,0 +1,14 @@
+# Документы стройки ведут диспетчер и владелец, эталон дизайн-системы — внешний код.
+# Форматтер их не трогает: переформатирование чужого файла создаёт шум и конфликты.
+docs/
+tasks.md
+progress.md
+
+# Сборка, отчёты, зависимости
+.next/
+reports/
+test-results/
+playwright-report/
+coverage/
+node_modules/
+package-lock.json
