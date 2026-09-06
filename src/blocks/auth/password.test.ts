@@ -15,9 +15,15 @@ describe("hashPassword", () => {
   test("выдаёт строку с именем алгоритма и параметрами, но без самого пароля", async () => {
     const stored = await testHash();
 
-    expect(stored.startsWith("scrypt$")).toBe(true);
+    expect(stored.startsWith("scrypt.")).toBe(true);
     expect(stored).toContain("1024");
     expect(stored).not.toContain(PASSWORD);
+  });
+
+  test("в хэше нет знака $: иначе его съедает подстановка загрузчика .env", async () => {
+    // Разделитель PHC `$` превращает `scrypt$32768$8$3$соль$ключ` в `scrypt-ключ` при
+    // первой же загрузке `.env` (см. env-file.test.ts). Формат обязан обходиться без него.
+    expect(await testHash()).not.toContain("$");
   });
 
   test("на один и тот же пароль даёт разные хэши — соль случайная", async () => {
@@ -63,8 +69,8 @@ describe("verifyPassword", () => {
     for (const broken of [
       "",
       "не-хэш",
-      "scrypt$1024$8",
-      "bcrypt$1024$8$1$c29sdA$aGFzaA",
+      "scrypt.1024.8",
+      "bcrypt.1024.8.1.c29sdA.aGFzaA",
     ]) {
       await expect(verifyPassword(PASSWORD, broken)).rejects.toThrow(
         /ADMIN_PASSWORD_HASH/,
@@ -75,7 +81,7 @@ describe("verifyPassword", () => {
   test("отвергает хэш с нечисловыми параметрами scrypt", async () => {
     const [, , blockSize, parallelization, salt, key] = (
       await testHash()
-    ).split("$");
+    ).split(".");
     const broken = [
       "scrypt",
       "не-число",
@@ -83,7 +89,7 @@ describe("verifyPassword", () => {
       parallelization,
       salt,
       key,
-    ].join("$");
+    ].join(".");
 
     await expect(verifyPassword(PASSWORD, broken)).rejects.toThrow(
       /ADMIN_PASSWORD_HASH/,
@@ -92,13 +98,13 @@ describe("verifyPassword", () => {
 
   test("отвергает хэш с солью или ключом не той длины", async () => {
     await expect(
-      verifyPassword(PASSWORD, "scrypt$1024$8$1$c29sdA$aGFzaA"),
+      verifyPassword(PASSWORD, "scrypt.1024.8.1.c29sdA.aGFzaA"),
     ).rejects.toThrow(/ADMIN_PASSWORD_HASH/);
   });
 
   test("ошибка про испорченный хэш не выносит наружу ни пароль, ни сам хэш", async () => {
     const stored = await testHash();
-    const broken = `bcrypt$${stored.split("$").slice(1).join("$")}`;
+    const broken = `bcrypt.${stored.split(".").slice(1).join(".")}`;
 
     const error = await verifyPassword(PASSWORD, broken).catch(
       (reason: unknown) => reason,
@@ -107,7 +113,7 @@ describe("verifyPassword", () => {
     expect(error).toBeInstanceOf(Error);
     const text = `${String(error)} ${JSON.stringify((error as Error).message)}`;
     expect(text).not.toContain(PASSWORD);
-    expect(text).not.toContain(broken.split("$").at(-1));
+    expect(text).not.toContain(broken.split(".").at(-1));
   });
 });
 
