@@ -9,15 +9,26 @@
 ## API-контракт
 
 ```ts
-stationQrSvg(code: string): string          // SVG, без внешних запросов
-/admin/qr?storeId=…                          // экран печати листа
-/admin/qr/screen?stationId=…                 // полноэкранный QR для планшета
+stationQrSvg(code: string, origin: string): string   // SVG, без внешних запросов
+stationScanUrl(origin: string, code: string): string // ссылка наклейки: <origin>/s/<код>
+
+/admin/qr?store=<uuid>[&station=<uuid>]        // экран печати листа
+/admin/qr/screen?store=<uuid>&station=<uuid>   // полноэкранный QR для планшета
+/admin/qr/code?store=<uuid>&station=<uuid>     // { code, issuedAt } — опрос планшетом
 ```
 Печать — из браузера: `@media print` и `@page { size: A4; margin: 10mm }`. Серверного PDF нет (D016).
 
+Отличия от исходной записи контракта, все с причинами в разделе решений ниже: у `stationQrSvg`
+появился второй аргумент (в наклейку обязан попасть абсолютный адрес); параметры адреса названы
+`store` и `station`, и адрес планшета несёт оба (справочник не отдаёт станцию по её
+идентификатору); добавлен маршрут опроса `/admin/qr/code` — без него планшет не узнал бы
+о перевыпуске кода. Источник ссылки задаётся переменной окружения `PUBLIC_BASE_URL`
+(по требованию по фактам целевой площадки), иначе берётся адрес запроса.
+
 ## Зависимости
 
-`catalog`
+`catalog`, `auth` (экран и перевыпуск закрыты входом — граф блоков в `plan.md` называет `qr`
+среди потребителей `requireAdmin()`, и таблица в `.dependency-cruiser.cjs` приведена к нему)
 
 ## Definition of Done блока
 
