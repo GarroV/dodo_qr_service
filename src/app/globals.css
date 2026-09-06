@@ -13,4 +13,53 @@
   --color-err: var(--err);
   --color-ok: var(--ok);
   --font-ui: var(--font-ui);
+  --font-num: var(--font-num);
+}
+
+/* Семейства шрифтов подключает next/font (src/app/layout.tsx) и отдаёт свои внутренние
+   имена в --font-ui-loaded и --font-num-loaded. Имя подставляется ПЕРЕД списком из токена,
+   а сам список не копируется: он снимается с html в --font-*-fallback и подставляется
+   следом. Разные элементы (html → body) нужны потому, что переменная не может ссылаться
+   на саму себя: на одном элементе это цикл, и браузер выбросит всё правило целиком. */
+@layer base {
+  html {
+    --font-ui-fallback: var(--font-ui);
+    --font-num-fallback: var(--font-num);
+    /* Поворот телефона на кухне не должен раздувать текст: эталон задаёт размеры сам. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    --font-ui: var(--font-ui-loaded), var(--font-ui-fallback);
+    --font-num: var(--font-num-loaded), var(--font-num-fallback);
+
+    /* База интерфейса из токенов: 13px/18px, а не браузерные 16px (эталон, app.css). */
+    font-family: var(--font-ui);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    font-weight: var(--w-regular);
+  }
+
+  /* Заголовки эталона. Экран, который задаёт свой размер, перебивает это утилитой. */
+  h1,
+  h2,
+  h3 {
+    font-weight: var(--w-semibold);
+  }
+  h1 {
+    font-size: var(--fs-display);
+    line-height: var(--lh-display);
+  }
+  h2 {
+    font-size: var(--fs-title);
+    line-height: var(--lh-title);
+  }
+  h3 {
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+  }
+
+  a {
+    color: var(--accent);
+  }
 }

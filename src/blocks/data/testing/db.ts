@@ -4,19 +4,24 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
+import { repositoryCopyId } from "@/blocks/core/repo-copy";
+
 import * as schema from "../schema";
 
-const TEST_DATABASE_SUFFIX = "_test";
+// Суффикс несёт метку копии репозитория: адрес, общий на все копии, роняет соседний
+// прогон — подготовка базы сносит схему целиком, и упавший тест выглядит случайным (T070).
+const TEST_DATABASE_SUFFIX = `_test_${repositoryCopyId()}`;
 
 /**
- * Адрес по умолчанию — ровно то, что поднимает `docker-compose.yml` проекта (и что
- * записано в `.env.example`). Без умолчания прогон в свежем клоне не стартовал вовсе:
+ * Адрес по умолчанию — сервер, который поднимает `docker-compose.yml` проекта, и своя
+ * база этой копии репозитория. Без умолчания прогон в свежем клоне не стартовал вовсе:
  * падал раньше первого теста, показывая нулевое покрытие вместо провала (T063).
+ * Имя базы с меткой копии, чтобы два прогона на одном сервере не сносили схему друг
+ * у друга (T070); настраивать ради этого ничего не нужно — метка считается сама.
  * База по этому адресу может не подняться — тогда ошибка приходит от `unreachableDatabase`
  * и говорит, какой командой её поднять, то есть пропущенной проверки не бывает.
  */
-const DEFAULT_TEST_DATABASE_URL =
-  "postgres://dodo:dodo@localhost:5433/dodo_qr_test";
+const DEFAULT_TEST_DATABASE_URL = `postgres://dodo:dodo@localhost:5433/dodo_qr${TEST_DATABASE_SUFFIX}`;
 
 let envLoaded = false;
 
@@ -32,9 +37,10 @@ function loadEnvOnce(): void {
 }
 
 /**
- * Адрес тестовой базы: TEST_DATABASE_URL, иначе рабочая база с суффиксом `_test`,
+ * Адрес тестовой базы: TEST_DATABASE_URL, иначе рабочая база с суффиксом `_test_<копия>`,
  * иначе адрес из `docker-compose.yml` — прогон должен стартовать и без `.env`.
- * Отдельная база, чтобы прогон тестов не сносил данные, с которыми работает разработчик.
+ * Отдельная база, чтобы прогон тестов не сносил данные, с которыми работает разработчик,
+ * и своя на каждую копию, чтобы копии не сносили базу друг у друга.
  */
 export function testDatabaseUrl(): string {
   loadEnvOnce();
