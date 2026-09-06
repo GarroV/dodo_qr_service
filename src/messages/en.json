@@ -17,5 +17,143 @@
     "home": "Admin",
     "signedIn": "You are signed in. Sections will appear here as they are built.",
     "signOut": "Sign out"
+  },
+  "editor": {
+    "nav": {
+      "brand": "Checklists",
+      "brandMuted": "Dodo",
+      "work": "Work",
+      "checklists": "Checklists",
+      "library": "Block library",
+      "feed": "Submissions",
+      "reference": "Reference",
+      "catalog": "Countries and stores",
+      "qr": "QR codes",
+      "signedIn": "Signed in",
+      "role": "methodologist",
+      "signOut": "Sign out"
+    },
+    "list": {
+      "title": "Checklists",
+      "crumbs": "All countries",
+      "new": "+ New checklist",
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "columnTitle": "Title",
+      "columnStation": "Station",
+      "columnWindow": "Window",
+      "columnVersion": "Version",
+      "columnItems": "Items",
+      "columnSubmissions": "Submissions in 7 days",
+      "draftTag": "draft",
+      "noStation": "no station",
+      "noStore": "No store",
+      "empty": "No checklists yet",
+      "emptyHint": "Create the first one: title, station, window — then start typing items."
+    },
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "For example, “Kitchen opening”",
+      "station": "Station",
+      "noStation": "No station",
+      "window": "Window",
+      "windowMorning": "Morning, 06:00–11:00",
+      "windowEvening": "Evening, 20:00–00:00",
+      "windowAny": "Any time",
+      "windowCustom": "{start}–{end}",
+      "create": "Create checklist",
+      "cancel": "Cancel"
+    },
+    "screen": {
+      "crumbsRoot": "Checklists",
+      "draftTag": "Draft",
+      "publishedMeta": "published v{number}",
+      "neverPublished": "never published",
+      "preview": "Preview",
+      "save": "Save draft",
+      "saving": "Saving…",
+      "publish": "Publish v{number}",
+      "publishing": "Publishing…",
+      "saved": "Draft saved",
+      "published": "Version {number} published",
+      "notFound": "Checklist not found"
+    },
+    "section": {
+      "titlePlaceholder": "Section title",
+      "items": "{count, plural, one {# item} other {# items}}",
+      "delete": "Delete",
+      "addItem": "+ Item",
+      "paste": "Paste a list",
+      "pastePlaceholder": "Paste the list here — one line per item",
+      "pasteApply": "Add items",
+      "pasteCancel": "Cancel",
+      "add": "+ Section",
+      "insertBlock": "Insert a library block",
+      "libraryTag": "Library block",
+      "usedIn": "also used in {count, plural, one {# checklist} other {# checklists}}",
+      "unlink": "Unlink",
+      "libraryHint": "Items are edited in the block — the change reaches every draft it is inserted into. Published versions never change."
+    },
+    "item": {
+      "placeholder": "Item text — Enter creates the next one",
+      "typeBool": "Yes / No",
+      "typeNumber": "Number",
+      "typeText": "Text",
+      "critical": "Critical",
+      "from": "from",
+      "to": "to",
+      "min": "Lower bound",
+      "max": "Upper bound",
+      "remove": "Delete item",
+      "moveUp": "Up",
+      "moveDown": "Down"
+    },
+    "keys": {
+      "enter": "next item",
+      "move": "reorder",
+      "paste": "paste a list"
+    },
+    "versions": {
+      "title": "Versions",
+      "draft": "Draft",
+      "draftMeta": "being edited",
+      "submissions": "{count, plural, one {# submission} other {# submissions}}",
+      "hint": "Publishing creates a new version. Submissions stay attached to the version they were filled against."
+    },
+    "library": {
+      "title": "Library",
+      "all": "All",
+      "insert": "Insert",
+      "inserted": "Inserted",
+      "empty": "No blocks yet"
+    },
+    "notice": {
+      "station": "The checklist is attached to station “{station}” of store “{store}”. Its QR code opens the version published at the moment of scanning.",
+      "noStation": "No station selected: until the checklist is attached to one, its QR code opens nothing."
+    },
+    "preview": {
+      "title": "Preview",
+      "back": "Back to the editor",
+      "notice": "This is what an employee sees. The preview shows the draft markup only: saving answers arrives with the fill block.",
+      "progress": "{done} of {total}",
+      "left": "{count, plural, one {# item left} other {# items left}}",
+      "finish": "Finish",
+      "critical": "Critical item",
+      "range": "{min}…{max}",
+      "empty": "The draft has no items yet"
+    },
+    "errors": {
+      "badFormat": "The checklist data was not accepted: check the fields and try again.",
+      "tooManySections": "Too many sections: no more than {limit}.",
+      "tooManyItems": "Too many items: no more than {limit}.",
+      "textTooLong": "Text is too long: no more than {limit} characters.",
+      "badRange": "The lower bound is above the upper bound.",
+      "emptyWindow": "The window starts and ends at the same time — such a checklist never opens.",
+      "emptyTitle": "The title is empty.",
+      "notFound": "Checklist not found.",
+      "nothingToPublish": "Nothing to publish: the checklist has no items.",
+      "unknownBlock": "The inserted library block was not found.",
+      "unknown": "Could not save. Please try again."
+    }
   }
 }
