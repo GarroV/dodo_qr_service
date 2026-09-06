@@ -202,7 +202,14 @@ export const submissions = pgTable(
   },
   (table) => [
     index("submissions_submitted_at_idx").on(table.submittedAt),
-    index("submissions_station_idx").on(table.stationId),
+    // Главный запрос ленты — «заполнения этой станции за период, свежие сверху».
+    // Составной индекс покрывает и отбор по станции, и порядок внутри неё; отдельный
+    // индекс по одной station_id был бы его левым префиксом, то есть лишней записью
+    // на каждое сохранение — публичной точке записи это ни к чему.
+    index("submissions_station_submitted_at_idx").on(
+      table.stationId,
+      table.submittedAt.desc(),
+    ),
     index("submissions_version_idx").on(table.versionId),
     check(
       "submissions_snapshot_size",

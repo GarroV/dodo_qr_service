@@ -226,6 +226,10 @@ export async function saveSubmission(
 /**
  * Лента заполнений: фильтры по стране, пиццерии, станции и периоду комбинируются,
  * сортировка по времени отправки по убыванию, лимит — по умолчанию 200, максимум 500.
+ *
+ * Вторичный ключ сортировки — `id` по убыванию. Пачка заполнений, вставленная одним
+ * запросом, имеет одинаковый `submitted_at`, и порядок внутри неё без второго ключа
+ * не определён: `LIMIT` отдавал бы разные подмножества от запроса к запросу.
  */
 export async function listSubmissions(
   filter: SubmissionFilter = {},
@@ -235,7 +239,7 @@ export async function listSubmissions(
 
   const rows = await submissionsBaseQuery(db)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(submissions.submittedAt))
+    .orderBy(desc(submissions.submittedAt), desc(submissions.id))
     .limit(clampLimit(filter.limit));
 
   return rows.map(toSubmissionRow);

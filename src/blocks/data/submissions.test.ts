@@ -357,6 +357,38 @@ describe("listSubmissions — фильтры", () => {
     expect(ids.indexOf(idNewer)).toBeLessThan(ids.indexOf(idOlder));
   });
 
+  test("пятьсот заполнений с одинаковой отметкой времени отдаются в одном порядке", async () => {
+    // Пачка, вставленная одним запросом, получает одинаковый submitted_at. Сортировки
+    // только по нему не хватает: порядок внутри пачки не определён, и LIMIT отдаёт
+    // разные подмножества от запроса к запросу. Вторичный ключ — id по убыванию.
+    const { station, versionId } = await readyVersion("устойчивый-порядок");
+    const submittedAt = new Date("2026-03-01T12:00:00.000Z");
+    const inserted = await db
+      .insert(submissions)
+      .values(
+        Array.from({ length: 500 }, () => ({
+          versionId,
+          stationId: station.stationId,
+          snapshot: [] as Section[],
+          answers: [] as Answer[],
+          startedAt: submittedAt,
+          submittedAt,
+        })),
+      )
+      .returning({ id: submissions.id });
+    const expected = inserted
+      .map((row) => row.id)
+      .sort()
+      .reverse()
+      .slice(0, 200);
+
+    const first = await listSubmissions({ stationId: station.stationId });
+    const second = await listSubmissions({ stationId: station.stationId });
+
+    expect(first.map((row) => row.id)).toStrictEqual(expected);
+    expect(second.map((row) => row.id)).toStrictEqual(expected);
+  });
+
   test("отрицательный лимит не роняет ленту", async () => {
     // Опечатка в фильтре не должна превращаться в ошибку драйвера.
     await expect(listSubmissions({ limit: -5 })).resolves.toHaveLength(1);
