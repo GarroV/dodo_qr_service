@@ -11,7 +11,10 @@ export async function LoginScreen() {
   const t = await getTranslations("login");
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-[var(--space-8)]">
+    <main
+      data-testid="login-screen"
+      className="flex min-h-screen items-center justify-center p-[var(--space-8)]"
+    >
       <div className="w-[340px] max-w-full">
         <h1 className="mb-[var(--space-8)] text-center text-[length:var(--fs-display)] leading-[var(--lh-display)] font-semibold">
           {t("brand")}{" "}

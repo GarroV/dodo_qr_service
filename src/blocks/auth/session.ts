@@ -4,7 +4,13 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 /** Имя сессионной куки. Одно на весь продукт: аккаунт в MVP один (D014). */
 export const SESSION_COOKIE_NAME = "dodo_qr_admin";
 
-/** Срок жизни сессии — 30 дней по контракту блока. */
+/**
+ * Срок жизни сессии — 30 дней по контракту блока.
+ *
+ * Отозвать выданную сессию раньше срока можно только сменой `SESSION_SECRET`:
+ * подпись зависит от него и не зависит от пароля, поэтому смена одного лишь
+ * `ADMIN_PASSWORD_HASH` украденную куку НЕ обесценивает. Хранилища сессий в MVP нет.
+ */
 export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 const PAYLOAD_VERSION = 1;

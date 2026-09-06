@@ -8,11 +8,16 @@ export interface ScryptParams {
   readonly parallelization: number;
 }
 
-/** N = 2^15, r = 8, p = 1 — рекомендация OWASP; на входе в админку это ~0,1 с. */
+/**
+ * N = 2^15, r = 8, p = 3 — строка из таблицы OWASP Password Storage Cheat Sheet.
+ * Пара N=2^15 с p=1 в этой таблице не встречается и даёт втрое меньше работы
+ * перебирающему: замер на машине разработки — 37 мс против 113 мс на проверку.
+ * Сотая доля секунды на входе в админку, которым пользуются раз в месяц, не заметна.
+ */
 const DEFAULT_SCRYPT_PARAMS: ScryptParams = {
   cost: 32_768,
   blockSize: 8,
-  parallelization: 1,
+  parallelization: 3,
 };
 
 const ALGORITHM = "scrypt";
