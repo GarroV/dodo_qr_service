@@ -28,6 +28,7 @@ run "типы"             bash -c 'npx --no-install next typegen && npx --no-in
 run "тесты"            npx --no-install vitest run --coverage --reporter=junit --outputFile=reports/vitest.junit.xml
 run "мёртвый код"      npx --no-install knip
 run "границы модулей"  npx --no-install depcruise src
+run "сквозные сценарии" npx --no-install playwright test
 
 if [ ${#FAILED[@]} -gt 0 ]; then
   printf '\n\033[31mПРОВАЛ (%d): %s\033[0m\n' "${#FAILED[@]}" "${FAILED[*]}"
