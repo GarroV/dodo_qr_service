@@ -2,5 +2,19 @@
   "home": {
     "title": "Digital checklists",
     "subtitle": "Scaffold is up: Next.js, Tailwind with design-system tokens and language from browser settings."
+  },
+  "login": {
+    "brand": "Checklists",
+    "brandMuted": "Dodo",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Checking…",
+    "failed": "Wrong password",
+    "kitchenHint": "Kitchen staff do not need to sign in: the checklist opens from the station QR code."
+  },
+  "admin": {
+    "home": "Admin",
+    "signedIn": "You are signed in. Sections will appear here as they are built.",
+    "signOut": "Sign out"
   }
 }
