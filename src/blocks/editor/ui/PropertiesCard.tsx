@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import type { ChangeEvent } from "react";
 
 import type { StationOption } from "../listing";
+import { SELECT_ARROW } from "./select-style";
 
 /** Окно времени в форме: варианты из эталона плюс то, что уже записано у чек-листа. */
 export interface WindowValue {
@@ -87,7 +88,8 @@ export function PropertiesCard({
           <select
             id="checklist-station"
             data-testid="checklist-station"
-            className={CONTROL_CLASS}
+            className={`${CONTROL_CLASS} pr-[var(--space-8)]`}
+            style={SELECT_ARROW}
             value={stationId}
             onChange={(event: ChangeEvent<HTMLSelectElement>) => {
               onStation(event.target.value);
@@ -109,7 +111,8 @@ export function PropertiesCard({
           <select
             id="checklist-window"
             data-testid="checklist-window"
-            className={CONTROL_CLASS}
+            className={`${CONTROL_CLASS} pr-[var(--space-8)]`}
+            style={SELECT_ARROW}
             value={current}
             onChange={(event: ChangeEvent<HTMLSelectElement>) => {
               onWindow(parseWindowKey(event.target.value));

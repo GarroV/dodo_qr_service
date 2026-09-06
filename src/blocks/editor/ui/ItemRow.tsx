@@ -3,6 +3,8 @@ import type { ChangeEvent, ClipboardEvent, KeyboardEvent } from "react";
 
 import type { Item, ItemType } from "@/blocks/data";
 
+import { SELECT_ARROW_SMALL } from "./select-style";
+
 /** Строка пункта в редакторе по эталону `docs/forge/design/screens/editor.html`. */
 export interface ItemRowProps {
   readonly item: Item;
@@ -90,7 +92,8 @@ export function ItemRow({
       <div className="flex items-center gap-[var(--space-4)]">
         <select
           data-testid="item-type"
-          className={SELECT_CLASS}
+          className={`${SELECT_CLASS} pr-[var(--space-8)]`}
+          style={SELECT_ARROW_SMALL}
           value={item.type}
           aria-label={t("typeBool")}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => {

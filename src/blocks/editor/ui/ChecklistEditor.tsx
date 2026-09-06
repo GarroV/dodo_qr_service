@@ -76,6 +76,8 @@ export function ChecklistEditor(props: ChecklistEditorProps) {
   const [stationId, setStationId] = useState(props.initialStationId);
   const [window, setWindow] = useState<WindowValue>(props.initialWindow);
   const [focusItemId, setFocusItemId] = useState<string | null>(null);
+  // Вставка блока доступна из двух мест эталона: правой колонки и кнопки под секциями.
+  const [pickingBlock, setPickingBlock] = useState(false);
 
   const [saveState, saveAction, saving] = useActionState(
     submitSaveDraft,
@@ -142,6 +144,13 @@ export function ChecklistEditor(props: ChecklistEditorProps) {
     if (parsePastedLines(text).length < MIN_PASTED_LINES) return;
     event.preventDefault();
     pasteInto(sectionId, itemId, text);
+  }
+
+  function insertBlock(blockId: string): void {
+    const block = props.library.find((one) => one.id === blockId);
+    if (block === undefined) return;
+    setSections(insertLibrarySection(sections, block));
+    setPickingBlock(false);
   }
 
   const total = itemCount(sections);
@@ -232,6 +241,7 @@ export function ChecklistEditor(props: ChecklistEditorProps) {
                   firstOrdinal={firstOrdinal}
                   locale={locale}
                   usageCount={usageOf(section, props.library)}
+                  soonLabel={t("nav.soon")}
                   onSectionTitle={(text) => {
                     setSections(
                       setSectionTitle(sections, section.id, locale, text),
@@ -278,7 +288,23 @@ export function ChecklistEditor(props: ChecklistEditorProps) {
               );
             })}
 
-            <div className="mt-[var(--space-8)] flex items-center gap-[var(--space-5)]">
+            {pickingBlock ? (
+              <div className="mt-[var(--space-8)]">
+                <LibraryPanel
+                  library={props.library}
+                  insertedBlockIds={insertedBlockIds}
+                  locale={locale}
+                  soonLabel={t("nav.soon")}
+                  onInsert={insertBlock}
+                />
+              </div>
+            ) : null}
+
+            <div
+              data-testid="editor-footer"
+              data-item-total={total}
+              className="mt-[var(--space-8)] flex items-center gap-[var(--space-5)]"
+            >
               <button
                 type="button"
                 data-testid="add-section"
@@ -289,6 +315,16 @@ export function ChecklistEditor(props: ChecklistEditorProps) {
                 }}
               >
                 {t("section.add")}
+              </button>
+              <button
+                type="button"
+                data-testid="insert-block"
+                className={BUTTON_CLASS}
+                onClick={() => {
+                  setPickingBlock((open) => !open);
+                }}
+              >
+                {t("section.insertBlock")}
               </button>
               <span className="ml-auto flex flex-wrap items-center gap-[var(--space-6)] text-[length:var(--fs-meta)] text-[var(--ink-3)]">
                 <span>
@@ -303,7 +339,6 @@ export function ChecklistEditor(props: ChecklistEditorProps) {
                   <kbd className={KBD_CLASS}>Cmd</kbd>+
                   <kbd className={KBD_CLASS}>V</kbd> {t("keys.paste")}
                 </span>
-                <span data-testid="item-total">{total}</span>
               </span>
             </div>
           </div>
@@ -313,11 +348,9 @@ export function ChecklistEditor(props: ChecklistEditorProps) {
             <LibraryPanel
               library={props.library}
               insertedBlockIds={insertedBlockIds}
-              onInsert={(blockId) => {
-                const block = props.library.find((one) => one.id === blockId);
-                if (block === undefined) return;
-                setSections(insertLibrarySection(sections, block));
-              }}
+              locale={locale}
+              soonLabel={t("nav.soon")}
+              onInsert={insertBlock}
             />
             <StationNotice station={props.station} />
           </aside>

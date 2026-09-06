@@ -29,6 +29,8 @@ export interface SectionCardProps {
   readonly locale: string;
   /** Сколько ещё чек-листов используют вставленный блок — «используется ещё в 6». */
   readonly usageCount: number;
+  /** Подпись «раздел ещё не готов» для пунктов, которых в продукте пока нет. */
+  readonly soonLabel: string;
   readonly onSectionTitle: (text: string) => void;
   readonly onRemoveSection: () => void;
   readonly onUnlink: () => void;
@@ -59,6 +61,8 @@ export function SectionCard(props: SectionCardProps) {
   const linked = isLinked(section);
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState("");
+  // Свёрнутая секция из эталона: в чек-листе на полсотни пунктов иначе не найти нужную.
+  const [collapsed, setCollapsed] = useState(false);
 
   const border = linked
     ? "border-[var(--reg-supp-line)]"
@@ -96,64 +100,91 @@ export function SectionCard(props: SectionCardProps) {
 
         <span className={META_CLASS}>
           {t("items", { count: section.items.length })}
-          {linked ? ` · ${t("usedIn", { count: props.usageCount })}` : ""}
+          {linked && props.usageCount > 0
+            ? ` · ${t("usedIn", { count: props.usageCount })}`
+            : ""}
         </span>
 
         {linked ? (
-          <button
-            type="button"
-            data-testid="section-unlink"
-            className={`${GHOST_BUTTON_CLASS} ml-auto`}
-            onClick={props.onUnlink}
-          >
-            {t("unlink")}
-          </button>
+          <>
+            {/* Раздела библиотеки в продукте ещё нет (его строит блок library), поэтому
+                пункт показан, но не ведёт в 404 — так же, как разделы в левом меню. */}
+            <span
+              className={`${GHOST_BUTTON_CLASS} ml-auto`}
+              aria-disabled="true"
+              title={props.soonLabel}
+            >
+              {t("openBlock")}
+            </span>
+            <button
+              type="button"
+              data-testid="section-unlink"
+              className={GHOST_BUTTON_CLASS}
+              onClick={props.onUnlink}
+            >
+              {t("unlink")}
+            </button>
+          </>
         ) : (
-          <button
-            type="button"
-            data-testid="section-remove"
-            className={`${GHOST_BUTTON_CLASS} text-err ml-auto`}
-            onClick={props.onRemoveSection}
-          >
-            {t("delete")}
-          </button>
+          <>
+            <button
+              type="button"
+              data-testid="section-collapse"
+              className={`${GHOST_BUTTON_CLASS} ml-auto`}
+              onClick={() => {
+                setCollapsed((open) => !open);
+              }}
+            >
+              {collapsed ? t("expand") : t("collapse")}
+            </button>
+            <button
+              type="button"
+              data-testid="section-remove"
+              className={`${GHOST_BUTTON_CLASS} text-err`}
+              onClick={props.onRemoveSection}
+            >
+              {t("delete")}
+            </button>
+          </>
         )}
       </div>
 
-      {section.items.map((item, index) =>
-        linked ? (
-          <LinkedItemRow
-            key={item.id}
-            item={item}
-            ordinal={firstOrdinal + index}
-            locale={locale}
-          />
-        ) : (
-          <ItemRow
-            key={item.id}
-            item={item}
-            ordinal={firstOrdinal + index}
-            locale={locale}
-            onTitle={(text) => {
-              props.onItemTitle(item.id, text);
-            }}
-            onPatch={(patch) => {
-              props.onItemPatch(item.id, patch);
-            }}
-            onRemove={() => {
-              props.onRemoveItem(item.id);
-            }}
-            onKeyDown={(event) => {
-              props.onItemKeyDown(item.id, event);
-            }}
-            onPaste={(event) => {
-              props.onItemPaste(item.id, event);
-            }}
-          />
-        ),
-      )}
+      {collapsed
+        ? null
+        : section.items.map((item, index) =>
+            linked ? (
+              <LinkedItemRow
+                key={item.id}
+                item={item}
+                ordinal={firstOrdinal + index}
+                locale={locale}
+              />
+            ) : (
+              <ItemRow
+                key={item.id}
+                item={item}
+                ordinal={firstOrdinal + index}
+                locale={locale}
+                onTitle={(text) => {
+                  props.onItemTitle(item.id, text);
+                }}
+                onPatch={(patch) => {
+                  props.onItemPatch(item.id, patch);
+                }}
+                onRemove={() => {
+                  props.onRemoveItem(item.id);
+                }}
+                onKeyDown={(event) => {
+                  props.onItemKeyDown(item.id, event);
+                }}
+                onPaste={(event) => {
+                  props.onItemPaste(item.id, event);
+                }}
+              />
+            ),
+          )}
 
-      {linked ? (
+      {collapsed ? null : linked ? (
         <div className="border-t border-[var(--line)] px-[var(--space-6)] py-[var(--space-4)]">
           <span className={META_CLASS}>{t("libraryHint")}</span>
         </div>

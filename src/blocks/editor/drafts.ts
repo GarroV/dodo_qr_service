@@ -197,7 +197,7 @@ interface VersionRow extends Record<string, unknown> {
   id: string;
   status: VersionStatus;
   version_number: number | null;
-  published_at: Date | null;
+  published_at: string | null;
   item_count: string;
   submission_count: string;
 }
@@ -210,7 +210,10 @@ async function versionSummaries(
   checklistId: string,
 ): Promise<VersionSummary[]> {
   const rows = await getDb().execute<VersionRow>(sql`
-    select v.id::text as id, v.status, v.version_number, v.published_at,
+    select v.id::text as id, v.status, v.version_number,
+      -- Время отдаётся в ISO строкой: сырой timestamptz из execute() приходит текстом
+      -- вида «2026-08-17 15:25:59.392272+00», и на экране он оказался бы таким же.
+      to_char(v.published_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as published_at,
       (select coalesce(sum(jsonb_array_length(s->'items')), 0)
          from jsonb_array_elements(v.sections) s) as item_count,
       (select count(*) from submissions sub where sub.version_id = v.id) as submission_count
@@ -222,7 +225,7 @@ async function versionSummaries(
     id: row.id,
     status: row.status,
     versionNumber: row.version_number,
-    publishedAt: row.published_at,
+    publishedAt: row.published_at === null ? null : new Date(row.published_at),
     itemCount: Number(row.item_count),
     submissionCount: Number(row.submission_count),
   }));

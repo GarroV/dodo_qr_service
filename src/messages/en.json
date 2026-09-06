@@ -161,7 +161,7 @@
     "screen": {
       "crumbsRoot": "Checklists",
       "draftTag": "Draft",
-      "publishedMeta": "published v{number}",
+      "publishedMeta": "published v{number} · {date}",
       "neverPublished": "never published",
       "preview": "Preview",
       "save": "Save draft",
@@ -186,7 +186,10 @@
       "libraryTag": "Library block",
       "usedIn": "also used in {count, plural, one {# checklist} other {# checklists}}",
       "unlink": "Unlink",
-      "libraryHint": "Items are edited in the block — the change reaches every draft it is inserted into. Published versions never change."
+      "libraryHint": "Items are edited in the block — the change reaches every draft it is inserted into. Published versions never change.",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "openBlock": "Open the block"
     },
     "item": {
       "placeholder": "Item text — Enter creates the next one",

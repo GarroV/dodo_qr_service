@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 
 import type { EditorActionState } from "../action-state";
 import type { VersionSummary } from "../drafts";
@@ -23,6 +23,7 @@ export function EditorStatus({
   readonly publishState: EditorActionState;
 }) {
   const t = useTranslations("editor");
+  const format = useFormatter();
   const published = versions.find((version) => version.status === "published");
   const failed =
     saveState.status === "failed"
@@ -63,6 +64,13 @@ export function EditorStatus({
             ? t("screen.neverPublished")
             : t("screen.publishedMeta", {
                 number: published.versionNumber ?? 0,
+                date:
+                  published.publishedAt === null
+                    ? ""
+                    : format.dateTime(published.publishedAt, {
+                        day: "numeric",
+                        month: "long",
+                      }),
               })}
       </span>
     </>

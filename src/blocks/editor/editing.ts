@@ -49,7 +49,10 @@ function mapItems(
   sections: readonly Section[],
   change: (items: readonly Item[]) => Item[],
 ): Section[] {
-  return sections.map((section) => ({ ...section, items: change(section.items) }));
+  return sections.map((section) => ({
+    ...section,
+    items: change(section.items),
+  }));
 }
 
 /**
@@ -83,24 +86,33 @@ export function moveItem(
   itemId: string,
   delta: -1 | 1,
 ): { sections: Section[]; moved: boolean } {
-  let moved = false;
+  const unchanged = { sections: [...sections], moved: false };
 
-  const result = sections.map((section) => {
-    const at = section.items.findIndex((item) => item.id === itemId);
-    if (at < 0) return section;
+  const sectionAt = sections.findIndex((section) =>
+    section.items.some((item) => item.id === itemId),
+  );
+  const section = sections[sectionAt];
+  if (section === undefined) return unchanged;
 
-    const to = at + delta;
-    if (to < 0 || to >= section.items.length) return section;
+  const from = section.items.findIndex((item) => item.id === itemId);
+  const to = from + delta;
+  const current = section.items[from];
+  // Соседа нет — пункт на границе секции: он остаётся на месте. Пункт, уехавший
+  // в соседнюю секцию от одного нажатия, для методиста просто исчезает.
+  const neighbour = section.items[to];
+  if (current === undefined || neighbour === undefined) return unchanged;
 
-    const items = [...section.items];
-    const [item] = items.splice(at, 1);
-    if (item === undefined) return section;
-    items.splice(to, 0, item);
-    moved = true;
-    return { ...section, items };
-  });
+  // Перестановка на одну позицию — это обмен соседями.
+  const items = [...section.items];
+  items[from] = neighbour;
+  items[to] = current;
 
-  return { sections: moved ? result : [...sections], moved };
+  return {
+    sections: sections.map((one, index) =>
+      index === sectionAt ? { ...section, items } : one,
+    ),
+    moved: true,
+  };
 }
 
 /**
@@ -142,9 +154,14 @@ export function updateItem(
       const merged = { ...item, ...patch };
       if (merged.type === "number") return merged;
       // Границы у нечислового пункта не видны на экране и не правятся: оставить их
-      // значит увезти в базу невидимое значение.
-      const { min: _min, max: _max, ...withoutRange } = merged;
-      return withoutRange;
+      // значит увезти в базу невидимое значение. Собираем пункт заново, без них.
+      return {
+        id: merged.id,
+        title: merged.title,
+        type: merged.type,
+        critical: merged.critical,
+        ...(merged.hint === undefined ? {} : { hint: merged.hint }),
+      };
     }),
   );
 }

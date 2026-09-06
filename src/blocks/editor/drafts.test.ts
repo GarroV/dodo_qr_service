@@ -248,6 +248,25 @@ describe("loadEditor", () => {
     ).toBe(1);
   });
 
+  test("время публикации приходит датой, а не строкой из базы", async () => {
+    // Экран форматирует его как «17 августа». Сырая строка timestamptz прошла бы
+    // в разметку целиком — и в правой колонке оказалось бы «2026-08-17 15:25:59.392272+00».
+    const checklistId = await createChecklist({
+      stationId: null,
+      title: { ru: "Со временем" },
+      window: MORNING,
+    });
+    await createPublishedVersion(checklistId, sampleSections("v1"), 1);
+
+    const state = await loadEditor(checklistId);
+    const published = state?.versions.find(
+      (version) => version.status === "published",
+    );
+
+    expect(published?.publishedAt).toBeInstanceOf(Date);
+    expect(Number.isNaN(published?.publishedAt?.getTime())).toBe(false);
+  });
+
   test("неизвестный чек-лист даёт null, а не исключение", async () => {
     expect(await loadEditor("0f3a1f6e-6c1a-4c2e-9f2a-1f2b3c4d5e6f")).toBeNull();
   });
