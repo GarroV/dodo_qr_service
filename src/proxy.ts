@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { sessionSecret } from "@/blocks/auth/config";
+import { PUBLIC_FILL_PREFIX, securityHeaders } from "@/security-headers";
 import { LOGIN_PATH } from "@/blocks/auth/routes";
 import { SESSION_COOKIE_NAME, readSessionToken } from "@/blocks/auth/session";
 
@@ -16,12 +17,52 @@ import { SESSION_COOKIE_NAME, readSessionToken } from "@/blocks/auth/session";
  * и второй продолжает работать, даже если этот файл когда-нибудь потеряют.
  */
 export const config = {
-  // Только админка. Публичный маршрут заполнения `/s/*` сюда не попадает и о входе не знает.
-  matcher: ["/admin/:path*"],
+  // Админка — ради охраны выше. Публичный маршрут заполнения — ради одноразового ключа
+  // в политике безопасности: выдать ключ на запрос больше некому (T071). О входе этот
+  // маршрут по-прежнему не знает и ни одной куки не читает — ветка для него первая
+  // и заканчивается раньше, чем начинается что-либо про сессию.
+  matcher: ["/admin/:path*", "/s/:path*"],
 };
+
+const NONCE_BYTES = 16;
+
+/** Одноразовый ключ запроса: случайный, свой на каждый ответ. */
+function createNonce(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(NONCE_BYTES));
+  return btoa(String.fromCharCode(...bytes));
+}
+
+/**
+ * Публичный маршрут заполнения: политика безопасности с одноразовым ключом.
+ *
+ * Ключ кладётся и в заголовок ЗАПРОСА, и в заголовок ответа. В запрос — потому что
+ * оттуда его читает сам Next и проставляет своим инлайновым скриптам; без этого
+ * строгая политика отбила бы полезную нагрузку RSC и страница осталась бы мёртвой.
+ * В ответ — потому что политику применяет браузер.
+ *
+ * Заголовки этого маршрута ставятся здесь целиком, а не поверх общих из `next.config.ts`:
+ * там `/s/*` из источника исключён нарочно. Два заголовка политики на одном ответе
+ * браузер применяет пересечением, и понять, что именно сработало, было бы гаданием.
+ */
+function publicFillResponse(request: NextRequest): NextResponse {
+  const nonce = createNonce();
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const headers = securityHeaders({ nonce, isDevelopment });
+
+  const requestHeaders = new Headers(request.headers);
+  for (const header of headers) requestHeaders.set(header.key, header.value);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  for (const header of headers) response.headers.set(header.key, header.value);
+  return response;
+}
 
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
+
+  // Первым делом и без единого обращения к сессии: публичный маршрут о входе не знает.
+  if (pathname.startsWith(PUBLIC_FILL_PREFIX))
+    return publicFillResponse(request);
 
   // Форма входа — единственный адрес под /admin, доступный без сессии.
   if (pathname === LOGIN_PATH || pathname.startsWith(`${LOGIN_PATH}/`)) {

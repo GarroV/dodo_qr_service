@@ -1,0 +1,86 @@
+// Заголовки безопасности продукта в одном месте: их ставят двое — `next.config.ts`
+// на всё приложение и `src/proxy.ts` на публичный маршрут заполнения. Два списка
+// в двух файлах разъехались бы молча, и разъехались бы именно там, где это дороже
+// всего: на единственном адресе, открытом интернету.
+
+/** Префикс публичного маршрута заполнения. Совпадает с `STATION_SCAN_PREFIX` блока `qr`. */
+export const PUBLIC_FILL_PREFIX = "/s/";
+
+export interface PolicyOptions {
+  /**
+   * Одноразовый ключ запроса. Задан — политика строгая: инлайновые скрипты
+   * разрешены только с этим ключом. Не задан — политика прежняя, с `'unsafe-inline'`.
+   */
+  readonly nonce?: string | undefined;
+  readonly isDevelopment: boolean;
+}
+
+/**
+ * Политика подобрана прогоном на настоящем браузере (`e2e/security-headers.spec.ts`),
+ * а не по памяти.
+ *
+ * **Про `script-src`.** Next кладёт полезную нагрузку RSC инлайновым `<script>`,
+ * поэтому без `'unsafe-inline'` приложение не работает — а с ним политика не мешает
+ * ни одному чужому скрипту, который дотянется до разметки. Строгий вариант — ключ
+ * на запрос: Next видит его в заголовке запроса и проставляет своим скриптам.
+ * `'strict-dynamic'` рядом с ключом нужен потому, что бутстрап догружает остальные
+ * файлы уже сам; в браузерах, знающих CSP 3, он заодно отменяет `'self'` и любые
+ * списки доменов — то есть «свой домен» перестаёт быть пропуском.
+ *
+ * Ключ выдаётся только там, где его есть кому выдать: `proxy.ts` включён на `/admin/*`
+ * и на публичном `/s/*`. На остальных адресах политика остаётся прежней — это
+ * сознательный компромисс, а не забывчивость: ослабление касается страниц, которые
+ * из интернета не открываются.
+ *
+ * **Про остальное.** `style-src 'unsafe-inline'` оставлен: атрибут `style` у React
+ * встречается на каждом втором экране (ширина шкалы, отметка выполненного пункта),
+ * и политика, которая ломает следующий же экран, будет снята целиком, а не ослаблена.
+ * `img-src data:` нужен QR-кодам и той самой отметке. `font-src 'self'` — шрифты
+ * раздаёт само приложение (T064), сторонний домен не нужен.
+ */
+function contentSecurityPolicy(options: PolicyOptions): string {
+  const { nonce, isDevelopment } = options;
+
+  // В разработке Next собирает страницы на лету: горячая замена ходит по вебсокету
+  // и выполняет код через eval. Продакшен-сборке ни то, ни другое не нужно.
+  const scriptSource =
+    nonce === undefined
+      ? `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`
+      : `script-src 'nonce-${nonce}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ""}`;
+
+  return [
+    "default-src 'self'",
+    scriptSource,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    `connect-src 'self'${isDevelopment ? " ws:" : ""}`,
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+  ].join("; ");
+}
+
+export interface SecurityHeader {
+  readonly key: string;
+  readonly value: string;
+}
+
+export function securityHeaders(options: PolicyOptions): SecurityHeader[] {
+  return [
+    { key: "Content-Security-Policy", value: contentSecurityPolicy(options) },
+    // То же, что frame-ancestors, для браузеров, которые его не знают. Публичный
+    // маршрут заполнения открыт по ссылке из QR — во фрейме его быть не должно нигде.
+    { key: "X-Frame-Options", value: "DENY" },
+    { key: "X-Content-Type-Options", value: "nosniff" },
+    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    // Камера в продукте не нужна: QR-наклейку читает камера телефона снаружи браузера,
+    // а не страница. Геолокацию не спрашиваем вовсе — это решение продукта (D003),
+    // и заголовок делает его правилом браузера, а не обещанием кода.
+    {
+      key: "Permissions-Policy",
+      value: "camera=(), microphone=(), geolocation=()",
+    },
+  ];
+}

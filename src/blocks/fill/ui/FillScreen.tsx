@@ -1,0 +1,130 @@
+import { NextIntlClientProvider, createTranslator } from "next-intl";
+import { headers } from "next/headers";
+import type { ReactElement } from "react";
+
+import type { Locale } from "@/blocks/core/locale";
+import en from "@/messages/en.json";
+import ru from "@/messages/ru.json";
+
+import { pickFillLocales } from "../locale";
+import { checkScanAllowed, identifyClient } from "../rate-limit";
+import { loadFillTarget } from "../station";
+import type { FillTarget } from "../station";
+import { buildFillView } from "../view";
+import { FillForm } from "./FillForm";
+import { StateScreen } from "./StateScreen";
+import { submitFillAction } from "./submit-action";
+
+/**
+ * Публичный экран заполнения: всё, что видит человек, отсканировавший наклейку.
+ *
+ * Язык здесь СВОЙ, а не общий язык запроса. Общий (`src/i18n/request.ts`) отвечает
+ * одинаково на «телефон просит английский» и «телефон просит язык, которого у нас нет»,
+ * а этому экрану во втором случае нужен язык страны пиццерии (T038). Поэтому словарь
+ * выбирается прямо здесь и отдаётся клиентской части провайдером — вместе с языком,
+ * который посчитала цепочка, а не тем, что решил заголовок.
+ */
+
+const MESSAGES: Record<Locale, typeof en> = { en, ru };
+
+/** Язык, на котором говорит отказ, когда о станции ещё ничего не известно. */
+async function refusalLocale(): Promise<Locale> {
+  const acceptLanguage = (await headers()).get("accept-language");
+  return pickFillLocales(acceptLanguage, null)[0] ?? "ru";
+}
+
+function translatorFor(locale: Locale) {
+  return createTranslator({
+    locale,
+    messages: MESSAGES[locale],
+    namespace: "fill",
+  });
+}
+
+export async function FillScreen({
+  code,
+}: {
+  readonly code: string;
+}): Promise<ReactElement> {
+  const requestHeaders = await headers();
+  const client = identifyClient(
+    requestHeaders.get("x-forwarded-for"),
+    requestHeaders.get("x-real-ip"),
+  );
+
+  // Предел на клиента применяется, только когда клиентов есть чем различать.
+  // Один общий ключ превратил бы его в рубильник на всю сеть (см. `identifyClient`).
+  if (client !== null && !checkScanAllowed(client, new Date()).allowed) {
+    const t = translatorFor(await refusalLocale());
+    return (
+      <StateScreen
+        testId="fill-too-often"
+        tone="plain"
+        title={t("tooOften.title")}
+        text={t("tooOften.text")}
+      />
+    );
+  }
+
+  const target: FillTarget = await loadFillTarget(code, new Date());
+
+  if (target.kind !== "ok") {
+    const locale = await refusalLocale();
+    const t = translatorFor(locale);
+    // Неизвестный и перевыпущенный код дают один и тот же экран: различать их
+    // значило бы отвечать перебору по-разному (D021).
+    const state = target.kind === "unknown-code" ? "invalid" : "none";
+    return (
+      <div lang={locale}>
+        <StateScreen
+          testId={`fill-${state}`}
+          tone="plain"
+          title={t(`${state}.title`)}
+          text={t(`${state}.text`)}
+        />
+      </div>
+    );
+  }
+
+  const locales = pickFillLocales(
+    requestHeaders.get("accept-language"),
+    target.countryLocale,
+  );
+  const locale = locales[0] ?? "ru";
+  const t = translatorFor(locale);
+
+  const view = buildFillView({
+    sections: target.version.sections,
+    checklistTitle: target.checklist.title,
+    storeName: target.storeName,
+    stationName: target.stationName,
+    windowStart: target.checklist.windowStart,
+    windowEnd: target.checklist.windowEnd,
+    locales,
+    labels: {
+      range: (min, max) => t("range", { min, max }),
+      rangeFrom: (min) => t("rangeFrom", { min }),
+      rangeTo: (max) => t("rangeTo", { max }),
+    },
+  });
+
+  return (
+    // Язык проставлен на самом экране, а не на <html>: корневая разметка общая
+    // с админкой и знает только язык запроса, а здесь он мог откатиться на язык страны.
+    <div lang={locale}>
+      <NextIntlClientProvider
+        locale={locale}
+        messages={{ fill: MESSAGES[locale].fill }}
+      >
+        <FillForm
+          view={view}
+          code={code}
+          versionId={target.version.id}
+          stationName={target.stationName}
+          storeName={target.storeName}
+          submit={submitFillAction}
+        />
+      </NextIntlClientProvider>
+    </div>
+  );
+}

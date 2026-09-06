@@ -29,8 +29,41 @@ afterEach(() => {
 });
 
 describe("охрана перед рендером", () => {
-  test("сторожит весь /admin, включая вложенные адреса", () => {
-    expect(config.matcher).toEqual(["/admin/:path*"]);
+  test("сторожит весь /admin и, отдельной веткой, публичный /s", () => {
+    // `/s/*` попал в matcher не ради охраны: этому маршруту выдаётся одноразовый
+    // ключ политики безопасности (T071), а выдать его больше некому.
+    expect(config.matcher).toEqual(["/admin/:path*", "/s/:path*"]);
+  });
+
+  test("публичный маршрут не заворачивается на вход и не читает сессию", () => {
+    // Ни без куки, ни с подделанной: ветка публичного маршрута срабатывает первой
+    // и до сессии не доходит вовсе.
+    const forged = createSessionToken(
+      "чужой-секрет-достаточной-длины-123456",
+      new Date(),
+    );
+    for (const request of [
+      requestTo("/s/abcdefghjk"),
+      requestTo("/s/abcdefghjk", forged),
+    ]) {
+      const response = proxy(request);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBeNull();
+    }
+  });
+
+  test("публичный маршрут получает свой ключ на каждый запрос", () => {
+    // Постоянный ключ не защищает ни от чего: он так же известен, как его отсутствие.
+    const first = proxy(requestTo("/s/abcdefghjk")).headers.get(
+      "content-security-policy",
+    );
+    const second = proxy(requestTo("/s/abcdefghjk")).headers.get(
+      "content-security-policy",
+    );
+
+    expect(first).toMatch(/script-src 'nonce-[^']+' 'strict-dynamic'/);
+    expect(first).not.toContain("unsafe-inline'; style");
+    expect(second).not.toBe(first);
   });
 
   test("без куки уводит на форму входа", () => {

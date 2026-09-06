@@ -1,0 +1,159 @@
+// Чистая сборка модели экрана заполнения из данных чек-листа. Никакого next-intl
+// и next/navigation здесь: их приносит только серверный компонент, а сама сборка
+// проверяется модульными тестами без базы и без React.
+import type { Locale } from "@/blocks/core/locale";
+import type { Item, LocalizedText, Section } from "@/blocks/data";
+
+import { pickFillText } from "./locale";
+import type {
+  FillItemView,
+  FillScreenView,
+  FillSectionView,
+  FillViewLabels,
+} from "./model";
+
+export interface BuildFillViewInput {
+  readonly sections: readonly Section[];
+  readonly checklistTitle: LocalizedText;
+  readonly storeName: string;
+  readonly stationName: string;
+  readonly windowStart: string;
+  readonly windowEnd: string;
+  readonly locales: readonly Locale[];
+  readonly labels: FillViewLabels;
+}
+
+// Длина строки "HH:MM" — до неё обрезается время из базы ("06:00:00" → "06:00").
+const TIME_PREFIX_LENGTH = 5;
+// Разделитель окна времени — тире (U+2013), а не дефис: так в эталоне экрана.
+const WINDOW_SEPARATOR = "–";
+// Разделитель частей шапки («Пиццерия · Станция · окно») и кусков подсказки пункта —
+// один и тот же символ, поэтому константа общая для обоих мест склейки.
+const TEXT_PART_SEPARATOR = " · ";
+
+/**
+ * Время из базы обрезается до "HH:MM" и не разбирается: строка неожиданного вида
+ * (пустая, короче обычного, мусор) возвращается как есть после этой обрезки —
+ * придумывать за методиста, что он имел в виду, не наше дело.
+ */
+function truncateToMinutes(time: string): string {
+  return time.slice(0, TIME_PREFIX_LENGTH);
+}
+
+/**
+ * "06:00–12:00". Окно через полночь (конец раньше начала) — обычный случай:
+ * порядок границ здесь не проверяется, это забота другого места.
+ */
+export function formatWindow(windowStart: string, windowEnd: string): string {
+  return `${truncateToMinutes(windowStart)}${WINDOW_SEPARATOR}${truncateToMinutes(windowEnd)}`;
+}
+
+/** Непустые части через разделитель — пустая часть не оставляет лишнего разделителя. */
+function joinNonEmpty(parts: readonly string[], separator: string): string {
+  return parts.filter((part) => part !== "").join(separator);
+}
+
+/**
+ * Пункт без названия ни на одном языке — черновик, который методист ещё не заполнил
+ * (то же решение, что в `validation.ts#parseItem`). Показывать его сотруднику нельзя.
+ */
+function hasTitle(text: LocalizedText): boolean {
+  return Object.keys(text).length > 0;
+}
+
+/** Подпись диапазона числового пункта: обе границы, только одна, либо её нет вовсе. */
+function rangeHint(item: Item, labels: FillViewLabels): string {
+  if (item.type !== "number") return "";
+  if (item.min !== undefined && item.max !== undefined) {
+    return labels.range(item.min, item.max);
+  }
+  if (item.min !== undefined) return labels.rangeFrom(item.min);
+  if (item.max !== undefined) return labels.rangeTo(item.max);
+  return "";
+}
+
+/**
+ * Подсказка методиста и диапазон одной строкой. Обе части необязательны и
+ * складываются в этом порядке; ни одной — `null`, а не пустая строка (пустой
+ * строкой разметка отрисовала бы пустой блок подсказки под пунктом).
+ */
+function buildHint(
+  item: Item,
+  locales: readonly Locale[],
+  labels: FillViewLabels,
+): string | null {
+  const ownHint =
+    item.hint === undefined ? "" : pickFillText(item.hint, locales);
+  const hint = joinNonEmpty(
+    [ownHint, rangeHint(item, labels)],
+    TEXT_PART_SEPARATOR,
+  );
+  return hint === "" ? null : hint;
+}
+
+function buildItemView(
+  item: Item,
+  locales: readonly Locale[],
+  labels: FillViewLabels,
+): FillItemView {
+  return {
+    id: item.id,
+    title: pickFillText(item.title, locales),
+    type: item.type,
+    critical: item.critical,
+    // exactOptionalPropertyTypes требует не выставлять ключ, а не выставлять его в undefined.
+    ...(item.min === undefined ? {} : { min: item.min }),
+    ...(item.max === undefined ? {} : { max: item.max }),
+    hint: buildHint(item, locales, labels),
+  };
+}
+
+/**
+ * Секция с пунктами, у которых есть название (то же правило, что в
+ * `editor/ui/PreviewScreen.tsx#visibleSections`). Секция, где после этой чистки
+ * не осталось ни одного пункта, выпадает целиком — заголовок без единой строки
+ * под ним сотруднику ничего не говорит.
+ */
+function buildSectionView(
+  section: Section,
+  locales: readonly Locale[],
+  labels: FillViewLabels,
+): FillSectionView | null {
+  const items = section.items
+    .filter((item) => hasTitle(item.title))
+    .map((item) => buildItemView(item, locales, labels));
+  if (items.length === 0) return null;
+
+  return {
+    id: section.id,
+    title: pickFillText(section.title, locales),
+    items,
+  };
+}
+
+export function buildFillView(input: BuildFillViewInput): FillScreenView {
+  const sections = input.sections
+    .map((section) => buildSectionView(section, input.locales, input.labels))
+    .filter((section): section is FillSectionView => section !== null);
+
+  const totalItems = sections.reduce(
+    (total, section) => total + section.items.length,
+    0,
+  );
+
+  const where = joinNonEmpty(
+    [
+      input.storeName,
+      input.stationName,
+      formatWindow(input.windowStart, input.windowEnd),
+    ],
+    TEXT_PART_SEPARATOR,
+  );
+
+  return {
+    checklistTitle: pickFillText(input.checklistTitle, input.locales),
+    where,
+    sections,
+    totalItems,
+  };
+}
