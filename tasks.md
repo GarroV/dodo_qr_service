@@ -8,13 +8,13 @@ stage: the number of the wave in which the task is done (1, 2, 3…), or "—" i
 | id | block | depends on | status | task | issue | stage |
 |---|---|---|---|---|---|---|
 <!-- | T001 | api | — | todo | Example: design the database schema | #12 | 1 | -->
-| T001 | core | — | in_progress | Поднять каркас: Next.js 16.3.4 (App Router), TypeScript 6.0.3, Tailwind 4.3.3; страница отвечает на http://localhost:3100 | — | 1 |
-| T002 | core | — | in_progress | Docker Compose с PostgreSQL 17 на порту 5433; `psql "$DATABASE_URL" -c 'select 1'` отвечает; `.env.example` с именами переменных | — | 1 |
-| T003 | core | T001 | in_progress | Поставить конфиги шести проверок: prettier, eslint 10 flat с typescript-eslint strictTypeChecked, tsconfig со strict и noUncheckedIndexedAccess, vitest с покрытием, knip, dependency-cruiser; `.npmrc` с min-release-age=7 | — | 1 |
-| T004 | core | T003 | in_progress | Написать исполняемый `scripts/check`: запускает весь набор и пишет reports/vitest.junit.xml и reports/playwright.junit.xml | — | 1 |
-| T005 | core | T004 | in_progress | Проверить каждую из шести проверок на испорченной копии: неформатированный файл, нарушение линта, ошибка типов, падающий тест, неиспользуемый экспорт, импорт мимо графа — каждая падает и печатает причину | — | 1 |
-| T006 | core | T004 | in_progress | Поставить хук .githooks/pre-push, включить core.hooksPath; хук падает, когда инструмента нет, и останавливает пуш при красной проверке | — | 1 |
-| T007 | core | T001 | in_progress | Смоук связок из рисков: Tailwind 4 с токеном из `@theme inline` под Turbopack и next-intl с выбором языка по заголовку браузера без cookie | — | 1 |
+| T001 | core | — | done | Поднять каркас: Next.js 16.3.4 (App Router), TypeScript 6.0.3, Tailwind 4.3.3; страница отвечает на http://localhost:3100 | — | 1 |
+| T002 | core | — | done | Docker Compose с PostgreSQL 17 на порту 5433; `psql "$DATABASE_URL" -c 'select 1'` отвечает; `.env.example` с именами переменных | — | 1 |
+| T003 | core | T001 | done | Поставить конфиги шести проверок: prettier, eslint 10 flat с typescript-eslint strictTypeChecked, tsconfig со strict и noUncheckedIndexedAccess, vitest с покрытием, knip, dependency-cruiser; `.npmrc` с min-release-age=7 | — | 1 |
+| T004 | core | T003 | done | Написать исполняемый `scripts/check`: запускает весь набор и пишет reports/vitest.junit.xml и reports/playwright.junit.xml | — | 1 |
+| T005 | core | T004 | done | Проверить каждую из шести проверок на испорченной копии: неформатированный файл, нарушение линта, ошибка типов, падающий тест, неиспользуемый экспорт, импорт мимо графа — каждая падает и печатает причину | — | 1 |
+| T006 | core | T004 | done | Поставить хук .githooks/pre-push, включить core.hooksPath; хук падает, когда инструмента нет, и останавливает пуш при красной проверке | — | 1 |
+| T007 | core | T001 | done | Смоук связок из рисков: Tailwind 4 с токеном из `@theme inline` под Turbopack и next-intl с выбором языка по заголовку браузера без cookie | — | 1 |
 | T008 | data | T002,T003 | todo | Схема Drizzle: countries, stores, stations, checklists, checklist_versions, blocks, submissions; типы Item, Section, Answer через .$type<T>() | — | 1 |
 | T009 | data | T008 | todo | Миграции применяются с нуля и откатываются; частичный уникальный индекс «одна опубликованная версия на чек-лист» | — | 1 |
 | T010 | data | T009 | todo | publishVersion: публикация вставляет строку версии и не трогает предыдущую — тест сравнивает содержимое прежней версии до и после | — | 1 |
