@@ -46,10 +46,7 @@ export interface FillSummary {
  * «Нет» — такой же полноценный ответ, как «да»: сотрудник сообщил, что не выполнено.
  * Текст без букв (одни пробелы) ответом не считается — это несделанный пункт.
  */
-export function isAnswered(
-  item: Item,
-  draft: DraftAnswer | undefined,
-): boolean {
+function isAnswered(item: Item, draft: DraftAnswer | undefined): boolean {
   if (draft?.value == null) return false;
   if (item.type === "bool") return typeof draft.value === "boolean";
   if (item.type === "number") {

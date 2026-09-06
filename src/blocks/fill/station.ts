@@ -34,7 +34,7 @@ export function isPlausibleCode(code: string): boolean {
 }
 
 /** Открытая версия станции и минимум вокруг неё: название пиццерии и язык страны. */
-export interface FillTargetReady {
+interface FillTargetReady {
   readonly kind: "ok";
   readonly version: ChecklistVersion;
   readonly checklist: Checklist;

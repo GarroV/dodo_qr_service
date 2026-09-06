@@ -38,7 +38,7 @@ export interface PolicyOptions {
  * `img-src data:` нужен QR-кодам и той самой отметке. `font-src 'self'` — шрифты
  * раздаёт само приложение (T064), сторонний домен не нужен.
  */
-export function contentSecurityPolicy(options: PolicyOptions): string {
+function contentSecurityPolicy(options: PolicyOptions): string {
   const { nonce, isDevelopment } = options;
 
   // В разработке Next собирает страницы на лету: горячая замена ходит по вебсокету

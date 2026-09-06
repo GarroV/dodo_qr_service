@@ -110,11 +110,14 @@ test.describe("админка закрыта: без сессии ни один 
   test("публичный маршрут заполнения вход не спрашивает", async ({
     request,
   }) => {
-    // Блок fill появится позже; сейчас проверяется главное: /s/* не заворачивается на вход
-    // и вообще не знает про сессию. Границу на уровне импортов держит .dependency-cruiser.cjs.
+    // Маршрут заполнения существует (блок fill) и на вход не заворачивается: он о сессии
+    // не знает вовсе. Границу на уровне импортов держит .dependency-cruiser.cjs.
+    // Код станции заведомо несуществующий — отвечать он должен отказом экрана, а не
+    // редиректом и не подсказкой о том, есть такая станция или нет.
     const response = await request.get("/s/ABCDEFGHJK", { maxRedirects: 0 });
 
-    expect(response.status()).toBe(404);
+    expect(response.status()).toBe(200);
     expect(response.headers()["location"]).toBeUndefined();
+    expect(await response.text()).toContain('data-testid="fill-invalid"');
   });
 });
