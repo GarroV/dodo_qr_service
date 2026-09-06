@@ -7,7 +7,7 @@ export const E2E_ADMIN_PASSWORD = "e2e-пароль-администратора
 
 /** Хэш пароля выше, посчитанный рабочими параметрами scrypt. */
 export const E2E_ADMIN_PASSWORD_HASH =
-  "scrypt$32768$8$1$VEBPqyZizNCu1bBmEgQQoQ$ew-dS1kNOX5bnC4kEI-p5xLrSb_misQXVp5VTUB_V1o";
+  "scrypt.32768.8.3.GcNmcKxhVZrQhq_AzNTkUA.YI_JB0SIPiRmRJh_txJl5LKtv-dMITTtsV_Tv-B9c9I";
 
 export const E2E_SESSION_SECRET =
   "e2e-секрет-подписи-сессии-длиннее-32-знаков-0123456789";

@@ -8,6 +8,16 @@ import * as schema from "../schema";
 
 const TEST_DATABASE_SUFFIX = "_test";
 
+/**
+ * Адрес по умолчанию — ровно то, что поднимает `docker-compose.yml` проекта (и что
+ * записано в `.env.example`). Без умолчания прогон в свежем клоне не стартовал вовсе:
+ * падал раньше первого теста, показывая нулевое покрытие вместо провала (T063).
+ * База по этому адресу может не подняться — тогда ошибка приходит от `unreachableDatabase`
+ * и говорит, какой командой её поднять, то есть пропущенной проверки не бывает.
+ */
+const DEFAULT_TEST_DATABASE_URL =
+  "postgres://dodo:dodo@localhost:5433/dodo_qr_test";
+
 let envLoaded = false;
 
 /** Читает .env один раз: vitest сам переменные окружения проекта не подхватывает. */
@@ -22,7 +32,8 @@ function loadEnvOnce(): void {
 }
 
 /**
- * Адрес тестовой базы: либо TEST_DATABASE_URL, либо рабочая база с суффиксом `_test`.
+ * Адрес тестовой базы: TEST_DATABASE_URL, иначе рабочая база с суффиксом `_test`,
+ * иначе адрес из `docker-compose.yml` — прогон должен стартовать и без `.env`.
  * Отдельная база, чтобы прогон тестов не сносил данные, с которыми работает разработчик.
  */
 export function testDatabaseUrl(): string {
@@ -31,11 +42,7 @@ export function testDatabaseUrl(): string {
   if (explicit !== undefined && explicit !== "") return explicit;
 
   const main = process.env["DATABASE_URL"];
-  if (main === undefined || main === "") {
-    throw new Error(
-      "Нет ни TEST_DATABASE_URL, ни DATABASE_URL: скопируйте .env.example в .env",
-    );
-  }
+  if (main === undefined || main === "") return DEFAULT_TEST_DATABASE_URL;
   const url = new URL(main);
   url.pathname = `${url.pathname.replace(/\/$/, "")}${TEST_DATABASE_SUFFIX}`;
   return url.toString();
