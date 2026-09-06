@@ -8,7 +8,7 @@ import {
   getPublishedVersionForStation,
   publishVersion,
 } from "./checklists";
-import { checklistVersions } from "./schema";
+import { checklistVersions, checklists } from "./schema";
 import { closeTestDb, getTestDb } from "./testing/db";
 import {
   createChecklist,
@@ -389,6 +389,27 @@ describe("getPublishedVersionForStation", () => {
     expect(found?.station.code).toBe(station.stationCode);
   });
 
+  test("после переноса чек-листа его прежняя версия не отдаётся на новой станции", async () => {
+    // Версия принадлежит станции, для которой опубликована: её станция заморожена
+    // в момент публикации. Отдать такую версию на новой станции значило бы записать
+    // заполнение, сделанное здесь, в историю прежней станции.
+    const first = await createStation();
+    const checklistId = await createChecklist({
+      stationId: first.stationId,
+      ...MORNING,
+    });
+    await createPublishedVersion(checklistId, sampleSections("перенос"));
+    const second = await createStation();
+    await db
+      .update(checklists)
+      .set({ stationId: second.stationId })
+      .where(eq(checklists.id, checklistId));
+
+    expect(
+      await getPublishedVersionForStation(second.stationCode, at(9)),
+    ).toBeNull();
+  });
+
   test("чек-лист без станции по коду не находится", async () => {
     const checklistId = await createChecklist({ stationId: null, ...MORNING });
     await createPublishedVersion(checklistId, sampleSections("ничей"));
@@ -397,5 +418,41 @@ describe("getPublishedVersionForStation", () => {
     expect(
       await getPublishedVersionForStation(station.stationCode, at(9)),
     ).toBeNull();
+  });
+
+  test("если окна двух чек-листов станции пересекаются, побеждает начинающийся раньше", async () => {
+    // Правило описано только комментарием в реализации и ни разу не проверялось
+    // тестом: до сих пор окна станции в тестах никогда не пересекались.
+    const station = await createStation();
+    const earlier = await createChecklist({
+      stationId: station.stationId,
+      windowStart: "06:00:00",
+      windowEnd: "14:00:00",
+    });
+    const later = await createChecklist({
+      stationId: station.stationId,
+      windowStart: "10:00:00",
+      windowEnd: "18:00:00",
+    });
+    const earlierVersionId = await createPublishedVersion(
+      earlier,
+      sampleSections("раннее"),
+    );
+    const laterVersionId = await createPublishedVersion(
+      later,
+      sampleSections("позднее"),
+    );
+
+    // 12:00 попадает в оба окна: побеждает то, что начинается раньше.
+    expect(
+      (await getPublishedVersionForStation(station.stationCode, at(12)))
+        ?.version.id,
+    ).toBe(earlierVersionId);
+    // 16:00 попадает только во второе окно — так видно, что правило не «всегда
+    // первый созданный чек-лист», а именно «раньше начинается».
+    expect(
+      (await getPublishedVersionForStation(station.stationCode, at(16)))
+        ?.version.id,
+    ).toBe(laterVersionId);
   });
 });

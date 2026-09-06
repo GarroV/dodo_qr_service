@@ -10,6 +10,7 @@ import { getSubmission, listSubmissions, saveSubmission } from "./submissions";
 import { checklistVersions, checklists, submissions } from "./schema";
 import { closeTestDb, getTestDb } from "./testing/db";
 import {
+  checklistStationId,
   createChecklist,
   createDraft,
   createPublishedVersion,
@@ -34,6 +35,7 @@ async function createArchivedVersion(
       checklistId,
       status: "archived",
       versionNumber,
+      stationId: await checklistStationId(checklistId),
       sections,
       publishedAt: new Date(),
     })
@@ -120,6 +122,32 @@ describe("saveSubmission", () => {
       .set({ stationId: otherStation.stationId })
       .where(eq(checklists.id, version?.checklistId ?? ""));
 
+    const detail = await getSubmission(id);
+
+    expect(detail?.stationId).toBe(station.stationId);
+  });
+
+  test("перевязка чек-листа между выдачей версии и отправкой не уводит заполнение", async () => {
+    // Гонка со станцией: сотрудник отсканировал QR станции A и получил версию,
+    // методист в это же время перевязывает чек-лист на станцию B, сотрудник
+    // отправляет заполнение. Оно физически сделано на A и обязано остаться на A:
+    // станция замораживается в версии при публикации, а не читается из
+    // мутируемой checklists.station_id в момент сохранения (принцип 3).
+    const { station, checklistId, sections, versionId } =
+      await readyVersion("гонка");
+    const itemId = sections[0]?.items[0]?.id ?? "";
+    const another = await createStation();
+
+    await db
+      .update(checklists)
+      .set({ stationId: another.stationId })
+      .where(eq(checklists.id, checklistId));
+
+    const id = await saveSubmission({
+      versionId,
+      answers: [boolAnswer(itemId, true)],
+      startedAt: Date.now(),
+    });
     const detail = await getSubmission(id);
 
     expect(detail?.stationId).toBe(station.stationId);
@@ -327,6 +355,38 @@ describe("listSubmissions — фильтры", () => {
     const ids = rows.map((row) => row.id);
 
     expect(ids.indexOf(idNewer)).toBeLessThan(ids.indexOf(idOlder));
+  });
+
+  test("пятьсот заполнений с одинаковой отметкой времени отдаются в одном порядке", async () => {
+    // Пачка, вставленная одним запросом, получает одинаковый submitted_at. Сортировки
+    // только по нему не хватает: порядок внутри пачки не определён, и LIMIT отдаёт
+    // разные подмножества от запроса к запросу. Вторичный ключ — id по убыванию.
+    const { station, versionId } = await readyVersion("устойчивый-порядок");
+    const submittedAt = new Date("2026-03-01T12:00:00.000Z");
+    const inserted = await db
+      .insert(submissions)
+      .values(
+        Array.from({ length: 500 }, () => ({
+          versionId,
+          stationId: station.stationId,
+          snapshot: [] as Section[],
+          answers: [] as Answer[],
+          startedAt: submittedAt,
+          submittedAt,
+        })),
+      )
+      .returning({ id: submissions.id });
+    const expected = inserted
+      .map((row) => row.id)
+      .sort()
+      .reverse()
+      .slice(0, 200);
+
+    const first = await listSubmissions({ stationId: station.stationId });
+    const second = await listSubmissions({ stationId: station.stationId });
+
+    expect(first.map((row) => row.id)).toStrictEqual(expected);
+    expect(second.map((row) => row.id)).toStrictEqual(expected);
   });
 
   test("отрицательный лимит не роняет ленту", async () => {

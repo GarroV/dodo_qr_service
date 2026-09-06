@@ -172,9 +172,11 @@ function buildFilterConditions(filter: SubmissionFilter): SQL[] {
 }
 
 /**
- * Сохраняет заполнение чек-листа. Снимок пунктов и станция берутся из версии
- * в момент сохранения и больше не меняются: последующая публикация новой версии
- * или перенос чек-листа на другую станцию не должны переписывать эту запись.
+ * Сохраняет заполнение чек-листа. Снимок пунктов и станция берутся из самой версии:
+ * и то и другое заморожено в ней в момент публикации. Читать станцию из
+ * `checklists.station_id` нельзя — это обычная мутируемая колонка, и перенос чек-листа
+ * между выдачей версии и отправкой уводил бы заполнение в чужую историю (T056).
+ * Клиент станцию не передаёт: она всегда выводится сервером из версии.
  */
 export async function saveSubmission(
   input: SaveSubmissionInput,
@@ -185,10 +187,9 @@ export async function saveSubmission(
     .select({
       status: checklistVersions.status,
       sections: checklistVersions.sections,
-      stationId: checklists.stationId,
+      stationId: checklistVersions.stationId,
     })
     .from(checklistVersions)
-    .innerJoin(checklists, eq(checklistVersions.checklistId, checklists.id))
     .where(eq(checklistVersions.id, input.versionId));
 
   if (version === undefined) {
@@ -201,7 +202,7 @@ export async function saveSubmission(
   }
   if (version.stationId === null) {
     throw new Error(
-      "Чек-листу этой версии не назначена станция: заполнение невозможно",
+      "У этой версии не заморожена станция: на момент публикации чек-лист не был ни к одной привязан, заполнение невозможно",
     );
   }
 
@@ -225,6 +226,10 @@ export async function saveSubmission(
 /**
  * Лента заполнений: фильтры по стране, пиццерии, станции и периоду комбинируются,
  * сортировка по времени отправки по убыванию, лимит — по умолчанию 200, максимум 500.
+ *
+ * Вторичный ключ сортировки — `id` по убыванию. Пачка заполнений, вставленная одним
+ * запросом, имеет одинаковый `submitted_at`, и порядок внутри неё без второго ключа
+ * не определён: `LIMIT` отдавал бы разные подмножества от запроса к запросу.
  */
 export async function listSubmissions(
   filter: SubmissionFilter = {},
@@ -234,7 +239,7 @@ export async function listSubmissions(
 
   const rows = await submissionsBaseQuery(db)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(submissions.submittedAt))
+    .orderBy(desc(submissions.submittedAt), desc(submissions.id))
     .limit(clampLimit(filter.limit));
 
   return rows.map(toSubmissionRow);

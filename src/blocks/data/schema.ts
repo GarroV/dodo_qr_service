@@ -29,6 +29,22 @@ import type {
 
 const CREATED_AT = "created_at";
 
+// Верхние границы JSONB стоят в самой базе, а не только в коде: `submissions` —
+// единственная таблица, куда пишет неопознанный человек из интернета, и забытая
+// проверка в блоке fill не должна означать, что база примет что угодно.
+// Числа взяты с запасом от измеренного: чек-лист станции на 50 пунктов с двумя
+// языками и подсказками занимает 22 КБ, ответы на него с комментариями — 7 КБ
+// (замерено `pg_column_size` на PostgreSQL 17). Чек-лист — единицы-десятки пунктов
+// (принципы 1 и 2), поэтому предел заведомо недостижим в работе и остаётся заслоном
+// от мусора. `pg_column_size` внутри CHECK видит несжатый размер значения, так что
+// граница не зависит от того, насколько удачно сжался вход.
+const SECTIONS_MAX_BYTES = 262_144; // 256 КиБ — двенадцатикратный запас к 22 КБ
+const ANSWERS_MAX_BYTES = 65_536; // 64 КиБ — девятикратный запас к 7 КБ
+
+function jsonbSizeLimit(column: string, maxBytes: number) {
+  return sql.raw(`pg_column_size(${column}) <= ${String(maxBytes)}`);
+}
+
 /** Серверное время: все отметки берутся из `now()` базы, а не с устройства. */
 function serverTimestamp(name: string) {
   return timestamp(name, { withTimezone: true }).notNull().defaultNow();
@@ -93,7 +109,13 @@ export const checklists = pgTable(
     windowEnd: time("window_end").notNull(),
     createdAt: serverTimestamp(CREATED_AT),
   },
-  (table) => [index("checklists_station_idx").on(table.stationId)],
+  (table) => [
+    index("checklists_station_idx").on(table.stationId),
+    // Равные границы делают условие выбора версии всегда ложным: чек-лист не открылся бы
+    // ни на одной станции и ни в одну минуту, молча. Конец раньше начала — наоборот,
+    // нормальное окно через полночь (22:00–02:00), и запрещать его нельзя.
+    check("checklists_window_not_empty", sql`window_start <> window_end`),
+  ],
 );
 
 export const checklistVersions = pgTable(
@@ -106,6 +128,14 @@ export const checklistVersions = pgTable(
     // Номер есть у опубликованных и архивных версий; у черновика номера нет.
     versionNumber: integer("version_number"),
     status: text("status").$type<VersionStatus>().notNull(),
+    // Станция замораживается вместе с содержимым в момент публикации, а не читается
+    // из мутируемой checklists.station_id при сохранении заполнения: иначе перенос
+    // чек-листа на другую станцию во время заполнения уводил бы заполнение в чужую
+    // историю (принцип 3). У черновика станции нет — он ещё не опубликован;
+    // у версии чек-листа, не привязанного к станции на момент публикации, тоже.
+    stationId: uuid("station_id").references(() => stations.id, {
+      onDelete: "set null",
+    }),
     sections: jsonb("sections").$type<Section[]>().notNull().default([]),
     createdAt: serverTimestamp(CREATED_AT),
     publishedAt: timestamp("published_at", { withTimezone: true }),
@@ -134,6 +164,10 @@ export const checklistVersions = pgTable(
     check(
       "checklist_versions_draft_has_no_publish_time",
       sql`(status = 'draft') = (published_at is null)`,
+    ),
+    check(
+      "checklist_versions_sections_size",
+      jsonbSizeLimit("sections", SECTIONS_MAX_BYTES),
     ),
   ],
 );
@@ -168,8 +202,23 @@ export const submissions = pgTable(
   },
   (table) => [
     index("submissions_submitted_at_idx").on(table.submittedAt),
-    index("submissions_station_idx").on(table.stationId),
+    // Главный запрос ленты — «заполнения этой станции за период, свежие сверху».
+    // Составной индекс покрывает и отбор по станции, и порядок внутри неё; отдельный
+    // индекс по одной station_id был бы его левым префиксом, то есть лишней записью
+    // на каждое сохранение — публичной точке записи это ни к чему.
+    index("submissions_station_submitted_at_idx").on(
+      table.stationId,
+      table.submittedAt.desc(),
+    ),
     index("submissions_version_idx").on(table.versionId),
+    check(
+      "submissions_snapshot_size",
+      jsonbSizeLimit("snapshot", SECTIONS_MAX_BYTES),
+    ),
+    check(
+      "submissions_answers_size",
+      jsonbSizeLimit("answers", ANSWERS_MAX_BYTES),
+    ),
   ],
 );
 

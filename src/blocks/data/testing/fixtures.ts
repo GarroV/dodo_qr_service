@@ -2,6 +2,8 @@
 // файлы тестов идут параллельно, общая очистка таблиц между ними ломала бы соседа.
 import { randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
+
 import {
   checklistVersions,
   checklists,
@@ -145,9 +147,22 @@ export async function createDraft(
   return draft.id;
 }
 
+/** Станция, привязанная к чек-листу сейчас: её `publishVersion` замораживает в версии. */
+export async function checklistStationId(
+  checklistId: string,
+): Promise<string | null> {
+  const db = getTestDb();
+  const [row] = await db
+    .select({ stationId: checklists.stationId })
+    .from(checklists)
+    .where(eq(checklists.id, checklistId));
+  return row?.stationId ?? null;
+}
+
 /**
  * Опубликованная версия в обход `publishVersion`: тестам слоя заполнений нужна
- * готовая версия, а не проверка самой публикации.
+ * готовая версия, а не проверка самой публикации. Станция замораживается так же,
+ * как это делает публикация, — иначе версия окажется без станции и не заполнится.
  */
 export async function createPublishedVersion(
   checklistId: string,
@@ -162,6 +177,7 @@ export async function createPublishedVersion(
         checklistId,
         status: "published",
         versionNumber,
+        stationId: await checklistStationId(checklistId),
         sections,
         publishedAt: new Date(),
       })
