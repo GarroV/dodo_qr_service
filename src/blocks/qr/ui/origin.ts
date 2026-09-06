@@ -10,8 +10,9 @@
 // `PUBLIC_BASE_URL` без пересборки не меняет коды: продукт продолжает печатать
 // прежний адрес, и выглядит это как «поменяли адрес, а коды старые».
 
-/** Имя переменной окружения с публичным адресом продукта. */
-export const PUBLIC_BASE_URL_VAR = "PUBLIC_BASE_URL";
+import { PUBLIC_BASE_URL_VAR, stickerOrigin } from "../sticker-origin";
+
+export { PUBLIC_BASE_URL_VAR };
 
 /** Первое звено цепочки прокси: `a, b, c` — это путь запроса, ближайший к посетителю первый. */
 function firstHop(value: string | null): string | undefined {
@@ -31,26 +32,11 @@ export function configuredOrigin(
   const raw = env[PUBLIC_BASE_URL_VAR]?.trim();
   if (raw === undefined || raw === "") return null;
 
-  let url: URL | null = null;
-  try {
-    url = new URL(raw);
-  } catch {
-    url = null;
-  }
-  // Схема проверяется отдельно: `muspelheim:10000` — формально адрес (схема
-  // `muspelheim`), но камера телефона по нему никуда не пойдёт.
-  const usable =
-    url !== null &&
-    (url.protocol === "http:" || url.protocol === "https:") &&
-    url.host !== "";
-  if (url === null || !usable) {
-    throw new Error(
-      `${PUBLIC_BASE_URL_VAR}: «${raw}» — не адрес. Ожидается вида https://узел:порт`,
-    );
-  }
-
-  // В ссылку идёт только источник: путь и параметры из переменной в наклейке лишние.
-  return url.origin;
+  // Правило пригодности одно на всех, кто строит ссылку (`../sticker-origin`):
+  // `muspelheim:10000` и `javascript:alert(1)` — формально адреса, но камера
+  // телефона по ним никуда не пойдёт. В ссылку идёт только источник: путь
+  // и параметры из переменной в наклейке лишние.
+  return stickerOrigin(raw);
 }
 
 /**
@@ -71,13 +57,9 @@ export function originFromHeaders(headers: Headers): string {
 
   const proto = firstHop(headers.get("x-forwarded-proto")) ?? "http";
 
-  try {
-    return new URL(`${proto}://${host}`).origin;
-  } catch {
-    throw new Error(
-      `ссылка станции: из узла «${host}» не собирается адрес, задайте ${PUBLIC_BASE_URL_VAR}`,
-    );
-  }
+  // Узел и схема приходят из заголовков, то есть снаружи: тем же правилом
+  // пригодности, что и значение переменной, — своего у них быть не должно.
+  return stickerOrigin(`${proto}://${host}`);
 }
 
 /** Источник ссылки для кода станции: окружение площадки, иначе адрес запроса. */
