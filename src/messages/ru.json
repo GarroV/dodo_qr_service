@@ -17,5 +17,98 @@
     "home": "Админка",
     "signedIn": "Вы вошли. Разделы появятся здесь по мере готовности.",
     "signOut": "Выйти"
+  },
+  "catalog": {
+    "title": "Страны и пиццерии",
+    "breadcrumb": "Справочник",
+    "nav": {
+      "brand": "Чек-листы",
+      "brandMuted": "Dodo",
+      "workGroup": "Работа",
+      "templates": "Чек-листы",
+      "library": "Библиотека блоков",
+      "feed": "Заполнения",
+      "catalogGroup": "Справочник",
+      "catalog": "Страны и пиццерии",
+      "qr": "QR-коды",
+      "soon": "Раздел ещё не готов",
+      "signedIn": "Вход выполнен",
+      "role": "методист"
+    },
+    "columns": {
+      "countries": "Страны",
+      "stores": "Пиццерии",
+      "stationsOf": "Станции пиццерии «{name}»",
+      "stations": "Станции"
+    },
+    "counts": {
+      "stations": "{count, plural, one {# станция} few {# станции} many {# станций} other {# станции}}"
+    },
+    "table": {
+      "station": "Станция",
+      "checklists": "Чек-листы",
+      "code": "Код QR",
+      "unassigned": "не назначен"
+    },
+    "add": {
+      "country": "+",
+      "store": "+",
+      "station": "+ Станция"
+    },
+    "fields": {
+      "name": "Название",
+      "country": "Страна",
+      "timezone": "Часовой пояс",
+      "locale": "Язык страны"
+    },
+    "actions": {
+      "save": "Сохранить",
+      "add": "Добавить",
+      "cancel": "Отмена",
+      "deleteCountry": "Удалить страну",
+      "deleteStore": "Удалить пиццерию",
+      "deleteStation": "Удалить станцию",
+      "confirmDelete": "Удалить",
+      "qr": "QR",
+      "qrStations": "QR-коды станций",
+      "reissue": "Перевыпустить",
+      "detach": "Отвязать",
+      "assign": "Привязать"
+    },
+    "card": {
+      "countryTitle": "Страна «{name}»",
+      "storeTitle": "Пиццерия «{name}»",
+      "stationTitle": "Станция «{name}»",
+      "stationChecklists": "Чек-листы станции",
+      "qrCode": "Код QR",
+      "issuedAt": "Выпущен {date}"
+    },
+    "confirm": {
+      "deleteStoreTitle": "Удалить пиццерию «{name}»?",
+      "deleteStoreBody": "Вместе с ней удалятся станции: {count}",
+      "deleteStoreWarning": "Если у станций есть заполнения, система откажет в удалении — история заполнений неприкосновенна.",
+      "deleteStationTitle": "Удалить станцию «{name}»?",
+      "deleteStationBody": "Её QR перестанет открывать чек-лист."
+    },
+    "assign": {
+      "none": "Чек-лист не назначен — QR этой станции откроется в пустоту.",
+      "noFree": "Свободных чек-листов нет.",
+      "selectLabel": "Чек-лист"
+    },
+    "empty": {
+      "countries": "Пока нет ни одной страны",
+      "stores": "У этой страны пока нет пиццерий",
+      "stations": "У этой пиццерии пока нет станций"
+    },
+    "errors": {
+      "nameRequired": "Название обязательно",
+      "localeNotSupported": "Такой язык раздел не поддерживает",
+      "unknownTimezone": "Такой часовой пояс базе неизвестен",
+      "referencedByHistory": "На запись ссылаются заполнения — удаление запрещено",
+      "countryNotEmpty": "В стране остались пиццерии — сначала удалите их",
+      "confirmationRequired": "Нужно подтверждение удаления",
+      "notFound": "Запись не найдена",
+      "codeCollision": "Код QR уже занят — попробуйте ещё раз"
+    }
   }
 }
