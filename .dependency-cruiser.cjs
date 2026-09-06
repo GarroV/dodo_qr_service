@@ -7,7 +7,8 @@ const DEPS = {
   catalog: ["data", "auth", "core"],
   editor: ["data", "auth", "core"],
   library: ["editor", "data", "auth", "core"],
-  qr: ["catalog", "data", "core"],
+  // auth — по графу из plan.md: экран печати и перевыпуск кода закрыты входом.
+  qr: ["catalog", "data", "auth", "core"],
   fill: ["data", "editor", "core"],
   feed: ["data", "auth", "core"],
   demo: ["catalog", "editor", "fill", "feed", "data", "core"],

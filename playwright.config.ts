@@ -7,6 +7,7 @@ import {
   E2E_SESSION_SECRET,
 } from "./e2e/admin-credentials";
 import { e2eDatabaseUrl } from "./e2e/database";
+import { E2E_PUBLIC_BASE_URL } from "./e2e/public-base-url";
 
 // Порт из переменной: параллельные копии репозитория (стройка блоками) иначе делят один
 // порт. Умолчание 3101 — то же, что было: 3100 остаётся за `npm run dev`, сквозные
@@ -96,6 +97,9 @@ export default defineConfig({
       // Своя база прогона: рабочую сносила бы подготовка, а тестовую посреди прогона
       // пересоздаёт vitest. Адрес считается сам и в свежем клоне без .env тоже.
       DATABASE_URL: e2eDatabaseUrl(),
+      // Адрес, который попадает внутрь QR-кода станции. Задан нарочно не тем, на
+      // котором поднят сервер: так видно, что код берёт его из окружения площадки.
+      PUBLIC_BASE_URL: E2E_PUBLIC_BASE_URL,
     },
   },
 });

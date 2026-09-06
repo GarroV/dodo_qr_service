@@ -1,0 +1,28 @@
+import { headers } from "next/headers";
+
+import { requireAdmin } from "@/blocks/auth/guard";
+import { buildQrModel } from "@/blocks/qr/ui/build-model";
+import { scanOrigin } from "@/blocks/qr/ui/origin";
+import { QrSheetScreen } from "@/blocks/qr/ui/QrSheetScreen";
+import { parseQrView, type SearchParams } from "@/blocks/qr/ui/view";
+
+/**
+ * Экран QR-кодов станций: лист A4 для печати наклеек и карточка планшета.
+ *
+ * `requireAdmin()` зовётся здесь, а не только в разметке `src/app/admin/layout.tsx`:
+ * разметка и страница рендерятся параллельно, поэтому без этой строки страница успела
+ * бы сходить в базу до того, как охрана уведёт гостя на вход.
+ */
+export default async function QrPage({
+  searchParams,
+}: {
+  readonly searchParams: Promise<SearchParams>;
+}) {
+  await requireAdmin();
+
+  const view = parseQrView(await searchParams);
+  const origin = scanOrigin(await headers(), process.env);
+  const model = await buildQrModel(view, origin);
+
+  return <QrSheetScreen model={model} />;
+}
