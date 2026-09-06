@@ -29,6 +29,22 @@ import type {
 
 const CREATED_AT = "created_at";
 
+// Верхние границы JSONB стоят в самой базе, а не только в коде: `submissions` —
+// единственная таблица, куда пишет неопознанный человек из интернета, и забытая
+// проверка в блоке fill не должна означать, что база примет что угодно.
+// Числа взяты с запасом от измеренного: чек-лист станции на 50 пунктов с двумя
+// языками и подсказками занимает 22 КБ, ответы на него с комментариями — 7 КБ
+// (замерено `pg_column_size` на PostgreSQL 17). Чек-лист — единицы-десятки пунктов
+// (принципы 1 и 2), поэтому предел заведомо недостижим в работе и остаётся заслоном
+// от мусора. `pg_column_size` внутри CHECK видит несжатый размер значения, так что
+// граница не зависит от того, насколько удачно сжался вход.
+const SECTIONS_MAX_BYTES = 262_144; // 256 КиБ — двенадцатикратный запас к 22 КБ
+const ANSWERS_MAX_BYTES = 65_536; // 64 КиБ — девятикратный запас к 7 КБ
+
+function jsonbSizeLimit(column: string, maxBytes: number) {
+  return sql.raw(`pg_column_size(${column}) <= ${String(maxBytes)}`);
+}
+
 /** Серверное время: все отметки берутся из `now()` базы, а не с устройства. */
 function serverTimestamp(name: string) {
   return timestamp(name, { withTimezone: true }).notNull().defaultNow();
@@ -149,6 +165,10 @@ export const checklistVersions = pgTable(
       "checklist_versions_draft_has_no_publish_time",
       sql`(status = 'draft') = (published_at is null)`,
     ),
+    check(
+      "checklist_versions_sections_size",
+      jsonbSizeLimit("sections", SECTIONS_MAX_BYTES),
+    ),
   ],
 );
 
@@ -184,6 +204,14 @@ export const submissions = pgTable(
     index("submissions_submitted_at_idx").on(table.submittedAt),
     index("submissions_station_idx").on(table.stationId),
     index("submissions_version_idx").on(table.versionId),
+    check(
+      "submissions_snapshot_size",
+      jsonbSizeLimit("snapshot", SECTIONS_MAX_BYTES),
+    ),
+    check(
+      "submissions_answers_size",
+      jsonbSizeLimit("answers", ANSWERS_MAX_BYTES),
+    ),
   ],
 );
 

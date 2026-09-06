@@ -20,10 +20,12 @@ import {
 } from "./testing/errors";
 import {
   createChecklist,
+  createPublishedVersion,
   createStation,
   sampleSections,
   uniqueStationCode,
 } from "./testing/fixtures";
+import type { Answer, Section } from "./types";
 
 const db = getTestDb();
 
@@ -266,6 +268,125 @@ describe("код станции", () => {
     );
 
     expect(failure).toBe(PG_UNIQUE_VIOLATION);
+  });
+});
+
+/** Станция с чек-листом и опубликованной версией: к ней цепляется заполнение. */
+async function readyVersionId(): Promise<{
+  versionId: string;
+  stationId: string;
+}> {
+  const station = await createStation();
+  const checklistId = await createChecklist({ stationId: station.stationId });
+  return {
+    versionId: await createPublishedVersion(
+      checklistId,
+      sampleSections("предел"),
+    ),
+    stationId: station.stationId,
+  };
+}
+
+describe("предел размера JSONB у публично записываемых данных", () => {
+  // submissions — единственная таблица, куда пишет неопознанный человек из интернета.
+  // Верхняя граница стоит в самой базе, а не только в блоке fill: забытая проверка
+  // в коде не должна означать, что база примет что угодно.
+  const BIG = "ы".repeat(400_000);
+
+  function hugeSections(): Section[] {
+    return [
+      {
+        id: "section-огромная",
+        title: { ru: BIG, en: BIG },
+        source: "own",
+        items: [],
+      },
+    ];
+  }
+
+  function hugeAnswers(): Answer[] {
+    return [{ itemId: "item-огромный", value: BIG, at: Date.now() }];
+  }
+
+  test("огромные ответы заполнения база не принимает", async () => {
+    const { versionId, stationId } = await readyVersionId();
+
+    const code = await dbErrorCode(
+      db.insert(submissions).values({
+        versionId,
+        stationId,
+        snapshot: [],
+        answers: hugeAnswers(),
+        startedAt: new Date(),
+      }),
+    );
+
+    expect(code).toBe(PG_CHECK_VIOLATION);
+  });
+
+  test("огромный снимок пунктов база не принимает", async () => {
+    const { versionId, stationId } = await readyVersionId();
+
+    const code = await dbErrorCode(
+      db.insert(submissions).values({
+        versionId,
+        stationId,
+        snapshot: hugeSections(),
+        answers: [],
+        startedAt: new Date(),
+      }),
+    );
+
+    expect(code).toBe(PG_CHECK_VIOLATION);
+  });
+
+  test("огромные секции версии база не принимает", async () => {
+    const checklistId = await createChecklist();
+
+    const code = await dbErrorCode(
+      db.insert(checklistVersions).values({
+        checklistId,
+        status: "draft",
+        sections: hugeSections(),
+      }),
+    );
+
+    expect(code).toBe(PG_CHECK_VIOLATION);
+  });
+
+  test("настоящий чек-лист на полсотни пунктов проходит с запасом", async () => {
+    // Предел — заслон от мусора, а не рамка для продукта: чек-лист станции это
+    // единицы-десятки пунктов, и он обязан проходить, не задевая границу.
+    const checklistId = await createChecklist();
+    const sections: Section[] = Array.from({ length: 5 }, (_, section) => ({
+      id: `section-${String(section)}`,
+      title: {
+        ru: `Секция ${String(section)}`,
+        en: `Section ${String(section)}`,
+      },
+      source: "own" as const,
+      items: Array.from({ length: 10 }, (_, item) => ({
+        id: `item-${String(section)}-${String(item)}`,
+        title: {
+          ru: `Проверить температуру в холодильнике №${String(item)}`,
+          en: `Check fridge temperature #${String(item)}`,
+        },
+        type: "number" as const,
+        critical: true,
+        min: 0,
+        max: 8,
+        hint: {
+          ru: "Термометр на верхней полке, допустимо от 0 до 8 градусов",
+          en: "Thermometer on the top shelf, 0 to 8 degrees is fine",
+        },
+      })),
+    }));
+
+    await expect(
+      db
+        .insert(checklistVersions)
+        .values({ checklistId, status: "draft", sections }),
+    ).resolves.not.toThrow();
   });
 });
 
