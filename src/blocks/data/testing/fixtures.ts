@@ -133,3 +133,29 @@ export async function createDraft(
   );
   return draft.id;
 }
+
+/**
+ * Опубликованная версия в обход `publishVersion`: тестам слоя заполнений нужна
+ * готовая версия, а не проверка самой публикации.
+ */
+export async function createPublishedVersion(
+  checklistId: string,
+  sections: Section[],
+  versionNumber = 1,
+): Promise<string> {
+  const db = getTestDb();
+  const version = firstRow(
+    await db
+      .insert(checklistVersions)
+      .values({
+        checklistId,
+        status: "published",
+        versionNumber,
+        sections,
+        publishedAt: new Date(),
+      })
+      .returning({ id: checklistVersions.id }),
+    "checklist_versions",
+  );
+  return version.id;
+}
