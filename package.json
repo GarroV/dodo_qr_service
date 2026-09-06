@@ -23,6 +23,7 @@
     "next": "16.3.3",
     "next-intl": "4.14.1",
     "pg": "8.23.0",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -33,6 +34,7 @@
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "26.4.0",
     "@types/pg": "8.23.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
     "@vitest/coverage-v8": "4.1.11",
@@ -44,6 +46,7 @@
     "eslint-plugin-import-x": "4.17.1",
     "eslint-plugin-sonarjs": "4.2.0",
     "eslint-plugin-unicorn": "74.0.0",
+    "jsqr": "^1.4.0",
     "knip": "6.33.0",
     "prettier": "3.9.6",
     "tailwindcss": "4.3.3",
