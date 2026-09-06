@@ -20,7 +20,7 @@ const STATION = "station";
  * только этими двумя. Набор сужен намеренно — иначе в словарь пришлось бы завести
  * восемь текстов справочника, семь из которых здесь не показываются никогда.
  */
-export const QR_ERROR_CODES = [
+const QR_ERROR_CODES = [
   "notFound",
   "codeCollision",
 ] as const satisfies readonly CatalogErrorCode[];
@@ -28,7 +28,7 @@ export const QR_ERROR_CODES = [
 export type QrErrorCode = (typeof QR_ERROR_CODES)[number];
 
 export function isQrErrorCode(value: unknown): value is QrErrorCode {
-  return QR_ERROR_CODES.some((code) => code === value);
+  return (QR_ERROR_CODES as readonly string[]).includes(value as string);
 }
 
 const UUID_PATTERN =

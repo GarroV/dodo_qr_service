@@ -142,15 +142,23 @@ function decodeAll({ width, height, pixels }) {
       if (code === null) continue;
 
       const corners = code.location;
-      const side =
+      // Сторона самого символа (без тихой зоны) в миллиметрах и размер одного
+      // модуля: именно модуль определяет, прочитает ли код камера с руки.
+      const sideMm =
         (Math.hypot(
           corners.topRightCorner.x - corners.topLeftCorner.x,
           corners.topRightCorner.y - corners.topLeftCorner.y,
         ) /
           DPI) *
         MM_PER_INCH;
+      const modules = 17 + 4 * code.version;
       if (!found.has(code.data)) {
-        found.set(code.data, { data: code.data, sideMm: side });
+        found.set(code.data, {
+          data: code.data,
+          sideMm,
+          moduleMm: sideMm / modules,
+          version: code.version,
+        });
       }
     }
   }
@@ -191,7 +199,8 @@ async function main() {
   const codes = decodeAll(raster);
   for (const code of codes) {
     console.log(
-      `  прочитано: ${code.data} · сторона кода на бумаге ≈ ${code.sideMm.toFixed(1)} мм`,
+      `  прочитано: ${code.data} · символ на бумаге ≈ ${code.sideMm.toFixed(1)} мм ` +
+        `(версия ${String(code.version)}, модуль ≈ ${code.moduleMm.toFixed(2)} мм)`,
     );
   }
 

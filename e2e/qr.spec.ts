@@ -82,6 +82,29 @@ async function signIn(page: Page): Promise<void> {
   await expect(page.getByTestId("admin-home")).toBeVisible();
 }
 
+/** Код первой станции в таблице — по нему видно, что перевыпуск уже доехал. */
+function firstStationCode(page: Page) {
+  return page
+    .getByTestId("qr-stations")
+    .locator("tbody tr td:nth-child(2)")
+    .first();
+}
+
+/**
+ * Перевыпускает код первой станции и ДОЖИДАЕТСЯ, что он сменился на экране.
+ *
+ * Ждать появления самого листа бесполезно: он на странице и до нажатия, поэтому
+ * проверка проскакивала вперёд перехода и читала прежний код. Поймано руками на
+ * живом экране — в базе код менялся уже после того, как сценарий его прочитал.
+ */
+async function reissueFirstStation(page: Page): Promise<void> {
+  const code = firstStationCode(page);
+  const before = await code.innerText();
+
+  await page.getByTestId("reissue-code").first().click();
+  await expect(code).not.toHaveText(before);
+}
+
 /** Разметка картинки первой наклейки — по ней и читается код. */
 async function firstStickerSvg(page: Page): Promise<string> {
   return page
@@ -148,8 +171,7 @@ test.describe("QR-коды станций", () => {
     await page.goto(`${QR_PATH}?store=${store.storeId}`);
 
     const before = decodeQrSvg(await firstStickerSvg(page));
-    await page.getByTestId("reissue-code").first().click();
-    await expect(page.getByTestId("qr-sheet")).toBeVisible();
+    await reissueFirstStation(page);
 
     const after = decodeQrSvg(await firstStickerSvg(page));
     expect(after).not.toBe(before);
@@ -173,8 +195,9 @@ test.describe("QR-коды станций", () => {
     // касается. Именно так это и происходит в жизни.
     const admin = await context.newPage();
     await admin.goto(`${QR_PATH}?store=${store.storeId}`);
-    await admin.getByTestId("reissue-code").first().click();
-    await expect(admin.getByTestId("qr-sheet")).toBeVisible();
+    // Окно закрывается только после того, как перевыпуск доехал: закрытая
+    // вкладка посреди серверного действия оборвала бы его.
+    await reissueFirstStation(admin);
     await admin.close();
 
     // Ни перезагрузки, ни нажатий на самом планшете: экран обязан обновиться сам.

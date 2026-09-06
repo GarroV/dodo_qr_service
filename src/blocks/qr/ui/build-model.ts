@@ -20,8 +20,8 @@ import {
   qrCodeHref,
   type QrErrorCode,
   type QrView,
+  type StationRef,
 } from "./view";
-import type { StationRef } from "./view";
 
 interface FoundStore {
   readonly store: StoreRow;

@@ -6,5 +6,6 @@
     "src/blocks/*/index.ts"
   ],
   "project": ["src/**/*.{ts,tsx}"],
-  "ignoreDependencies": ["tailwindcss", "dependency-cruiser"]
+  "ignoreDependencies": ["tailwindcss", "dependency-cruiser"],
+  "ignoreBinaries": ["pdftoppm"]
 }

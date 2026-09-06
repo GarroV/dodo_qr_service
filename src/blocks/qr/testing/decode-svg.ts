@@ -11,7 +11,7 @@ const SCALE = 6;
 
 type Rgb = readonly [number, number, number];
 
-export interface QrPicture {
+interface QrPicture {
   /** Матрица модулей вместе с тихой зоной. */
   readonly grid: boolean[][];
   /** Цвет модуля и цвет поля — те самые, что записаны в картинке. */
@@ -65,7 +65,7 @@ export function parseQrSvg(svg: string): QrPicture {
 }
 
 /** Растр в RGBA — то, что увидела бы камера: один модуль в `SCALE` точек. */
-export function rasterize(picture: QrPicture): {
+function rasterize(picture: QrPicture): {
   data: Uint8ClampedArray;
   side: number;
 } {
