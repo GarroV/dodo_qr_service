@@ -252,5 +252,66 @@
       "unknownBlock": "The inserted library block was not found.",
       "unknown": "Could not save. Please try again."
     }
+  },
+  "qr": {
+    "nav": {
+      "brand": "Checklists",
+      "brandMuted": "Dodo",
+      "workGroup": "Work",
+      "templates": "Checklists",
+      "library": "Block library",
+      "feed": "Submissions",
+      "catalogGroup": "Reference",
+      "catalog": "Countries and stores",
+      "qr": "QR codes",
+      "soon": "Section is not ready yet",
+      "signedIn": "Signed in",
+      "role": "methodologist"
+    },
+    "title": "Station QR codes",
+    "breadcrumb": { "pick": "All stores" },
+    "actions": {
+      "print": "Print",
+      "openScreen": "Open full screen",
+      "reissue": "Reissue"
+    },
+    "notice": {
+      "text": "A sticker is printed once and lives for years: the QR belongs to the station, not to the checklist. Change the checklist — the sticker stays. Reissuing the code kills the old stickers: print new ones.",
+      "origin": "Codes on this sheet point to {origin}"
+    },
+    "sheet": {
+      "title": "Print sheet",
+      "meta": "A4 · {count, plural, one {# station} other {# stations}}",
+      "empty": "This store has no stations yet — nothing to print."
+    },
+    "sticker": {
+      "hint": "{store} · scan with a camera",
+      "qrLabel": "Station QR code for {station}"
+    },
+    "stations": {
+      "title": "Stations",
+      "colStation": "Station",
+      "colCode": "Code",
+      "colIssued": "Issued"
+    },
+    "tablet": {
+      "title": "QR on the station tablet",
+      "hint": "The same link as on the sticker. The tablet keeps the screen awake; when the code is reissued the picture updates itself.",
+      "empty": "The store has no stations — nothing to show."
+    },
+    "picker": {
+      "title": "Pick a store",
+      "hint": "A sheet is printed per store: it carries stickers for all of its stations.",
+      "stations": "{count, plural, one {# station} other {# stations}}",
+      "empty": "No stores yet — add them in the reference."
+    },
+    "errors": {
+      "notFound": "That station is gone: refresh the page.",
+      "codeCollision": "No free code was issued. Try reissuing again."
+    },
+    "screen": {
+      "back": "Back to the print sheet",
+      "qrLabel": "Station QR code for {station}"
+    }
   }
 }
