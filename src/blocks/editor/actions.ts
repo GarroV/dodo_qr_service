@@ -1,0 +1,128 @@
+"use server";
+
+// Серверные действия редактора. Каждое зовёт requireAdmin() само: действия выполняются
+// мимо дерева разметки, и охрана в src/app/admin/layout.tsx их не закрывает.
+//
+// Наружу уходит код отказа, а не текст: экран двуязычный и сообщение выбирает он.
+// Подробности отказа остаются в журнале сервера — браузеру знать их незачем.
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import { requireAdmin } from "@/blocks/auth/guard";
+
+import {
+  checklistInputFrom,
+  failureState,
+  formText,
+  sectionsFrom,
+} from "./action-input";
+import type { EditorActionState } from "./action-state";
+import { createChecklist, saveDraft, updateChecklist } from "./drafts";
+import { duplicateChecklist } from "./duplicate";
+import { publish } from "./publish";
+import { CHECKLISTS_PATH, checklistPath } from "./routes";
+import { EditorInputError } from "./validation";
+
+/**
+ * Отказ для экрана. Разбор и выбор кода живут в `action-input.ts` и покрыты тестами;
+ * здесь остаётся то, чего в чистой функции быть не может, — запись в журнал сервера.
+ * Молча проглоченный сбой означал бы, что методист считает работу сохранённой.
+ */
+function failure(error: unknown): EditorActionState {
+  if (!(error instanceof EditorInputError)) {
+    console.error("Редактор: непредвиденный сбой действия", error);
+  }
+  return failureState(error);
+}
+
+/** Заведение чек-листа с экрана «Новый чек-лист». Успех уводит сразу в редактор. */
+export async function submitCreateChecklist(
+  _previous: EditorActionState,
+  form: FormData,
+): Promise<EditorActionState> {
+  await requireAdmin();
+
+  let checklistId: string;
+  try {
+    checklistId = await createChecklist(checklistInputFrom(form));
+  } catch (error) {
+    return failure(error);
+  }
+
+  // redirect() бросает исключение управления потоком — он обязан быть вне try/catch,
+  // иначе переход будет пойман как отказ и методист останется на пустой форме.
+  revalidatePath(CHECKLISTS_PATH);
+  redirect(checklistPath(checklistId));
+}
+
+/** «Сохранить черновик»: свойства чек-листа и разметка уходят одним действием. */
+export async function submitSaveDraft(
+  _previous: EditorActionState,
+  form: FormData,
+): Promise<EditorActionState> {
+  await requireAdmin();
+
+  try {
+    const checklistId = formText(form, "checklistId");
+    const sections = sectionsFrom(form);
+    await updateChecklist(checklistId, checklistInputFrom(form));
+    await saveDraft(checklistId, sections);
+    revalidatePath(checklistPath(checklistId));
+    return { status: "saved" };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/**
+ * «Опубликовать»: сначала сохраняется то, что на экране, потом создаётся версия.
+ * Иначе опубликовалось бы прошлое сохранение, а методист смотрел бы на свежие правки.
+ */
+export async function submitPublish(
+  _previous: EditorActionState,
+  form: FormData,
+): Promise<EditorActionState> {
+  await requireAdmin();
+
+  try {
+    const checklistId = formText(form, "checklistId");
+    const sections = sectionsFrom(form);
+    await updateChecklist(checklistId, checklistInputFrom(form));
+    await saveDraft(checklistId, sections);
+    const version = await publish(checklistId);
+    revalidatePath(checklistPath(checklistId));
+    return {
+      status: "published",
+      ...(version.versionNumber === null
+        ? {}
+        : { versionNumber: version.versionNumber }),
+    };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/**
+ * Дублирование со списка чек-листов: обычное действие формы, без состояния. Успех
+ * открывает копию в редакторе — методист попадает сразу туда, где будет её править.
+ *
+ * Отказ разбора здесь означает одно: исходный чек-лист исчез, пока список был открыт.
+ * Тогда возвращаемся в список — он перечитается и покажет, что есть на самом деле.
+ * Всё остальное пробрасывается: молча проглоченный сбой хуже страницы с ошибкой.
+ */
+export async function submitDuplicate(form: FormData): Promise<void> {
+  await requireAdmin();
+
+  let copyId: string;
+  try {
+    copyId = await duplicateChecklist(formText(form, "checklistId"));
+  } catch (error) {
+    if (!(error instanceof EditorInputError)) throw error;
+    console.error("Редактор: дублирование не состоялось", error);
+    revalidatePath(CHECKLISTS_PATH);
+    redirect(CHECKLISTS_PATH);
+  }
+
+  revalidatePath(CHECKLISTS_PATH);
+  redirect(checklistPath(copyId));
+}

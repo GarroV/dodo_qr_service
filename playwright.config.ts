@@ -6,6 +6,7 @@ import {
   E2E_ADMIN_PASSWORD_HASH,
   E2E_SESSION_SECRET,
 } from "./e2e/admin-credentials";
+import { e2eDatabaseUrl } from "./e2e/database";
 
 // Порт из переменной: параллельные копии репозитория (стройка блоками) иначе делят один
 // порт. Умолчание 3101 — то же, что было: 3100 остаётся за `npm run dev`, сквозные
@@ -77,6 +78,9 @@ export default defineConfig({
     colorScheme: "light",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // База прогона готовится один раз и с нуля: экраны админки читают и пишут настоящие
+  // данные, а зелёный прогон на чужих остатках ничего не доказывает.
+  globalSetup: "./e2e/global-setup.ts",
   webServer: {
     // Продакшен-сборка, а не dev: Next 16 не поднимает второй dev-сервер на тот же каталог,
     // и проверять всё равно правильнее то, что уедет на площадку.
@@ -89,6 +93,9 @@ export default defineConfig({
     env: {
       ADMIN_PASSWORD_HASH: E2E_ADMIN_PASSWORD_HASH,
       SESSION_SECRET: E2E_SESSION_SECRET,
+      // Своя база прогона: рабочую сносила бы подготовка, а тестовую посреди прогона
+      // пересоздаёт vitest. Адрес считается сам и в свежем клоне без .env тоже.
+      DATABASE_URL: e2eDatabaseUrl(),
     },
   },
 });
