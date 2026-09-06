@@ -65,6 +65,11 @@ export async function getPublishedVersionForStation(
       and(
         eq(checklistVersions.checklistId, checklists.id),
         eq(checklistVersions.status, "published"),
+        // Версия принадлежит станции, для которой опубликована: её станция заморожена
+        // в момент публикации и здесь обязана совпасть со сканируемой. Иначе после
+        // переноса чек-листа станция отдавала бы чужую версию, а заполнение уходило
+        // бы в историю прежней станции (T056).
+        eq(checklistVersions.stationId, stations.id),
       ),
     )
     .where(
@@ -86,7 +91,9 @@ export async function getPublishedVersionForStation(
 }
 
 /**
- * Публикует черновик чек-листа новой версией и возвращает её.
+ * Публикует черновик чек-листа новой версией и возвращает её. Вместе с содержимым
+ * замораживается станция чек-листа: версия принадлежит той станции, для которой
+ * опубликована, и перенос чек-листа задним числом её не переписывает.
  * Черновик остаётся на месте: методист продолжает править его дальше, а правка
  * переиспользуемого блока приходит в черновики и не трогает опубликованное (D011).
  *
@@ -115,6 +122,18 @@ export async function publishVersion(
       );
     }
 
+    // Станция чек-листа замораживается вместе с содержимым: она читается здесь,
+    // в транзакции публикации, и больше у этой версии не меняется (T056).
+    const checklistRows = await tx
+      .select({ stationId: checklists.stationId })
+      .from(checklists)
+      .where(eq(checklists.id, checklistId))
+      .limit(1);
+    const checklist = checklistRows[0];
+    if (checklist === undefined) {
+      throw new Error(`Чек-листа ${checklistId} нет: публиковать нечего`);
+    }
+
     const numbers = await tx
       .select({
         highest: sql<number | null>`max(${checklistVersions.versionNumber})`,
@@ -140,6 +159,7 @@ export async function publishVersion(
         checklistId,
         status: "published",
         versionNumber: nextNumber,
+        stationId: checklist.stationId,
         sections: draft.sections,
         // Время публикации — серверное: клиентским отметкам времени веры нет.
         publishedAt: sql`now()`,

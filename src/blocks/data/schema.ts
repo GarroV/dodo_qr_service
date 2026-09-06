@@ -106,6 +106,14 @@ export const checklistVersions = pgTable(
     // Номер есть у опубликованных и архивных версий; у черновика номера нет.
     versionNumber: integer("version_number"),
     status: text("status").$type<VersionStatus>().notNull(),
+    // Станция замораживается вместе с содержимым в момент публикации, а не читается
+    // из мутируемой checklists.station_id при сохранении заполнения: иначе перенос
+    // чек-листа на другую станцию во время заполнения уводил бы заполнение в чужую
+    // историю (принцип 3). У черновика станции нет — он ещё не опубликован;
+    // у версии чек-листа, не привязанного к станции на момент публикации, тоже.
+    stationId: uuid("station_id").references(() => stations.id, {
+      onDelete: "set null",
+    }),
     sections: jsonb("sections").$type<Section[]>().notNull().default([]),
     createdAt: serverTimestamp(CREATED_AT),
     publishedAt: timestamp("published_at", { withTimezone: true }),

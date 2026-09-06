@@ -8,7 +8,7 @@ import {
   getPublishedVersionForStation,
   publishVersion,
 } from "./checklists";
-import { checklistVersions } from "./schema";
+import { checklistVersions, checklists } from "./schema";
 import { closeTestDb, getTestDb } from "./testing/db";
 import {
   createChecklist,
@@ -387,6 +387,27 @@ describe("getPublishedVersionForStation", () => {
     expect(found?.checklist.title).toStrictEqual({ ru: "Утро", en: "Morning" });
     expect(found?.station.id).toBe(station.stationId);
     expect(found?.station.code).toBe(station.stationCode);
+  });
+
+  test("после переноса чек-листа его прежняя версия не отдаётся на новой станции", async () => {
+    // Версия принадлежит станции, для которой опубликована: её станция заморожена
+    // в момент публикации. Отдать такую версию на новой станции значило бы записать
+    // заполнение, сделанное здесь, в историю прежней станции.
+    const first = await createStation();
+    const checklistId = await createChecklist({
+      stationId: first.stationId,
+      ...MORNING,
+    });
+    await createPublishedVersion(checklistId, sampleSections("перенос"));
+    const second = await createStation();
+    await db
+      .update(checklists)
+      .set({ stationId: second.stationId })
+      .where(eq(checklists.id, checklistId));
+
+    expect(
+      await getPublishedVersionForStation(second.stationCode, at(9)),
+    ).toBeNull();
   });
 
   test("чек-лист без станции по коду не находится", async () => {

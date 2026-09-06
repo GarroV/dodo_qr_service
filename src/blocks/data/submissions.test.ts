@@ -10,6 +10,7 @@ import { getSubmission, listSubmissions, saveSubmission } from "./submissions";
 import { checklistVersions, checklists, submissions } from "./schema";
 import { closeTestDb, getTestDb } from "./testing/db";
 import {
+  checklistStationId,
   createChecklist,
   createDraft,
   createPublishedVersion,
@@ -34,6 +35,7 @@ async function createArchivedVersion(
       checklistId,
       status: "archived",
       versionNumber,
+      stationId: await checklistStationId(checklistId),
       sections,
       publishedAt: new Date(),
     })
@@ -120,6 +122,32 @@ describe("saveSubmission", () => {
       .set({ stationId: otherStation.stationId })
       .where(eq(checklists.id, version?.checklistId ?? ""));
 
+    const detail = await getSubmission(id);
+
+    expect(detail?.stationId).toBe(station.stationId);
+  });
+
+  test("перевязка чек-листа между выдачей версии и отправкой не уводит заполнение", async () => {
+    // Гонка со станцией: сотрудник отсканировал QR станции A и получил версию,
+    // методист в это же время перевязывает чек-лист на станцию B, сотрудник
+    // отправляет заполнение. Оно физически сделано на A и обязано остаться на A:
+    // станция замораживается в версии при публикации, а не читается из
+    // мутируемой checklists.station_id в момент сохранения (принцип 3).
+    const { station, checklistId, sections, versionId } =
+      await readyVersion("гонка");
+    const itemId = sections[0]?.items[0]?.id ?? "";
+    const another = await createStation();
+
+    await db
+      .update(checklists)
+      .set({ stationId: another.stationId })
+      .where(eq(checklists.id, checklistId));
+
+    const id = await saveSubmission({
+      versionId,
+      answers: [boolAnswer(itemId, true)],
+      startedAt: Date.now(),
+    });
     const detail = await getSubmission(id);
 
     expect(detail?.stationId).toBe(station.stationId);
