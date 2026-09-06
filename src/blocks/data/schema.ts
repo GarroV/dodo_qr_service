@@ -54,6 +54,9 @@ export const stores = pgTable(
       .notNull()
       .references(() => countries.id, { onDelete: "restrict" }),
     name: text("name").notNull(),
+    // Часовой пояс пиццерии: по нему окно чек-листа сравнивается с местным временем,
+    // иначе утренний чек-лист в Казахстане открывался бы днём.
+    timezone: text("timezone").notNull().default("UTC"),
     createdAt: serverTimestamp(CREATED_AT),
   },
   (table) => [index("stores_country_idx").on(table.countryId)],

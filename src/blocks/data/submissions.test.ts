@@ -1,0 +1,365 @@
+// Слой доступа к заполнениям проверяется на настоящей базе: снимок, станция и
+// время сервера — это гарантии из принципа 3 (история неприкосновенна), их даёт
+// PostgreSQL, а не память процесса, и заглушкой их не проверить.
+import { randomUUID } from "node:crypto";
+
+import { eq } from "drizzle-orm";
+import { afterAll, describe, expect, test } from "vitest";
+
+import { getSubmission, listSubmissions, saveSubmission } from "./submissions";
+import { checklistVersions, checklists, submissions } from "./schema";
+import { closeTestDb, getTestDb } from "./testing/db";
+import {
+  createChecklist,
+  createDraft,
+  createPublishedVersion,
+  createStation,
+  sampleSections,
+} from "./testing/fixtures";
+import type { Answer, Section } from "./types";
+
+const db = getTestDb();
+
+afterAll(closeTestDb);
+
+/** Версия сразу в состоянии `archived` — методист успел опубликовать следующую. */
+async function createArchivedVersion(
+  checklistId: string,
+  sections: Section[],
+  versionNumber: number,
+): Promise<string> {
+  const [row] = await db
+    .insert(checklistVersions)
+    .values({
+      checklistId,
+      status: "archived",
+      versionNumber,
+      sections,
+      publishedAt: new Date(),
+    })
+    .returning({ id: checklistVersions.id });
+  if (row === undefined)
+    throw new Error("Строка не вставилась: checklist_versions");
+  return row.id;
+}
+
+/** Готовая цепочка станция → чек-лист → опубликованная версия с одним критичным пунктом. */
+async function readyVersion(label: string) {
+  const station = await createStation();
+  const checklistId = await createChecklist({ stationId: station.stationId });
+  const sections = sampleSections(label);
+  const versionId = await createPublishedVersion(checklistId, sections);
+  return { station, checklistId, sections, versionId };
+}
+
+function boolAnswer(itemId: string, value: boolean): Answer {
+  return { itemId, value, at: Date.now() };
+}
+
+describe("saveSubmission", () => {
+  test("сохраняет снимок пунктов версии и считает провалы по нему", async () => {
+    const { station, sections, versionId } = await readyVersion("save");
+    const itemId = sections[0]?.items[0]?.id ?? "";
+    const answers = [boolAnswer(itemId, false)];
+
+    const id = await saveSubmission({
+      versionId,
+      answers,
+      startedAt: Date.now() - 60_000,
+    });
+    const detail = await getSubmission(id);
+
+    expect(detail).not.toBeNull();
+    expect(detail?.snapshot).toStrictEqual(sections);
+    expect(detail?.answers).toStrictEqual(answers);
+    expect(detail?.stationId).toBe(station.stationId);
+    expect(detail?.itemCount).toBe(1);
+    expect(detail?.answeredCount).toBe(1);
+    expect(detail?.failedCriticalCount).toBe(1);
+  });
+
+  test("submittedAt берётся из времени базы, а не из входного startedAt", async () => {
+    const { sections, versionId } = await readyVersion("clock");
+    const itemId = sections[0]?.items[0]?.id ?? "";
+    const startedAt = Date.now() - 5 * 60_000;
+
+    const before = Date.now();
+    const id = await saveSubmission({
+      versionId,
+      answers: [boolAnswer(itemId, true)],
+      startedAt,
+    });
+    const after = Date.now();
+    const detail = await getSubmission(id);
+
+    expect(detail?.startedAt.getTime()).toBe(startedAt);
+    const submittedAtMs = detail?.submittedAt.getTime() ?? 0;
+    expect(submittedAtMs).toBeGreaterThanOrEqual(before - 1000);
+    expect(submittedAtMs).toBeLessThanOrEqual(after + 1000);
+    expect(detail?.durationMs).toBe(submittedAtMs - startedAt);
+    expect(detail?.durationMs ?? -1).toBeGreaterThanOrEqual(0);
+  });
+
+  test("станция берётся из чек-листа в момент сохранения и не меняется при переносе", async () => {
+    const { station, sections, versionId } = await readyVersion("station-pin");
+    const itemId = sections[0]?.items[0]?.id ?? "";
+    const otherStation = await createStation();
+
+    const id = await saveSubmission({
+      versionId,
+      answers: [boolAnswer(itemId, true)],
+      startedAt: Date.now(),
+    });
+    // Перенос чек-листа на другую станцию задним числом не переписывает историю.
+    const [version] = await db
+      .select({ checklistId: checklistVersions.checklistId })
+      .from(checklistVersions)
+      .where(eq(checklistVersions.id, versionId));
+    await db
+      .update(checklists)
+      .set({ stationId: otherStation.stationId })
+      .where(eq(checklists.id, version?.checklistId ?? ""));
+
+    const detail = await getSubmission(id);
+
+    expect(detail?.stationId).toBe(station.stationId);
+  });
+
+  test("снимок и заполнение не меняются после публикации следующей версии чек-листа", async () => {
+    const { checklistId, sections, versionId } = await readyVersion("history");
+    const itemId = sections[0]?.items[0]?.id ?? "";
+    const answers = [boolAnswer(itemId, true)];
+
+    const id = await saveSubmission({
+      versionId,
+      answers,
+      startedAt: Date.now(),
+    });
+    // Методист публикует следующую версию: прежняя уходит в архив, у неё новое содержимое.
+    await db
+      .update(checklistVersions)
+      .set({ status: "archived" })
+      .where(eq(checklistVersions.id, versionId));
+    await createPublishedVersion(checklistId, sampleSections("history-v2"), 2);
+
+    const detail = await getSubmission(id);
+
+    expect(detail?.snapshot).toStrictEqual(sections);
+    expect(detail?.versionId).toBe(versionId);
+    expect(detail?.answers).toStrictEqual(answers);
+  });
+
+  test("принимает заполнение на версии в состоянии archived", async () => {
+    const station = await createStation();
+    const checklistId = await createChecklist({ stationId: station.stationId });
+    const sections = sampleSections("archived-accept");
+    const versionId = await createArchivedVersion(checklistId, sections, 1);
+    const itemId = sections[0]?.items[0]?.id ?? "";
+
+    const id = await saveSubmission({
+      versionId,
+      answers: [boolAnswer(itemId, false)],
+      startedAt: Date.now(),
+    });
+    const detail = await getSubmission(id);
+
+    expect(detail).not.toBeNull();
+    expect(detail?.versionNumber).toBe(1);
+  });
+
+  test("отказывает на версии в состоянии draft", async () => {
+    const station = await createStation();
+    const checklistId = await createChecklist({ stationId: station.stationId });
+    const versionId = await createDraft(checklistId, sampleSections("draft"));
+
+    await expect(
+      saveSubmission({ versionId, answers: [], startedAt: Date.now() }),
+    ).rejects.toThrow();
+  });
+
+  test("отказывает, если чек-листу этой версии не назначена станция", async () => {
+    const checklistId = await createChecklist({ stationId: null });
+    const versionId = await createPublishedVersion(
+      checklistId,
+      sampleSections("no-station"),
+    );
+
+    await expect(
+      saveSubmission({ versionId, answers: [], startedAt: Date.now() }),
+    ).rejects.toThrow();
+  });
+
+  test("отказывает понятной ошибкой, если версии не существует", async () => {
+    await expect(
+      saveSubmission({
+        versionId: randomUUID(),
+        answers: [],
+        startedAt: Date.now(),
+      }),
+    ).rejects.toThrow(/версия/i);
+  });
+});
+
+describe("getSubmission", () => {
+  test("читает снимок из самого заполнения, а не текущие пункты версии", async () => {
+    // История держится на двух опорах сразу (D002): версии неизменяемы И заполнение
+    // хранит свою копию пунктов. Если карточка читает версию, вторая опора мнимая —
+    // достаточно одной правки версии мимо слоя доступа, чтобы история переписалась.
+    const { sections, versionId } = await readyVersion("опора");
+    const id = await saveSubmission({
+      versionId,
+      answers: [boolAnswer(sections[0]?.items[0]?.id ?? "", false)],
+      startedAt: Date.now(),
+    });
+    await db
+      .update(checklistVersions)
+      .set({ sections: sampleSections("подменённый") })
+      .where(eq(checklistVersions.id, versionId));
+
+    const detail = await getSubmission(id);
+
+    expect(detail?.snapshot).toStrictEqual(sections);
+    expect(detail?.failedCriticalCount).toBe(1);
+  });
+
+  test("возвращает null для несуществующего, но корректного uuid", async () => {
+    await expect(getSubmission(randomUUID())).resolves.toBeNull();
+  });
+
+  test("возвращает null, а не бросает исключение, для некорректного формата uuid", async () => {
+    await expect(getSubmission("not-a-uuid")).resolves.toBeNull();
+  });
+});
+
+describe("listSubmissions — фильтры", () => {
+  test("фильтрует по стране, пиццерии и станции по отдельности", async () => {
+    const a = await readyVersion("filter-a");
+    const b = await readyVersion("filter-b");
+    const itemA = a.sections[0]?.items[0]?.id ?? "";
+    const itemB = b.sections[0]?.items[0]?.id ?? "";
+    const idA = await saveSubmission({
+      versionId: a.versionId,
+      answers: [boolAnswer(itemA, true)],
+      startedAt: Date.now(),
+    });
+    const idB = await saveSubmission({
+      versionId: b.versionId,
+      answers: [boolAnswer(itemB, true)],
+      startedAt: Date.now(),
+    });
+
+    const byCountry = await listSubmissions({ countryId: a.station.countryId });
+    const byStore = await listSubmissions({ storeId: a.station.storeId });
+    const byStation = await listSubmissions({ stationId: a.station.stationId });
+
+    for (const rows of [byCountry, byStore, byStation]) {
+      const ids = rows.map((row) => row.id);
+      expect(ids).toContain(idA);
+      expect(ids).not.toContain(idB);
+    }
+  });
+
+  test("фильтрует по периоду включительно с обеих сторон и комбинирует фильтры", async () => {
+    const { station, versionId } = await readyVersion("period");
+    const early = new Date("2026-01-01T00:00:00.000Z");
+    const boundaryFrom = new Date("2026-01-05T00:00:00.000Z");
+    const boundaryTo = new Date("2026-01-10T00:00:00.000Z");
+    const late = new Date("2026-01-20T00:00:00.000Z");
+
+    const insertAt = async (submittedAt: Date): Promise<string> => {
+      const [row] = await db
+        .insert(submissions)
+        .values({
+          versionId,
+          stationId: station.stationId,
+          snapshot: [],
+          answers: [],
+          startedAt: submittedAt,
+          submittedAt,
+        })
+        .returning({ id: submissions.id });
+      if (row === undefined)
+        throw new Error("Строка не вставилась: submissions");
+      return row.id;
+    };
+    const idEarly = await insertAt(early);
+    const idFrom = await insertAt(boundaryFrom);
+    const idTo = await insertAt(boundaryTo);
+    const idLate = await insertAt(late);
+
+    const rows = await listSubmissions({
+      stationId: station.stationId,
+      from: boundaryFrom,
+      to: boundaryTo,
+    });
+    const ids = rows.map((row) => row.id);
+
+    expect(ids).toContain(idFrom);
+    expect(ids).toContain(idTo);
+    expect(ids).not.toContain(idEarly);
+    expect(ids).not.toContain(idLate);
+  });
+
+  test("сортирует по времени отправки по убыванию", async () => {
+    const { station, versionId } = await readyVersion("order");
+    const older = new Date("2026-02-01T00:00:00.000Z");
+    const newer = new Date("2026-02-02T00:00:00.000Z");
+    const insertAt = async (submittedAt: Date): Promise<string> => {
+      const [row] = await db
+        .insert(submissions)
+        .values({
+          versionId,
+          stationId: station.stationId,
+          snapshot: [],
+          answers: [],
+          startedAt: submittedAt,
+          submittedAt,
+        })
+        .returning({ id: submissions.id });
+      if (row === undefined)
+        throw new Error("Строка не вставилась: submissions");
+      return row.id;
+    };
+    const idOlder = await insertAt(older);
+    const idNewer = await insertAt(newer);
+
+    const rows = await listSubmissions({ stationId: station.stationId });
+    const ids = rows.map((row) => row.id);
+
+    expect(ids.indexOf(idNewer)).toBeLessThan(ids.indexOf(idOlder));
+  });
+
+  test("отрицательный лимит не роняет ленту", async () => {
+    // Опечатка в фильтре не должна превращаться в ошибку драйвера.
+    await expect(listSubmissions({ limit: -5 })).resolves.toHaveLength(1);
+  });
+
+  test("ограничивает выдачу лимитом и обрезает значение выше 500 до 500", async () => {
+    const { station, versionId } = await readyVersion("limit");
+    const total = 505;
+    const rows = Array.from({ length: total }, () => ({
+      versionId,
+      stationId: station.stationId,
+      snapshot: [] as Section[],
+      answers: [] as Answer[],
+      startedAt: new Date(),
+    }));
+    await db.insert(submissions).values(rows);
+
+    const defaultLimit = await listSubmissions({
+      stationId: station.stationId,
+    });
+    const explicitLimit = await listSubmissions({
+      stationId: station.stationId,
+      limit: 3,
+    });
+    const aboveMax = await listSubmissions({
+      stationId: station.stationId,
+      limit: 10_000,
+    });
+
+    expect(defaultLimit).toHaveLength(200);
+    expect(explicitLimit).toHaveLength(3);
+    expect(aboveMax).toHaveLength(500);
+  });
+});

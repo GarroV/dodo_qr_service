@@ -7,22 +7,13 @@ import { and, asc, eq, sql } from "drizzle-orm";
 
 import { getDb } from "./client";
 import type { Checklist, ChecklistVersion, Station } from "./schema";
-import { checklistVersions, checklists, stations } from "./schema";
+import { checklistVersions, checklists, stations, stores } from "./schema";
 
 /** Всё, что нужно экрану заполнения за один запрос: версия, её чек-лист и станция. */
 export interface VersionWithChecklist {
   version: ChecklistVersion;
   checklist: Checklist;
   station: Station;
-}
-
-/**
- * Время суток для сравнения с окном чек-листа — в UTC.
- * Часового пояса у пиццерии в модели нет (окно вместо расписания, D004), а брать пояс
- * машины приложения значило бы получать разный ответ на разных площадках.
- */
-function timeOfDayUtc(at: Date): string {
-  return at.toISOString().slice(11, 19);
 }
 
 export async function getDraft(
@@ -43,6 +34,11 @@ export async function getDraft(
 
 /**
  * Опубликованная версия чек-листа станции, подходящая по времени.
+ *
+ * Время сравнивается **местное для пиццерии**: момент `at` переводится в часовой пояс
+ * пиццерии, и только потом сопоставляется с окном. Иначе утренний чек-лист в стране
+ * с большим сдвигом открывался бы среди дня.
+ *
  * Окно полуоткрытое: начало включительно, конец исключительно, — и умеет переходить
  * через полночь (22:00–02:00). Неизвестный код станции даёт `null`: перебор кодов
  * не должен отличаться по ответу от промаха (D021).
@@ -52,7 +48,8 @@ export async function getPublishedVersionForStation(
   at: Date,
 ): Promise<VersionWithChecklist | null> {
   if (stationCode === "") return null;
-  const time = timeOfDayUtc(at);
+
+  const localTime = sql`(${at.toISOString()}::timestamptz at time zone ${stores.timezone})::time`;
 
   const rows = await getDb()
     .select({
@@ -61,6 +58,7 @@ export async function getPublishedVersionForStation(
       station: stations,
     })
     .from(stations)
+    .innerJoin(stores, eq(stations.storeId, stores.id))
     .innerJoin(checklists, eq(checklists.stationId, stations.id))
     .innerJoin(
       checklistVersions,
@@ -74,8 +72,8 @@ export async function getPublishedVersionForStation(
         eq(stations.code, stationCode),
         sql`case
               when ${checklists.windowStart} <= ${checklists.windowEnd}
-                then ${time}::time >= ${checklists.windowStart} and ${time}::time < ${checklists.windowEnd}
-              else ${time}::time >= ${checklists.windowStart} or ${time}::time < ${checklists.windowEnd}
+                then ${localTime} >= ${checklists.windowStart} and ${localTime} < ${checklists.windowEnd}
+              else ${localTime} >= ${checklists.windowStart} or ${localTime} < ${checklists.windowEnd}
             end`,
       ),
     )

@@ -50,6 +50,7 @@ CREATE TABLE "stores" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"country_id" uuid NOT NULL,
 	"name" text NOT NULL,
+	"timezone" text DEFAULT 'UTC' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

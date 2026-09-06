@@ -306,6 +306,28 @@ describe("getPublishedVersionForStation", () => {
     ).toBeNull();
   });
 
+  test("окно сравнивается с местным временем пиццерии, а не с UTC", async () => {
+    // Алма-Ата живёт на UTC+5: утренний чек-лист там открывается в 04:00 UTC.
+    const station = await createStation({ timezone: "Asia/Almaty" });
+    const checklistId = await createChecklist({
+      stationId: station.stationId,
+      ...MORNING,
+    });
+    const versionId = await createPublishedVersion(
+      checklistId,
+      sampleSections("местное время"),
+    );
+
+    expect(
+      (await getPublishedVersionForStation(station.stationCode, at(4)))?.version
+        .id,
+    ).toBe(versionId);
+    // 09:00 UTC — это 14:00 по местному, окно уже закрыто.
+    expect(
+      await getPublishedVersionForStation(station.stationCode, at(9)),
+    ).toBeNull();
+  });
+
   test("черновик наружу не уходит", async () => {
     const station = await createStation();
     const checklistId = await createChecklist({

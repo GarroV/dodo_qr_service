@@ -7,8 +7,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import type { Pool } from "pg";
 
-export const MIGRATIONS_FOLDER = new URL("./migrations", import.meta.url)
-  .pathname;
+const MIGRATIONS_FOLDER = new URL("./migrations", import.meta.url).pathname;
 
 const JOURNAL_PATH = `${MIGRATIONS_FOLDER}/meta/_journal.json`;
 const MIGRATIONS_TABLE = "drizzle.__drizzle_migrations";

@@ -7,7 +7,7 @@ function quoteIdentifier(name: string): string {
   return `"${name.replaceAll('"', '""')}"`;
 }
 
-export function databaseNameFrom(url: URL): string {
+function databaseNameFrom(url: URL): string {
   return decodeURIComponent(url.pathname.replace(/^\//, ""));
 }
 

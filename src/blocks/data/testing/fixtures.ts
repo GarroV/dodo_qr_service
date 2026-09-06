@@ -20,7 +20,7 @@ function firstRow<T>(rows: T[], what: string): T {
   return row;
 }
 
-export function uniqueSuffix(): string {
+function uniqueSuffix(): string {
   return randomUUID().slice(0, 8);
 }
 
@@ -35,8 +35,15 @@ export interface StationFixture {
   stationCode: string;
 }
 
+export interface StationOptions {
+  /** Часовой пояс пиццерии: окно чек-листа сравнивается с её местным временем. */
+  timezone?: string;
+}
+
 /** Страна → пиццерия → станция: минимальная цепочка, к которой цепляется чек-лист. */
-export async function createStation(): Promise<StationFixture> {
+export async function createStation(
+  options: StationOptions = {},
+): Promise<StationFixture> {
   const db = getTestDb();
   const suffix = uniqueSuffix();
   const country = firstRow(
@@ -49,7 +56,11 @@ export async function createStation(): Promise<StationFixture> {
   const store = firstRow(
     await db
       .insert(stores)
-      .values({ countryId: country.id, name: `Пиццерия ${suffix}` })
+      .values({
+        countryId: country.id,
+        name: `Пиццерия ${suffix}`,
+        timezone: options.timezone ?? "UTC",
+      })
       .returning({ id: stores.id }),
     "stores",
   );

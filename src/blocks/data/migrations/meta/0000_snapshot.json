@@ -1,5 +1,5 @@
 {
-  "id": "98b05778-97c7-4035-b58c-6d4f075d236c",
+  "id": "6e1bfcea-4d55-4139-9a8d-02627f494bbd",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -414,6 +414,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'UTC'"
         },
         "created_at": {
           "name": "created_at",
