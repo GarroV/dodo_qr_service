@@ -35,7 +35,7 @@ import {
 } from "./validation";
 
 /** Окно времени так, как его вводят на экране: «06:00» и «11:00». */
-export interface EditorWindow {
+interface EditorWindow {
   start: string;
   end: string;
 }

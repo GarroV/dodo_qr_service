@@ -44,8 +44,9 @@ function sections(): Section[] {
 }
 
 const ids = (list: Section[], sectionId: string): string[] =>
-  list.find((section) => section.id === sectionId)?.items.map((one) => one.id) ??
-  [];
+  list
+    .find((section) => section.id === sectionId)
+    ?.items.map((one) => one.id) ?? [];
 
 describe("addItemAfter (Enter создаёт следующий пункт)", () => {
   test("вставляет новый пункт сразу за текущим и называет, куда ставить курсор", () => {
@@ -60,7 +61,11 @@ describe("addItemAfter (Enter создаёт следующий пункт)", ()
   });
 
   test("в конце секции добавляет пункт в конец", () => {
-    const { sections: after, focusItemId } = addItemAfter(sections(), "s1", "c");
+    const { sections: after, focusItemId } = addItemAfter(
+      sections(),
+      "s1",
+      "c",
+    );
 
     expect(ids(after, "s1")).toStrictEqual(["a", "b", "c", focusItemId]);
   });
@@ -77,7 +82,11 @@ describe("addItemAfter (Enter создаёт следующий пункт)", ()
 
   test("новый пункт — обычный «да/нет», не критичный", () => {
     // Тип по умолчанию задан требованием блока: критичность выставляется по месту.
-    const { sections: after, focusItemId } = addItemAfter(sections(), "s1", "a");
+    const { sections: after, focusItemId } = addItemAfter(
+      sections(),
+      "s1",
+      "a",
+    );
     const created = after[0]?.items.find((one) => one.id === focusItemId);
 
     expect(created).toMatchObject({ type: "bool", critical: false, title: {} });

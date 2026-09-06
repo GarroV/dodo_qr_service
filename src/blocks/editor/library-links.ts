@@ -35,7 +35,7 @@ interface BlockRow extends Record<string, unknown> {
  * Опознаватели блоков, вставленных в разметку. Не-uuid отсеивается здесь: такой ссылки
  * в базе быть не может, а в запрос она уехала бы ошибкой драйвера вместо пустого ответа.
  */
-export function linkedBlockIds(sections: readonly Section[]): string[] {
+function linkedBlockIds(sections: readonly Section[]): string[] {
   const ids = new Set<string>();
   for (const section of sections) {
     if (typeof section.source !== "string" && isUuid(section.source.blockId)) {

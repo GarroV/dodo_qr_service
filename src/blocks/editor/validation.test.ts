@@ -177,9 +177,7 @@ describe("parseSections", () => {
           ],
         }),
       ]),
-    ).toThrow(
-      expect.objectContaining({ code: "badRange" }) as unknown,
-    );
+    ).toThrow(expect.objectContaining({ code: "badRange" }) as unknown);
   });
 
   test("неизвестный тип ответа отвергается", () => {
@@ -213,9 +211,7 @@ describe("parseSections", () => {
       parseSections([
         goodSection({ title: { ru: "я".repeat(LIMITS.textLength + 1) } }),
       ]),
-    ).toThrow(
-      expect.objectContaining({ code: "textTooLong" }) as unknown,
-    );
+    ).toThrow(expect.objectContaining({ code: "textTooLong" }) as unknown);
   });
 
   test("больше пунктов, чем помещается в чек-лист, — отказ с внятным кодом", () => {

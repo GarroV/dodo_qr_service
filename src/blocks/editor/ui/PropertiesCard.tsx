@@ -10,7 +10,7 @@ export interface WindowValue {
   end: string;
 }
 
-export const WINDOW_PRESETS: readonly {
+const WINDOW_PRESETS: readonly {
   key: "windowMorning" | "windowEvening" | "windowAny";
   value: WindowValue;
 }[] = [
@@ -19,11 +19,11 @@ export const WINDOW_PRESETS: readonly {
   { key: "windowAny", value: { start: "00:00", end: "24:00" } },
 ];
 
-export function windowKey(value: WindowValue): string {
+function windowKey(value: WindowValue): string {
   return `${value.start}|${value.end}`;
 }
 
-export function parseWindowKey(key: string): WindowValue {
+function parseWindowKey(key: string): WindowValue {
   const [start = "", end = ""] = key.split("|");
   return { start, end };
 }

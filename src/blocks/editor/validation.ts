@@ -70,7 +70,7 @@ function fail(code: EditorErrorCode, message: string): never {
 }
 
 /** Текст пункта на языках продукта: чужие языки отбрасываются, пустые значения не хранятся. */
-export function parseLocalizedText(input: unknown): LocalizedText {
+function parseLocalizedText(input: unknown): LocalizedText {
   if (!isRecord(input)) fail("badFormat", "Текст должен быть объектом языков");
 
   const text: LocalizedText = {};

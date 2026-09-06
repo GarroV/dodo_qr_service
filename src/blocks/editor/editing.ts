@@ -18,7 +18,7 @@ export function emptyItem(): Item {
 }
 
 /** Пустая секция с одним пустым пунктом: курсору сразу есть куда встать. */
-export function emptySection(): Section {
+function emptySection(): Section {
   return { id: newId(), title: {}, source: "own", items: [emptyItem()] };
 }
 
@@ -31,7 +31,7 @@ export function itemCount(sections: readonly Section[]): number {
 }
 
 /** Есть ли у пункта текст хоть на одном языке: пустые строки не сохраняются. */
-export function hasText(text: LocalizedText): boolean {
+function hasText(text: LocalizedText): boolean {
   return Object.values(text).some((value) => value.trim() !== "");
 }
 

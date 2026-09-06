@@ -176,11 +176,9 @@ test.describe("редактор чек-листа", () => {
     const editorUrl = await createChecklist(page, `Открытие кухни ${label()}`);
 
     // Привязка к станции: без неё QR ничего не откроет.
-    await page
-      .getByTestId("checklist-station")
-      .selectOption({
-        label: `${station.countryName} · ${station.storeName} · ${station.stationName}`,
-      });
+    await page.getByTestId("checklist-station").selectOption({
+      label: `${station.countryName} · ${station.storeName} · ${station.stationName}`,
+    });
 
     await page.evaluate(async (text) => {
       await navigator.clipboard.writeText(text);
