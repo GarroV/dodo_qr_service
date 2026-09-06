@@ -22,4 +22,23 @@ describe("проверка окружения при старте", () => {
       checkStartupConfig({ PUBLIC_BASE_URL: "https://qr.example:10000" }),
     ).not.toThrow();
   });
+
+  it("говорит вслух, что предел на открытие экрана не применяется", () => {
+    // Молча выключенный предел неотличим от работающего — отсюда строка в журнале.
+    expect(checkStartupConfig({}).join(" · ")).toMatch(/TRUSTED_PROXY_HOPS/);
+  });
+
+  it("молчит про предел, когда посредник объявлен", () => {
+    expect(
+      checkStartupConfig({ TRUSTED_PROXY_HOPS: "1" }).join(" · "),
+    ).not.toMatch(/TRUSTED_PROXY_HOPS/);
+  });
+
+  it("отказывает на негодном числе посредников, а не считает его нулём", () => {
+    for (const value of ["-1", "полтора", "1,5", ""]) {
+      expect(() => checkStartupConfig({ TRUSTED_PROXY_HOPS: value })).toThrow(
+        /TRUSTED_PROXY_HOPS/,
+      );
+    }
+  });
 });
