@@ -7,3 +7,6 @@ build/
 coverage/
 .DS_Store
 reports/
+test-results/
+playwright-report/
+*.tsbuildinfo

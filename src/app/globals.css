@@ -1,0 +1,16 @@
+@import "tailwindcss";
+/* Единственный источник токенов — экранный эталон, копии здесь нет (решение D013). */
+@import "../../docs/forge/design/reference/tokens.css";
+
+/* Токены дизайн-системы названы не по конвенции Tailwind, поэтому прокидываются
+   в нужные namespace через @theme inline: значения остаются в tokens.css. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-accent: var(--accent);
+  --color-err: var(--err);
+  --color-ok: var(--ok);
+  --font-ui: var(--font-ui);
+}
