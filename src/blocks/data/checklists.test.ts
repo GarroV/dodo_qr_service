@@ -419,4 +419,40 @@ describe("getPublishedVersionForStation", () => {
       await getPublishedVersionForStation(station.stationCode, at(9)),
     ).toBeNull();
   });
+
+  test("если окна двух чек-листов станции пересекаются, побеждает начинающийся раньше", async () => {
+    // Правило описано только комментарием в реализации и ни разу не проверялось
+    // тестом: до сих пор окна станции в тестах никогда не пересекались.
+    const station = await createStation();
+    const earlier = await createChecklist({
+      stationId: station.stationId,
+      windowStart: "06:00:00",
+      windowEnd: "14:00:00",
+    });
+    const later = await createChecklist({
+      stationId: station.stationId,
+      windowStart: "10:00:00",
+      windowEnd: "18:00:00",
+    });
+    const earlierVersionId = await createPublishedVersion(
+      earlier,
+      sampleSections("раннее"),
+    );
+    const laterVersionId = await createPublishedVersion(
+      later,
+      sampleSections("позднее"),
+    );
+
+    // 12:00 попадает в оба окна: побеждает то, что начинается раньше.
+    expect(
+      (await getPublishedVersionForStation(station.stationCode, at(12)))
+        ?.version.id,
+    ).toBe(earlierVersionId);
+    // 16:00 попадает только во второе окно — так видно, что правило не «всегда
+    // первый созданный чек-лист», а именно «раньше начинается».
+    expect(
+      (await getPublishedVersionForStation(station.stationCode, at(16)))
+        ?.version.id,
+    ).toBe(laterVersionId);
+  });
 });
