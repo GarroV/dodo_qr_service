@@ -6,6 +6,7 @@ import {
   checkSubmitAllowed,
   createRateLimiter,
   forgetAllFillHits,
+  identifyClient,
 } from "./rate-limit";
 
 const START = new Date("2026-09-06T09:00:00Z");
@@ -146,5 +147,23 @@ describe("пределы публичного маршрута", () => {
 
     expect(checkScanAllowed("1.2.3.4", START).allowed).toBe(false);
     expect(checkSubmitAllowed("код", START).allowed).toBe(true);
+  });
+});
+
+describe("кто прислал запрос", () => {
+  it("берёт первый адрес из цепочки прокси", () => {
+    expect(identifyClient("203.0.113.7, 10.0.0.1", null)).toBe("203.0.113.7");
+  });
+
+  it("падает на прямой адрес, когда цепочки нет", () => {
+    expect(identifyClient(null, "203.0.113.7")).toBe("203.0.113.7");
+    expect(identifyClient("  ", "203.0.113.7")).toBe("203.0.113.7");
+  });
+
+  it("возвращает null, когда различить клиентов нечем", () => {
+    // Не «все под одним ключом»: общий ключ превратил бы предел на клиента
+    // в рубильник, гасящий всю сеть на пересменке.
+    expect(identifyClient(null, null)).toBeNull();
+    expect(identifyClient("", "  ")).toBeNull();
   });
 });

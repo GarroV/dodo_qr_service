@@ -360,6 +360,10 @@
       "tooOften": "Too often. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
       "gone": "This sticker is no longer valid — ask your manager for a new one.",
       "broken": "The server did not accept the answers. Check the items and send again."
+    },
+    "tooOften": {
+      "title": "Too many requests",
+      "text": "Wait a minute and scan the sticker again."
     }
   }
 }

@@ -4,8 +4,17 @@
 // Чистые функции без разметки: то же самое считает и браузер (кнопка и прогресс),
 // и сервер (проверка перед записью). Два разных счёта означали бы, что экран
 // разрешает то, что сервер отвергнет, — или наоборот.
-import type { Answer, Item, Section } from "@/blocks/data";
-import { flattenItems, isFailed } from "@/blocks/data";
+// Ввоз из самих файлов блока `data`, а не из его входа `index.ts`, и это не вольность.
+// Этот модуль работает и в браузере: он считает прогресс и кнопку между касаниями, без
+// похода на сервер (принцип 2). Вход блока `data` тянет за собой `client.ts`, то есть
+// драйвер `pg`, и сборка падает — «Module not found: Can't resolve 'dns'» в клиентском
+// пакете. Найдено настоящей сборкой (`next build`), при зелёных тестах. Тот же приём
+// и по той же причине уже применён к миграциям — см. хвост `src/blocks/data/index.ts`.
+// Оба файла ниже чистые: `types.ts` — только типы, `grading.ts` — только правило провала.
+import { flattenItems, isFailed } from "@/blocks/data/grading";
+import type { Answer, Item, Section } from "@/blocks/data/types";
+
+import type { FillScreenView } from "./model";
 
 /** Ответ в работе: значение ещё может отсутствовать, комментарий — быть пустым. */
 export interface DraftAnswer {
@@ -41,7 +50,7 @@ export function isAnswered(
   item: Item,
   draft: DraftAnswer | undefined,
 ): boolean {
-  if (draft === undefined || draft.value === null) return false;
+  if (draft?.value == null) return false;
   if (item.type === "bool") return typeof draft.value === "boolean";
   if (item.type === "number") {
     return typeof draft.value === "number" && Number.isFinite(draft.value);
@@ -126,4 +135,37 @@ export function toAnswers(
     answers.push(toAnswer(item.id, entry));
   }
   return answers;
+}
+
+/**
+ * Модель экрана обратно в пункты, которые понимает общий счёт провалов блока `data`.
+ *
+ * Названия при этом теряются намеренно: в модели экрана они уже выбраны по языку
+ * и лежат строкой, а счёту провалов названия не нужны вовсе — он смотрит на тип,
+ * признак критичности и границы диапазона. Пустой словарь названий здесь честнее,
+ * чем притворная запись `{ display: "…" }`, которая выглядела бы как настоящий перевод.
+ */
+export function gradingSections(view: FillScreenView): Section[] {
+  return view.sections.map((section) => ({
+    id: section.id,
+    title: {},
+    source: "own" as const,
+    items: section.items.map((item) => ({
+      id: item.id,
+      title: {},
+      type: item.type,
+      critical: item.critical,
+      ...(item.min === undefined ? {} : { min: item.min }),
+      ...(item.max === undefined ? {} : { max: item.max }),
+    })),
+  }));
+}
+
+/** Те же пункты по идентификатору: разметке нужен быстрый доступ к границам. */
+export function gradingItemsById(
+  view: FillScreenView,
+): ReadonlyMap<string, Item> {
+  return new Map(
+    flattenItems(gradingSections(view)).map((item) => [item.id, item]),
+  );
 }

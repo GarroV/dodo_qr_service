@@ -2,8 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import type { Item, Section } from "@/blocks/data";
 
-import { emptyDraft, rangeVerdict, summarizeFill, toAnswers } from "./answers";
+import {
+  emptyDraft,
+  gradingItemsById,
+  gradingSections,
+  rangeVerdict,
+  summarizeFill,
+  toAnswers,
+} from "./answers";
 import type { FillDraft } from "./answers";
+import type { FillScreenView } from "./model";
 
 const AT = 1_757_000_000_000;
 
@@ -225,5 +233,63 @@ describe("что уходит на сервер", () => {
     expect(toAnswers(list, draft).map((answer) => answer.itemId)).toStrictEqual(
       ["a"],
     );
+  });
+});
+
+describe("модель экрана обратно в пункты для счёта", () => {
+  const view: FillScreenView = {
+    checklistTitle: "Открытие кухни",
+    where: "Пиццерия · Станция · 06:00–12:00",
+    totalItems: 2,
+    sections: [
+      {
+        id: "s1",
+        title: "Печь",
+        items: [
+          {
+            id: "a",
+            title: "Включить",
+            type: "bool",
+            critical: true,
+            hint: null,
+          },
+          {
+            id: "n",
+            title: "Температура",
+            type: "number",
+            critical: false,
+            min: 2,
+            max: 4,
+            hint: "2…4",
+          },
+        ],
+      },
+    ],
+  };
+
+  it("сохраняет всё, от чего зависит счёт: тип, критичность, границы", () => {
+    const [section] = gradingSections(view);
+
+    expect(section?.items[0]).toStrictEqual({
+      id: "a",
+      title: {},
+      type: "bool",
+      critical: true,
+    });
+    expect(section?.items[1]).toMatchObject({ type: "number", min: 2, max: 4 });
+  });
+
+  it("этими пунктами считается заполнение так же, как настоящими", () => {
+    const summary = summarizeFill(gradingSections(view), {
+      a: { value: false, comment: "", at: AT },
+    });
+
+    expect(summary.total).toBe(2);
+    expect(summary.needsCommentItemIds).toStrictEqual(["a"]);
+  });
+
+  it("отдаёт пункты по идентификатору", () => {
+    expect(gradingItemsById(view).get("n")).toMatchObject({ min: 2, max: 4 });
+    expect(gradingItemsById(view).has("нет такого")).toBe(false);
   });
 });
