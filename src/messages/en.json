@@ -365,5 +365,108 @@
       "title": "Too many requests",
       "text": "Wait a minute and scan the sticker again."
     }
+  },
+  "feed": {
+    "nav": {
+      "brand": "Checklists",
+      "brandMuted": "Dodo",
+      "work": "Work",
+      "checklists": "Checklists",
+      "library": "Block library",
+      "feed": "Submissions",
+      "reference": "Reference",
+      "catalog": "Countries and stores",
+      "qr": "QR codes",
+      "soon": "Section is not ready yet",
+      "signedIn": "Signed in",
+      "role": "methodologist"
+    },
+    "title": "Submissions",
+    "crumbs": {
+      "allCountries": "Whole network",
+      "allStores": "all stores"
+    },
+    "filters": {
+      "country": "Country",
+      "store": "Store",
+      "station": "Station",
+      "period": "Period",
+      "all": "All",
+      "reset": "Reset",
+      "apply": "Show",
+      "periodToday": "Today",
+      "periodWeek": "7 days",
+      "periodMonth": "Month",
+      "timeZone": "The period is counted in store time: {zone}"
+    },
+    "range": {
+      "day": "for {day}",
+      "span": "from {from} to {to}"
+    },
+    "metrics": {
+      "submissions": "{count, plural, one {submission} other {submissions}} {period}",
+      "periodToday": "today",
+      "periodWeek": "over 7 days",
+      "periodMonth": "over a month",
+      "failedCritical": "{count, plural, one {failed critical item} other {failed critical items}}",
+      "averageDuration": "average time to fill",
+      "noValue": "—"
+    },
+    "list": {
+      "title": "Feed",
+      "count": "{count, plural, one {# record} other {# records}}",
+      "columnWhen": "When",
+      "columnStore": "Store",
+      "columnStation": "Station",
+      "columnChecklist": "Checklist",
+      "columnOutcome": "Result",
+      "columnDuration": "Duration",
+      "open": "Open",
+      "yesterday": "yesterday {time}",
+      "version": "v{number}",
+      "limitReached": "Showing the latest {count} submissions: narrow the period or the filters to see the rest"
+    },
+    "outcome": {
+      "ok": "All done",
+      "unanswered": "{count, plural, one {# item unanswered} other {# items unanswered}}",
+      "failed": "{count, plural, one {# item not done} other {# items not done}}",
+      "criticalFailed": "{count, plural, one {# critical failed} other {# critical failed}}"
+    },
+    "empty": {
+      "neverTitle": "No submissions yet",
+      "neverText": "As soon as someone scans a station QR code and fills the checklist, the record shows up here.",
+      "neverAction": "Print QR codes",
+      "periodTitle": "Nothing was filled in the selected period",
+      "periodText": "There are submissions for these filters, just on other days: widen the period or clear the filters.",
+      "periodAction": "Clear filters",
+      "noStationsTitle": "Nothing to fill yet",
+      "noStationsText": "First add a store and a station in the reference, then print the station QR code — that is what the employee scans to fill the checklist.",
+      "noStationsAction": "Open the reference"
+    },
+    "card": {
+      "back": "Submissions",
+      "title": "{checklist} · {store}",
+      "checklistLink": "Checklist v{number}",
+      "checklistLinkNoVersion": "Checklist",
+      "startedAt": "started",
+      "submittedAt": "submitted",
+      "duration": "duration",
+      "done": "done",
+      "doneValue": "{done} of {total}",
+      "snapshotNotice": "The items are shown exactly as the employee saw them — version v{number} of {date}. Later edits of the checklist do not affect this card.",
+      "snapshotNoticeNoDate": "The items are shown exactly as the employee saw them. Later edits of the checklist do not affect this card.",
+      "answers": "Answers",
+      "libraryBlock": "library block",
+      "critical": "critical",
+      "range": "{min}–{max}",
+      "rangeMin": "at least {min}",
+      "rangeMax": "at most {max}",
+      "yes": "yes",
+      "no": "no",
+      "noAnswer": "no answer",
+      "notFoundTitle": "Submission not found",
+      "notFoundText": "The link points to a submission that does not exist: the address may have a typo.",
+      "notFoundAction": "Back to the feed"
+    }
   }
 }
