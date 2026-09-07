@@ -73,6 +73,11 @@ npm run seed:demo     # идемпотентный сид, повторный з
 Секреты площадки свои, не демонстрационные из `.env.example`: пароль кабинета, секрет подписи
 сессии и пароль базы. Файл `.env` лежит только на площадке и в git не попадает.
 
+На время показа в кабинете стоит короткая единая учётка по требованию владельца (D047): порог
+длины у `scripts/hash-admin-password.mjs` не снят, а пройден явным флагом `--allow-short`.
+Значение пароля не пишется ни в один файл репозитория — он публичный; пароль знают владелец и
+`.env` площадки. После показа его меняют на длинный.
+
 Наружу продукт отдаёт отдельный туннель Cloudflare (`C:\bootstrap\cloudflared.exe`), продукт
 живёт на корне своего адреса. Публиковать его на пути порта Tailscale нельзя, пока не закрыта
 T088: обычные ссылки между экранами базового пути не знают.
@@ -98,3 +103,46 @@ node scripts/mvp-smoke.mjs --url <публичный адрес> --password <п�
 Шаг ожидания задаётся флагом `--timeout`: через туннель ответы идут медленнее, и значения по
 умолчанию не хватает. Смоук оставляет после себя данные с именами `Smokeland …` — их нужно
 удалять из демо-контура, иначе они копятся в справочнике.
+
+**Удаления по имени страны недостаточно.** Станция удаляется, а её чек-листы остаются:
+`checklists.station_id` объявлен `ON DELETE SET NULL` осознанно — удаление станции отвязывает
+чек-лист, но не уничтожает его историю (см. `src/blocks/data/schema.ts`). Поэтому после чистки
+по стране отвязанные чек-листы прогонов остаются в базе и копятся невидимо: 07.09.2026 их
+накопилось восемь. Убирать нужно оба слоя, в порядке связей:
+
+```sql
+-- 1. данные смоука, найденные по стране
+BEGIN;
+CREATE TEMP VIEW smoke_stations AS
+  SELECT st.id FROM stations st
+  JOIN stores s ON s.id = st.store_id
+  JOIN countries c ON c.id = s.country_id
+  WHERE c.name LIKE 'Smokeland%';
+DELETE FROM submissions WHERE station_id IN (SELECT id FROM smoke_stations);
+DELETE FROM checklist_versions WHERE station_id IN (SELECT id FROM smoke_stations)
+   OR checklist_id IN (SELECT id FROM checklists WHERE station_id IN (SELECT id FROM smoke_stations));
+DELETE FROM checklists WHERE station_id IN (SELECT id FROM smoke_stations);
+DELETE FROM stations WHERE id IN (SELECT id FROM smoke_stations);
+DELETE FROM stores WHERE country_id IN (SELECT id FROM countries WHERE name LIKE 'Smokeland%');
+DELETE FROM countries WHERE name LIKE 'Smokeland%';
+COMMIT;
+
+-- 2. чек-листы, отвязанные предыдущим шагом (в демо-контуре все чек-листы привязаны к станции,
+--    поэтому station_id IS NULL здесь означает «остаток прогона»; сначала убедиться, что
+--    заполнений на них нет — они бы значили живые данные, а не мусор)
+BEGIN;
+SELECT count(*) FROM submissions s
+  JOIN checklist_versions v ON v.id = s.version_id
+  JOIN checklists c ON c.id = v.checklist_id
+ WHERE c.station_id IS NULL;   -- должно быть 0
+DELETE FROM checklist_versions WHERE checklist_id IN (SELECT id FROM checklists WHERE station_id IS NULL);
+DELETE FROM checklists WHERE station_id IS NULL;
+COMMIT;
+```
+
+Ручной рецепт — заплатка, а не решение: смоук обязан убирать за собой сам, иначе правило
+соблюдается ровно до первого раза, когда о нём забыли (issue #9).
+
+Ожидаемое содержимое демо-контура после чистки — `1 страна · 2 пиццерии · 5 станций ·
+3 чек-листа · 7 версий · 12 заполнений`. Расхождение означает либо остатки прогона, либо
+потерянные демо-данные.
