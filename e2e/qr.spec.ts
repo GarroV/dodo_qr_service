@@ -3,77 +3,15 @@
 //
 // Код проверяется не по разметке, а чтением картинки обратно — тем же способом,
 // каким его читает камера.
-import { randomUUID } from "node:crypto";
-
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { Pool } from "pg";
 
 import { decodeQrSvg } from "../src/blocks/qr/testing/decode-svg";
 import { E2E_ADMIN_PASSWORD } from "./admin-credentials";
-import { e2eDatabaseUrl } from "./database";
 import { E2E_PUBLIC_BASE_URL } from "./public-base-url";
+import { seedStore, STATION_NAMES } from "./station-fixtures";
 
 const QR_PATH = "/admin/qr";
-const STATION_NAMES = ["Касса", "Кухня", "Упаковка"];
-
-/** Алфавит кода станции: без похожих знаков (`0`, `1`, `i`, `l`, `o`) — решение D031. */
-const CODE_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
-
-interface SeededStore {
-  storeId: string;
-  storeName: string;
-  countryName: string;
-  stationNames: string[];
-}
-
-function code(): string {
-  return Array.from(
-    { length: 10 },
-    () =>
-      CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)] ?? "z",
-  ).join("");
-}
-
-/**
- * Пиццерия с тремя станциями прямо в базе. Через экран справочника заводить незачем:
- * сценарий проверяет блок QR, а не чужой блок, и лишние шаги делают падение
- * непонятным — упало бы в справочнике, а искали бы в QR.
- */
-async function seedStore(): Promise<SeededStore> {
-  const label = randomUUID().slice(0, 8);
-  const pool = new Pool({ connectionString: e2eDatabaseUrl() });
-  try {
-    const country = await pool.query<{ id: string }>(
-      "insert into countries (name, locale) values ($1, 'ru') returning id",
-      [`Страна ${label}`],
-    );
-    const countryId = country.rows[0]?.id;
-    const store = await pool.query<{ id: string }>(
-      "insert into stores (country_id, name, timezone) values ($1, $2, 'Asia/Almaty') returning id",
-      [countryId, `Пиццерия ${label}`],
-    );
-    const storeId = store.rows[0]?.id;
-    if (storeId === undefined)
-      throw new Error("Пиццерия для сценария не завелась");
-
-    for (const name of STATION_NAMES) {
-      await pool.query(
-        "insert into stations (store_id, name, code) values ($1, $2, $3)",
-        [storeId, `${name} ${label}`, code()],
-      );
-    }
-
-    return {
-      storeId,
-      storeName: `Пиццерия ${label}`,
-      countryName: `Страна ${label}`,
-      stationNames: STATION_NAMES.map((name) => `${name} ${label}`),
-    };
-  } finally {
-    await pool.end();
-  }
-}
 
 async function signIn(page: Page): Promise<void> {
   await page.goto("/admin/login");

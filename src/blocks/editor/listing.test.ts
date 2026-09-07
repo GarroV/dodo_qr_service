@@ -4,7 +4,13 @@
 import { afterAll, describe, expect, test } from "vitest";
 import { eq } from "drizzle-orm";
 
-import { getDb, saveSubmission, stations, stores } from "@/blocks/data";
+import {
+  checklists,
+  getDb,
+  saveSubmission,
+  stations,
+  stores,
+} from "@/blocks/data";
 import { closeTestDb } from "@/blocks/data/testing/db";
 import {
   createPublishedVersion,
@@ -92,6 +98,33 @@ describe("listChecklists", () => {
       .map((entry) => entry.id);
 
     expect(mine).toStrictEqual([first, second]);
+  });
+});
+
+describe("listChecklists и снятые с работы", () => {
+  test("снятый с работы чек-лист из списка уходит, а соседний остаётся", async () => {
+    // Смысл удаления для методиста — «этого больше нет в работе». Если снятый чек-лист
+    // остаётся в списке, он заводит второй такой же и путается в них.
+    const station = await createStation();
+    const kept = await createChecklist({
+      stationId: station.stationId,
+      title: { ru: "Остаётся" },
+      window: MORNING,
+    });
+    const removed = await createChecklist({
+      stationId: station.stationId,
+      title: { ru: "Снят с работы" },
+      window: MORNING,
+    });
+
+    await getDb()
+      .update(checklists)
+      .set({ archivedAt: new Date() })
+      .where(eq(checklists.id, removed));
+
+    const ids = (await listChecklists()).map((row) => row.id);
+    expect(ids).toContain(kept);
+    expect(ids).not.toContain(removed);
   });
 });
 

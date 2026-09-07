@@ -3,7 +3,7 @@
 // Публикация — вставка строки, никогда не переписывание. Прежняя опубликованная версия
 // уходит в архив сменой одного признака: её содержимое остаётся тем же, потому что на неё
 // ссылаются заполнения (принцип 3, D002).
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 
 import { getDb } from "./client";
 import type { Checklist, ChecklistVersion, Station } from "./schema";
@@ -75,6 +75,10 @@ export async function getPublishedVersionForStation(
     .where(
       and(
         eq(stations.code, stationCode),
+        // Снятый с работы чек-лист станции не отдаётся: наклейка живёт годами и переклейке
+        // не подлежит, поэтому сканирование обязано вести в «нечего заполнять», а не
+        // открывать то, что методист убрал из работы.
+        isNull(checklists.archivedAt),
         sql`case
               when ${checklists.windowStart} <= ${checklists.windowEnd}
                 then ${localTime} >= ${checklists.windowStart} and ${localTime} < ${checklists.windowEnd}

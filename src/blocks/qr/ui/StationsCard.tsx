@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 
 import { submitReissueCode } from "./actions";
 import type { QrStationView, QrStoreView } from "./model";
-import { qrHref } from "./view";
+import { qrHref, qrStickerHref } from "./view";
 
 /**
  * Карточка «Станции» (таблица `.table` из эталона): код и дата выпуска на
@@ -40,6 +40,7 @@ interface StationRowProps {
   readonly storeId: string;
   readonly issuedAt: string;
   readonly reissueLabel: string;
+  readonly downloadLabel: string;
 }
 
 function StationRow({
@@ -47,6 +48,7 @@ function StationRow({
   storeId,
   issuedAt,
   reissueLabel,
+  downloadLabel,
 }: StationRowProps): ReactElement {
   return (
     <tr className={TABLE_ROW_CLASS}>
@@ -61,17 +63,29 @@ function StationRow({
       <td className={TABLE_TD_NUM_CLASS}>{station.code}</td>
       <td className={TABLE_TD_META_CLASS}>{issuedAt}</td>
       <td className={TABLE_TD_ACTIONS_CLASS}>
-        <form action={submitReissueCode}>
-          <input type="hidden" name={FIELD_STORE_ID} value={storeId} />
-          <input type="hidden" name={FIELD_STATION_ID} value={station.id} />
-          <button
-            type="submit"
-            data-testid="reissue-code"
+        <div className="inline-flex items-center gap-[var(--space-4)]">
+          {/* Обычная ссылка с `download`: файл отдаёт маршрут, и скачивание работает
+              без JavaScript — как и остальные действия продукта. */}
+          <a
+            href={qrStickerHref({ storeId, stationId: station.id })}
+            download
+            data-testid="download-sticker"
             className={BTN_GHOST_SM_CLASS}
           >
-            {reissueLabel}
-          </button>
-        </form>
+            {downloadLabel}
+          </a>
+          <form action={submitReissueCode}>
+            <input type="hidden" name={FIELD_STORE_ID} value={storeId} />
+            <input type="hidden" name={FIELD_STATION_ID} value={station.id} />
+            <button
+              type="submit"
+              data-testid="reissue-code"
+              className={BTN_GHOST_SM_CLASS}
+            >
+              {reissueLabel}
+            </button>
+          </form>
+        </div>
       </td>
     </tr>
   );
@@ -89,6 +103,7 @@ export async function StationsCard({
   const t = await getTranslations("qr");
   const format = await getFormatter();
   const reissueLabel = t("actions.reissue");
+  const downloadLabel = t("actions.download");
 
   return (
     <div data-testid="qr-stations" className={CARD_CLASS}>
@@ -116,6 +131,7 @@ export async function StationsCard({
                 timeZone: store.timezone,
               })}
               reissueLabel={reissueLabel}
+              downloadLabel={downloadLabel}
             />
           ))}
         </tbody>

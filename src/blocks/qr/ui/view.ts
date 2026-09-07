@@ -12,6 +12,9 @@ export const QR_SCREEN_PATH = "/admin/qr/screen";
 /** Опрос кода станции планшетом: отдаёт только код и время его выпуска. */
 export const QR_CODE_PATH = "/admin/qr/code";
 
+/** Наклейка станции файлом (SVG) — «Скачать» рядом с кодом. */
+const QR_STICKER_PATH = "/admin/qr/sticker";
+
 const STORE = "store";
 const STATION = "station";
 
@@ -123,6 +126,14 @@ export function qrScreenHref(ref: StationRef): string {
 /** Адрес опроса кода станции. */
 export function qrCodeHref(ref: StationRef): string {
   return withParams(QR_CODE_PATH, [
+    [STORE, ref.storeId],
+    [STATION, ref.stationId],
+  ]);
+}
+
+/** Адрес файла наклейки станции. */
+export function qrStickerHref(ref: StationRef): string {
+  return withParams(QR_STICKER_PATH, [
     [STORE, ref.storeId],
     [STATION, ref.stationId],
   ]);

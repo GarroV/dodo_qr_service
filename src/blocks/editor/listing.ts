@@ -80,6 +80,9 @@ export async function listChecklists(): Promise<ChecklistRow[]> {
       left join stations st on st.id = c.station_id
       left join stores sto on sto.id = st.store_id
       left join countries co on co.id = sto.country_id
+     -- Снятые с работы не показываются: для методиста они удалены. Сама строка остаётся
+     -- в базе только потому, что на её версии ссылаются заполнения (принцип 3, D002).
+     where c.archived_at is null
      order by co.name nulls last, sto.name nulls last, st.name nulls last,
               coalesce(c.title->>'ru', c.title->>'en') nulls last, c.created_at`);
 
