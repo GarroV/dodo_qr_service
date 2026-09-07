@@ -1,17 +1,18 @@
 import { useTranslations } from "next-intl";
 
-import { CHECKLISTS_PATH } from "../routes";
+import { ADMIN_SECTIONS } from "@/blocks/core/admin-sections";
 
 /**
  * Левое меню админки по эталону (`docs/forge/design/screens/editor.html`): 208 px,
  * две группы разделов, внизу — кто вошёл.
  *
  * Разделы, которых в продукте ещё нет, — `<span aria-disabled>`, а не ссылка: ссылка
- * вела бы в 404. Адрес справочника вписан строкой, а не импортирован из блока `catalog`:
- * границы модулей запрещают редактору зависеть от справочника (.dependency-cruiser.cjs),
- * и общий каркас для двух блоков сейчас негде положить, кроме как продублировать.
+ * вела бы в 404. Что готово и куда ведёт — не решается здесь: адреса и готовность лежат
+ * в `core/admin-sections`. Раньше каждая навигация держала свой список, и они разъехались:
+ * заполнения и коды показывались неготовыми, хотя работали (#11). Границы модулей
+ * (.dependency-cruiser.cjs) не дают редактору зависеть от блоков соседних разделов, а `core`
+ * доступен всем — поэтому общее знание живёт там.
  */
-const CATALOG_PATH = "/admin/catalog";
 
 const LABEL_CLASS =
   "px-[var(--space-7)] pb-[var(--space-3)] text-[length:var(--fs-micro)] leading-[var(--lh-micro)] font-semibold tracking-[var(--tracking-micro)] text-[var(--ink-3)] uppercase";
@@ -43,26 +44,26 @@ export function AdminNav({
         <div className={LABEL_CLASS}>{t("work")}</div>
         <a
           className={active === "checklists" ? ITEM_ACTIVE_CLASS : ITEM_CLASS}
-          href={CHECKLISTS_PATH}
+          href={ADMIN_SECTIONS.checklists.path}
         >
           {t("checklists")}
         </a>
         <span className={ITEM_SOON_CLASS} aria-disabled="true" title={soon}>
           {t("library")}
         </span>
-        <span className={ITEM_SOON_CLASS} aria-disabled="true" title={soon}>
+        <a className={ITEM_CLASS} href={ADMIN_SECTIONS.feed.path}>
           {t("feed")}
-        </span>
+        </a>
       </div>
 
       <div className="flex flex-col">
         <div className={LABEL_CLASS}>{t("reference")}</div>
-        <a className={ITEM_CLASS} href={CATALOG_PATH}>
+        <a className={ITEM_CLASS} href={ADMIN_SECTIONS.catalog.path}>
           {t("catalog")}
         </a>
-        <span className={ITEM_SOON_CLASS} aria-disabled="true" title={soon}>
+        <a className={ITEM_CLASS} href={ADMIN_SECTIONS.qr.path}>
           {t("qr")}
-        </span>
+        </a>
       </div>
 
       <div className="mt-auto px-[var(--space-7)] text-[length:var(--fs-meta)] text-[var(--ink-3)]">
