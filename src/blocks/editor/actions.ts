@@ -20,6 +20,7 @@ import type { EditorActionState } from "./action-state";
 import { createChecklist, saveDraft, updateChecklist } from "./drafts";
 import { duplicateChecklist } from "./duplicate";
 import { publish } from "./publish";
+import { removeChecklist } from "./removal";
 import { CHECKLISTS_PATH, checklistPath } from "./routes";
 import { EditorInputError } from "./validation";
 
@@ -110,6 +111,26 @@ export async function submitPublish(
  * Тогда возвращаемся в список — он перечитается и покажет, что есть на самом деле.
  * Всё остальное пробрасывается: молча проглоченный сбой хуже страницы с ошибкой.
  */
+/**
+ * «Удалить чек-лист» с экрана подтверждения. Что именно произойдёт — решает `removeChecklist`
+ * по наличию заполнений; экран подтверждения показал это заранее, а здесь остаётся выполнить.
+ * Успех и отказ ведут в список: удалённого чек-листа больше нет, возвращать методиста
+ * на его редактор — значит показать ему 404.
+ */
+export async function submitDeleteChecklist(form: FormData): Promise<void> {
+  await requireAdmin();
+
+  try {
+    await removeChecklist(formText(form, "checklistId"));
+  } catch (error) {
+    if (!(error instanceof EditorInputError)) throw error;
+    console.error("Редактор: удаление не состоялось", error);
+  }
+
+  revalidatePath(CHECKLISTS_PATH);
+  redirect(CHECKLISTS_PATH);
+}
+
 export async function submitDuplicate(form: FormData): Promise<void> {
   await requireAdmin();
 

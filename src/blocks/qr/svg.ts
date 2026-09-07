@@ -62,6 +62,40 @@ export function stationQrSvg(
   origin: string,
   basePath = "",
 ): string {
+  return render(code, origin, basePath, 'width="100%" height="100%"');
+}
+
+/**
+ * Печатный размер наклейки. Тот же, что на листе A4 (`PrintSheet`): скачанный файл и
+ * напечатанный лист обязаны давать один и тот же код одного размера, иначе наклейки
+ * из двух источников не совпадут в рабочей зоне.
+ */
+const STICKER_SIZE_MM = 42;
+
+/**
+ * Тот же код, но файлом для скачивания.
+ *
+ * Отличие одно и оно важное: размер задан в миллиметрах, а не долей «100%». Доля
+ * означает «сколько дадут в разметке» — в чужой программе, куда файл откроют, давать
+ * её некому, и код открывается размером в ноль или во весь лист. Вектор при этом
+ * сохраняется: геометрия живёт в `viewBox`, поэтому масштаб меняется без потери
+ * качества, а печатать можно любым размером.
+ */
+export function stationStickerSvg(
+  code: string,
+  origin: string,
+  basePath = "",
+): string {
+  const size = `${String(STICKER_SIZE_MM)}mm`;
+  return render(code, origin, basePath, `width="${size}" height="${size}"`);
+}
+
+function render(
+  code: string,
+  origin: string,
+  basePath: string,
+  dimensions: string,
+): string {
   const url = stationScanUrl(origin, code, basePath);
   const { modules } = QRCode.create(url, {
     errorCorrectionLevel: ERROR_CORRECTION,
@@ -75,7 +109,7 @@ export function stationQrSvg(
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${box} ${box}" ` +
-    `width="100%" height="100%" shape-rendering="crispEdges" aria-hidden="true">` +
+    `${dimensions} shape-rendering="crispEdges" aria-hidden="true">` +
     `<path fill="${LIGHT}" d="M0 0h${box}v${box}H0z"/>` +
     `<path fill="${DARK}" d="${path}"/>` +
     `</svg>`

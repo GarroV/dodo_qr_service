@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { PUBLIC_BASE_URL_VAR } from "./sticker-origin";
-import { QR_QUIET_ZONE, stationQrSvg } from "./svg";
+import { QR_QUIET_ZONE, stationQrSvg, stationStickerSvg } from "./svg";
 import { decodeQrSvg, parseQrSvg } from "./testing/decode-svg";
 
 const ORIGIN = "http://localhost:3160";
@@ -135,6 +135,37 @@ describe("QR станции: негодные значения на входе",
 
     expect(decodeQrSvg(stationQrSvg(code, ORIGIN))).toBe(
       `${ORIGIN}/s/${encodeURIComponent(code)}`,
+    );
+  });
+});
+
+describe("QR станции: файл наклейки для скачивания", () => {
+  it("несёт печатный размер в миллиметрах, а не растяжку по месту", () => {
+    // Файл уходит человеку и открывается в чужой программе: доля «100%» там означает
+    // «размер неизвестен». Миллиметры дают тот же размер, что и печатный лист (42 мм).
+    const file = stationStickerSvg(CODE, ORIGIN);
+
+    expect(file).toContain('width="42mm"');
+    expect(file).toContain('height="42mm"');
+    expect(file).not.toContain('width="100%"');
+  });
+
+  it("остаётся вектором: масштаб задаётся viewBox, а не пикселями", () => {
+    const file = stationStickerSvg(CODE, ORIGIN);
+
+    expect(file).toMatch(/viewBox="0 0 \d+ \d+"/);
+    expect(file).toContain("<path");
+  });
+
+  it("кодирует ту же ссылку, что и код на экране", () => {
+    expect(decodeQrSvg(stationStickerSvg(CODE, ORIGIN))).toBe(
+      decodeQrSvg(stationQrSvg(CODE, ORIGIN)),
+    );
+  });
+
+  it("учитывает базовый путь площадки — как и код на экране", () => {
+    expect(decodeQrSvg(stationStickerSvg(CODE, ORIGIN, "/qr"))).toBe(
+      `${ORIGIN}/qr/s/${CODE}`,
     );
   });
 });

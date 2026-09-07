@@ -228,6 +228,32 @@ async function stationWithTwoChecklists(): Promise<{
 }
 
 describe("getPublishedVersionForStation", () => {
+  test("снятый с работы чек-лист по наклейке не открывается", async () => {
+    // Наклейка на станции живёт годами и переклейке не подлежит: сняли чек-лист с работы —
+    // сканирование обязано вести в «нечего заполнять», а не открывать снятое.
+    const station = await createStation();
+    const checklistId = await createChecklist({
+      stationId: station.stationId,
+      ...MORNING,
+    });
+    await createPublishedVersion(checklistId, sampleSections("утро"));
+
+    const before = await getPublishedVersionForStation(
+      station.stationCode,
+      at(9),
+    );
+    expect(before).not.toBeNull();
+
+    await getTestDb()
+      .update(checklists)
+      .set({ archivedAt: new Date() })
+      .where(eq(checklists.id, checklistId));
+
+    expect(
+      await getPublishedVersionForStation(station.stationCode, at(9)),
+    ).toBeNull();
+  });
+
   test("в 09:00 отдаёт утренний чек-лист", async () => {
     const { code, morningVersionId } = await stationWithTwoChecklists();
 

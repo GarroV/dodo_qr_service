@@ -144,6 +144,7 @@
       "new": "+ New checklist",
       "edit": "Edit",
       "duplicate": "Duplicate",
+      "delete": "Delete",
       "columnTitle": "Title",
       "columnStation": "Station",
       "columnWindow": "Window",
@@ -262,6 +263,17 @@
       "nothingToPublish": "Nothing to publish: the checklist has no items.",
       "unknownBlock": "The inserted library block was not found.",
       "unknown": "Could not save. Please try again."
+    },
+    "remove": {
+      "crumbs": "Checklists",
+      "title": "Delete this checklist?",
+      "name": "Checklist",
+      "willDelete": "This checklist has no submissions — it will be deleted completely, together with its draft and versions. This cannot be undone.",
+      "willArchive": "This checklist already has submissions ({count}). They cannot be erased: they hold what the employee actually saw. So the checklist will leave the list and stop opening at the station, while the submission history stays in the feed.",
+      "alreadyArchived": "This checklist is already out of service. Its submission history stays in the feed.",
+      "confirmDelete": "Delete completely",
+      "confirmArchive": "Take out of service",
+      "cancel": "Cancel"
     }
   },
   "qr": {
@@ -286,7 +298,8 @@
     "actions": {
       "print": "Print",
       "openScreen": "Open full screen",
-      "reissue": "Reissue"
+      "reissue": "Reissue",
+      "download": "Download"
     },
     "notice": {
       "text": "A sticker is printed once and lives for years: the QR belongs to the station, not to the checklist. Change the checklist — the sticker stays. Reissuing the code kills the old stickers: print new ones.",

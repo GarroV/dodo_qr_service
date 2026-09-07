@@ -15,3 +15,10 @@ export function checklistPath(checklistId: string): string {
 export function checklistPreviewPath(checklistId: string): string {
   return `${checklistPath(checklistId)}/preview`;
 }
+
+/** Подтверждение удаления. Отдельный экран, а не диалог: он обязан заранее сказать, что
+ *  именно произойдёт — «удалить полностью» и «убрать из работы» слишком разные вещи, чтобы
+ *  выясняться после нажатия. Заодно работает без JavaScript, как и остальные формы. */
+export function checklistDeletePath(checklistId: string): string {
+  return `${checklistPath(checklistId)}/delete`;
+}
