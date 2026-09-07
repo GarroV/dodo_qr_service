@@ -76,6 +76,25 @@ export function ChecklistEditor(props: ChecklistEditorProps) {
   const [stationId, setStationId] = useState(props.initialStationId);
   const [window, setWindow] = useState<WindowValue>(props.initialWindow);
   const [focusItemId, setFocusItemId] = useState<string | null>(null);
+
+  // Свойства чек-листа уезжают на сервер скрытыми полями из состояния, а до гидратации
+  // состояния ещё нет: изменённое в первую секунду видно на экране, но в форму уходит
+  // прежнее значение, и сохранение СТИРАЕТ привязку молча (#7). Поэтому при монтировании
+  // состояние подхватывает то, что уже стоит в разметке.
+  useEffect(() => {
+    const station = document.getElementById("checklist-station");
+    if (station instanceof HTMLSelectElement && station.value !== "") {
+      setStationId((current) =>
+        station.value === current ? current : station.value,
+      );
+    }
+    const titleField = document.getElementById("checklist-title");
+    if (titleField instanceof HTMLInputElement && titleField.value !== "") {
+      setTitle((current) =>
+        titleField.value === current ? current : titleField.value,
+      );
+    }
+  }, []);
   // Вставка блока доступна из двух мест эталона: правой колонки и кнопки под секциями.
   const [pickingBlock, setPickingBlock] = useState(false);
 

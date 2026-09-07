@@ -20,7 +20,63 @@ import { chromium } from "@playwright/test";
 
 const PHONE = { width: 375, height: 812 };
 const DESKTOP = { width: 1440, height: 960 };
-const STEP_TIMEOUT = 20_000;
+// Шаг ожидания: на localhost хватает 20 с, по внешнему адресу через туннель — нет.
+const STEP_TIMEOUT = Number(argumentRaw("timeout") ?? 30_000);
+
+/** Значение флага командной строки или undefined. */
+function argumentRaw(name) {
+  const index = process.argv.indexOf(`--${name}`);
+  return index !== -1 && index + 1 < process.argv.length
+    ? process.argv[index + 1]
+    : undefined;
+}
+
+/**
+ * Осталась ли выбранной станция в редакторе.
+ *
+ * Значение читается с самого селектора: перерисовка после серверного действия
+ * возвращает список заново, и потерянный выбор виден только так.
+ */
+async function stationBound(page, label, timeout = STEP_TIMEOUT) {
+  const select = page.getByTestId("checklist-station");
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    const selected = await select
+      .locator("option:checked")
+      .innerText()
+      .catch(() => "");
+    if (selected.trim() === label) return true;
+    await page.waitForTimeout(300);
+  }
+  return false;
+}
+
+/** Дождаться, пока элементов станет не меньше `expected`. */
+async function waitForCount(locator, expected, timeout = STEP_TIMEOUT) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if ((await locator.count()) >= expected) return;
+    await locator.page().waitForTimeout(200);
+  }
+  throw new Error(
+    `не дождался ${String(expected)} элементов: их ${String(await locator.count())}`,
+  );
+}
+
+/**
+ * Дождаться, пока у элемента появится нужное состояние.
+ *
+ * Проверка «прочитал атрибут сразу после касания» верна только на быстром localhost:
+ * через туннель ответ приходит позже, и такой смоук падает на работающем продукте.
+ */
+async function hasState(locator, expected, timeout = STEP_TIMEOUT) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if ((await locator.getAttribute("data-state")) === expected) return true;
+    await locator.page().waitForTimeout(200);
+  }
+  return false;
+}
 
 function argument(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
@@ -152,13 +208,28 @@ async function createChecklist(page, catalog) {
   await page
     .getByTestId("checklist-station")
     .selectOption({ label: `${COUNTRY} · ${STORE} · ${STATION}` });
+  // Выбор станции уходит на сервер и перерисовывает редактор. Пока перерисовка идёт,
+  // клавиатурный ввод уезжает в элемент, который сейчас будет заменён, — на localhost
+  // это успевало, по внешнему адресу пункты переставали создаваться вовсе.
+  await page.waitForLoadState("networkidle");
+  // Привязка станции уходит в черновик серверным действием. Проверяем, что она там
+  // осталась: публикация читает черновик, и потерянная привязка даёт станцию без
+  // чек-листа — заполнение по её QR открыть уже нельзя.
+  const stationLabel = `${COUNTRY} · ${STORE} · ${STATION}`;
+  const bound = await stationBound(page, stationLabel);
+  check(bound, `чек-лист привязан к станции «${STATION}»`);
 
   const items = page.getByTestId("item-title");
   await items.first().click();
   await page.keyboard.type("Turn on the oven and the hood");
+  await items.first().waitFor({ state: "visible", timeout: STEP_TIMEOUT });
+  // После Enter ЖДЁМ появления следующего пункта: по внешнему адресу ответ идёт через
+  // туннель, и следующая строка текста уезжала в пункт, которого ещё нет.
   await page.keyboard.press("Enter");
+  await waitForCount(items, 2);
   await page.keyboard.type("Fryer temperature");
   await page.keyboard.press("Enter");
+  await waitForCount(items, 3);
   await page.keyboard.type("Check labels on the sauces");
 
   await page.getByTestId("item-type").nth(1).selectOption("number");
@@ -233,8 +304,11 @@ async function fillFromPhone(browser, code) {
     const critical = bools.nth(2);
     await critical.tap();
     await critical.tap();
+    // Состояние ЖДЁМ, а не читаем сразу: по внешнему адресу ответ идёт через туннель,
+    // и мгновенное чтение атрибута ловит предыдущее состояние — смоук падал на этом
+    // шаге на живой площадке, хотя продукт работал.
     check(
-      (await critical.getAttribute("data-state")) === "no",
+      await hasState(critical, "no"),
       "критичный пункт отмечен как не выполненный",
     );
 
