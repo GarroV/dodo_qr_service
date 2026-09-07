@@ -8,6 +8,7 @@ import {
   TRUSTED_PROXY_HOPS_VAR,
   trustedProxyHops,
 } from "@/blocks/fill/rate-limit";
+import { publicBasePath } from "@/blocks/qr/sticker-origin";
 import { configuredOrigin } from "@/blocks/qr/ui/origin";
 
 /**
@@ -23,6 +24,10 @@ export function checkStartupConfig(
 
   // Бросает, если адрес задан и негоден: иначе первая же наклейка печатается в никуда.
   configuredOrigin(env);
+
+  // То же про базовый путь площадки: он уезжает внутрь напечатанного кода вместе
+  // с адресом, поэтому негодное значение останавливает продукт здесь (D045).
+  publicBasePath(env);
 
   // Бросает, если число посредников задано и негодно.
   if (trustedProxyHops(env) === 0) {

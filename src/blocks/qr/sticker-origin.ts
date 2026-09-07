@@ -72,3 +72,38 @@ export function stickerOrigin(raw: string): string {
 
   return url.origin;
 }
+
+/** Имя переменной окружения с базовым путём, на котором площадка публикует продукт. */
+const BASE_PATH_VAR = "BASE_PATH";
+
+/** Годный базовый путь: сегменты из букв, цифр, дефиса и подчёркивания. */
+const USABLE_BASE_PATH = /^(?:\/[\w-]+)+$/;
+
+/**
+ * Базовый путь площадки, приведённый к одному виду: `/qr` или пустая строка.
+ *
+ * Нужен там, где у площадки нет своего адреса целиком: у Tailscale всего три порта
+ * под публикацию, и корень порта может занимать соседний сервис (D045). Путь уезжает
+ * внутрь напечатанного кода наравне с источником, поэтому проверяется так же строго:
+ * `//evil.example` — формально путь, а по факту чужой узел.
+ */
+export function publicBasePath(
+  env: Record<string, string | undefined>,
+): string {
+  const raw = env[BASE_PATH_VAR]?.trim();
+  if (raw === undefined || raw === "") return "";
+
+  const withLeadingSlash = raw.startsWith("/") ? raw : `/${raw}`;
+  const value = withLeadingSlash.endsWith("/")
+    ? withLeadingSlash.slice(0, -1)
+    : withLeadingSlash;
+
+  if (!USABLE_BASE_PATH.test(value)) {
+    throw new Error(
+      `${BASE_PATH_VAR}: базовый путь не годится — ожидается вид «/qr», получено «${excerpt(raw)}». ` +
+        "Путь печатается внутри QR-кода станции, поэтому чужой узел, запрос и якорь в нём недопустимы",
+    );
+  }
+
+  return value;
+}

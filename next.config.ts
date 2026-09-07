@@ -19,7 +19,13 @@ const EVERYTHING_EXCEPT_PUBLIC_FILL = `/:path((?!${PUBLIC_FILL_PREFIX.slice(1)})
  * Сами заголовки и обоснование каждой строки политики — в `src/security-headers.ts`.
  * Здесь только развешивание: список один и тот же, ставится в двух местах.
  */
+// Площадка публикует продукт не на корне адреса, а на своём пути: у Tailscale всего три
+// порта под публикацию, и корень занят соседним сервисом. Пустое значение — обычный корень,
+// поэтому разработка и сквозные сценарии живут как раньше (D045).
+const basePath = (process.env["BASE_PATH"] ?? "").replace(/\/$/, "");
+
 const nextConfig: NextConfig = {
+  ...(basePath === "" ? {} : { basePath }),
   typedRoutes: true,
   // Next 16 иначе кладёт в корень свои AGENTS.md и CLAUDE.md — инструкции агентам ведём мы, не сборщик.
   agentRules: false,

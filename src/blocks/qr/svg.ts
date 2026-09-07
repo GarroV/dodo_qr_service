@@ -57,8 +57,12 @@ function rowRuns(
  * В разметку не попадает ни сам код, ни ссылка: только геометрия, то есть
  * подставить в неё через код станции нечего.
  */
-export function stationQrSvg(code: string, origin: string): string {
-  const url = stationScanUrl(origin, code);
+export function stationQrSvg(
+  code: string,
+  origin: string,
+  basePath = "",
+): string {
+  const url = stationScanUrl(origin, code, basePath);
   const { modules } = QRCode.create(url, {
     errorCorrectionLevel: ERROR_CORRECTION,
   });

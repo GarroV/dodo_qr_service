@@ -82,6 +82,7 @@ async function chooseStore(
 async function stationViews(
   storeId: string,
   origin: string,
+  basePath: string,
 ): Promise<QrStationView[]> {
   const stations = await listStations(storeId);
 
@@ -90,7 +91,7 @@ async function stationViews(
     name: station.name,
     code: station.code,
     codeIssuedAt: station.codeIssuedAt,
-    svg: stationQrSvg(station.code, origin),
+    svg: stationQrSvg(station.code, origin, basePath),
     screenHref: qrScreenHref({ storeId, stationId: station.id }),
   }));
 }
@@ -104,6 +105,7 @@ async function stationViews(
 export async function buildQrModel(
   view: QrView,
   origin: string,
+  basePath = "",
 ): Promise<QrModel> {
   const errorCode = view.error ?? null;
   const storeId = view.storeId;
@@ -117,7 +119,7 @@ export async function buildQrModel(
   // с чужой шапкой.
   if (found === null) return chooseStore(origin, errorCode);
 
-  const stations = await stationViews(storeId, origin);
+  const stations = await stationViews(storeId, origin, basePath);
   const picked = stations.find((station) => station.id === view.stationId);
 
   return {
@@ -140,6 +142,7 @@ export async function buildQrModel(
 export async function buildScreenModel(
   ref: StationRef,
   origin: string,
+  basePath = "",
 ): Promise<QrScreenModel | null> {
   const found = await findStore(ref.storeId);
   if (found === null) return null;
@@ -153,7 +156,7 @@ export async function buildScreenModel(
     stationName: station.name,
     storeName: found.store.name,
     code: station.code,
-    svg: stationQrSvg(station.code, origin),
+    svg: stationQrSvg(station.code, origin, basePath),
     codeHref: qrCodeHref(ref),
     backHref: qrHref({ storeId: ref.storeId, stationId: ref.stationId }),
   };

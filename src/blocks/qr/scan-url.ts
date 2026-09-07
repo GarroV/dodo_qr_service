@@ -17,7 +17,11 @@ export const STATION_SCAN_PREFIX = "/s/";
  * Абсолютная, а не относительная: код читает камера телефона снаружи браузера —
  * относительный путь ей открыть неоткуда.
  */
-export function stationScanUrl(origin: string, code: string): string {
+export function stationScanUrl(
+  origin: string,
+  code: string,
+  basePath = "",
+): string {
   if (code === "") {
     throw new Error("ссылка станции: код пустой, вести такой наклейке некуда");
   }
@@ -26,5 +30,8 @@ export function stationScanUrl(origin: string, code: string): string {
   // и то, по чему камера никуда не пойдёт, — см. соседний модуль.
   const base = stickerOrigin(origin);
 
-  return `${base}${STATION_SCAN_PREFIX}${encodeURIComponent(code)}`;
+  // Базовый путь площадки: продукт может быть опубликован не на корне адреса,
+  // и тогда он обязан быть внутри напечатанного кода тоже (D045). Пригодность
+  // пути проверяет `publicBasePath` там, где путь читается из окружения.
+  return `${base}${basePath}${STATION_SCAN_PREFIX}${encodeURIComponent(code)}`;
 }

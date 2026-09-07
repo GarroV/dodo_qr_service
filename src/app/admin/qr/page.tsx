@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 
 import { requireAdmin } from "@/blocks/auth/guard";
 import { buildQrModel } from "@/blocks/qr/ui/build-model";
+import { publicBasePath } from "@/blocks/qr/sticker-origin";
 import { scanOrigin } from "@/blocks/qr/ui/origin";
 import { QrSheetScreen } from "@/blocks/qr/ui/QrSheetScreen";
 import { parseQrView, type SearchParams } from "@/blocks/qr/ui/view";
@@ -22,7 +23,7 @@ export default async function QrPage({
 
   const view = parseQrView(await searchParams);
   const origin = scanOrigin(await headers(), process.env);
-  const model = await buildQrModel(view, origin);
+  const model = await buildQrModel(view, origin, publicBasePath(process.env));
 
   return <QrSheetScreen model={model} />;
 }

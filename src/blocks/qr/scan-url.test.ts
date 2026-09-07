@@ -90,4 +90,17 @@ describe("ссылка станции: что считается пригодн�
       `https://qr.example:10000/s/${CODE}`,
     );
   });
+  it("несёт базовый путь площадки, когда продукт опубликован не на корне", () => {
+    // Иначе камера уходит на корень адреса, где у площадки живёт соседний сервис,
+    // и наклейка ведёт в чужой продукт вместо заполнения (D045).
+    expect(
+      stationScanUrl("https://muspelheim.example:10000", "dmcskt2394", "/qr"),
+    ).toBe("https://muspelheim.example:10000/qr/s/dmcskt2394");
+  });
+
+  it("без базового пути ссылка остаётся прежней", () => {
+    expect(stationScanUrl("https://qr.example", "abc", "")).toBe(
+      "https://qr.example/s/abc",
+    );
+  });
 });

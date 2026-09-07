@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/blocks/auth/guard";
 import { buildScreenModel } from "@/blocks/qr/ui/build-model";
+import { publicBasePath } from "@/blocks/qr/sticker-origin";
 import { scanOrigin } from "@/blocks/qr/ui/origin";
 import { StationScreen } from "@/blocks/qr/ui/StationScreen";
 import { parseStationRef, type SearchParams } from "@/blocks/qr/ui/view";
@@ -22,7 +23,11 @@ export default async function QrStationScreenPage({
   if (ref === null) notFound();
 
   const origin = scanOrigin(await headers(), process.env);
-  const model = await buildScreenModel(ref, origin);
+  const model = await buildScreenModel(
+    ref,
+    origin,
+    publicBasePath(process.env),
+  );
   if (model === null) notFound();
 
   return <StationScreen model={model} />;

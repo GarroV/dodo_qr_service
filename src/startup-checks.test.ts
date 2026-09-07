@@ -57,4 +57,21 @@ describe("проверка окружения при старте", () => {
     }).join(" \u00b7 ");
     expect(notes).not.toMatch(/SESSION_SECRET|ADMIN_PASSWORD_HASH/);
   });
+  it("не даёт продукту подняться с негодным базовым путём", () => {
+    // Путь печатается внутри QR-кода станции наравне с адресом: негодное значение
+    // должно останавливать продукт при старте, а не уезжать на наклейку.
+    for (const value of [
+      "//evil.example",
+      "/qr?x=1",
+      "https://evil.example/qr",
+    ]) {
+      expect(() => checkStartupConfig({ BASE_PATH: value })).toThrow(
+        /BASE_PATH/,
+      );
+    }
+  });
+
+  it("пускает пригодный базовый путь площадки", () => {
+    expect(() => checkStartupConfig({ BASE_PATH: "/qr" })).not.toThrow();
+  });
 });
