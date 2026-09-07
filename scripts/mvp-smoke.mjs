@@ -295,9 +295,15 @@ async function fillFromPhone(browser, code) {
       `ссылка станции открыла чек-лист «${CHECKLIST}»`,
     );
 
+    // Ждём, пока экран оживёт: до гидратации касание по пункту ничего не меняет —
+    // человек на кухне это увидит и тапнет снова, а смоук молча уезжал дальше
+    // и упирался в неактивную кнопку отправки с «2 items left».
+    await page.waitForLoadState("networkidle");
+
     const bools = page.locator('[data-testid="fill-item"][data-state]');
     const oven = bools.nth(0);
     await oven.tap();
+    check(await hasState(oven, "yes"), "первый пункт отмечен выполненным");
     await page.getByTestId("fill-number").fill("172");
 
     // Критичный пункт проваливается вторым касанием: «да» → «нет».
