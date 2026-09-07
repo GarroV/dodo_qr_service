@@ -6,7 +6,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { redirectPath } from "@/blocks/core/base-path";
 import { requireAdmin } from "@/blocks/auth/guard";
 
 import { createCountry, deleteCountry, updateCountry } from "../countries";
@@ -55,7 +54,7 @@ async function perform<T>(
 
   revalidatePath(CATALOG_PATH);
   // redirect бросает исключение — код ниже не выполняется, и это единственный выход.
-  redirect(redirectPath(catalogHref(view)));
+  redirect(catalogHref(view));
 }
 
 /** Куда вернуться, если действие не удалось: то же место дерева плюс код отказа. */
@@ -181,15 +180,13 @@ export async function submitDeleteStation(form: FormData): Promise<void> {
   if (!confirmed) {
     await requireAdmin();
     redirect(
-      redirectPath(
-        catalogHref({
-          countryId,
-          storeId,
-          stationId,
-          focus: "station",
-          confirm: "station",
-        }),
-      ),
+      catalogHref({
+        countryId,
+        storeId,
+        stationId,
+        focus: "station",
+        confirm: "station",
+      }),
     );
   }
 

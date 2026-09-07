@@ -3,8 +3,6 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
-import { redirectPath } from "@/blocks/core/base-path";
-
 import { signIn } from "../actions";
 import { ADMIN_HOME_PATH } from "../routes";
 
@@ -60,7 +58,7 @@ export async function submitLogin(
   }
 
   if (result.status === "ok") {
-    redirect(redirectPath(ADMIN_HOME_PATH));
+    redirect(ADMIN_HOME_PATH);
   }
 
   return REFUSED;
