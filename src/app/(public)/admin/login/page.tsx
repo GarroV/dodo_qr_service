@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { redirectPath } from "@/blocks/core/base-path";
 import { hasAdminSession } from "@/blocks/auth/guard";
 import { ADMIN_HOME_PATH } from "@/blocks/auth/routes";
 import { LoginScreen } from "@/blocks/auth/ui/LoginScreen";
@@ -8,7 +9,7 @@ import { LoginScreen } from "@/blocks/auth/ui/LoginScreen";
 // каталога src/app/admin/ — там всё закрыто охраной в layout.tsx.
 export default async function AdminLoginPage() {
   if (await hasAdminSession()) {
-    redirect(ADMIN_HOME_PATH);
+    redirect(redirectPath(ADMIN_HOME_PATH));
   }
 
   return <LoginScreen />;

@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { redirectPath } from "@/blocks/core/base-path";
 import { CatalogError, reissueStationCode } from "@/blocks/catalog";
 import { requireAdmin } from "@/blocks/auth/guard";
 
@@ -45,10 +46,12 @@ export async function submitReissueCode(form: FormData): Promise<void> {
   revalidatePath(QR_PATH);
   // redirect бросает исключение — код ниже не выполняется, и это единственный выход.
   redirect(
-    qrHref({
-      storeId,
-      stationId,
-      ...(error === null ? {} : { error }),
-    }),
+    redirectPath(
+      qrHref({
+        storeId,
+        stationId,
+        ...(error === null ? {} : { error }),
+      }),
+    ),
   );
 }

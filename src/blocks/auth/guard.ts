@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { redirectPath } from "@/blocks/core/base-path";
+
 import { sessionSecret } from "./config";
 import { LOGIN_PATH } from "./routes";
 import {
@@ -27,7 +29,7 @@ async function currentSession(): Promise<AdminSession | null> {
  */
 export async function requireAdmin(): Promise<void> {
   if ((await currentSession()) === null) {
-    redirect(LOGIN_PATH);
+    redirect(redirectPath(LOGIN_PATH));
   }
 }
 

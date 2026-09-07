@@ -8,6 +8,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { redirectPath } from "@/blocks/core/base-path";
 import { requireAdmin } from "@/blocks/auth/guard";
 
 import {
@@ -52,7 +53,7 @@ export async function submitCreateChecklist(
   // redirect() бросает исключение управления потоком — он обязан быть вне try/catch,
   // иначе переход будет пойман как отказ и методист останется на пустой форме.
   revalidatePath(CHECKLISTS_PATH);
-  redirect(checklistPath(checklistId));
+  redirect(redirectPath(checklistPath(checklistId)));
 }
 
 /** «Сохранить черновик»: свойства чек-листа и разметка уходят одним действием. */
@@ -120,9 +121,9 @@ export async function submitDuplicate(form: FormData): Promise<void> {
     if (!(error instanceof EditorInputError)) throw error;
     console.error("Редактор: дублирование не состоялось", error);
     revalidatePath(CHECKLISTS_PATH);
-    redirect(CHECKLISTS_PATH);
+    redirect(redirectPath(CHECKLISTS_PATH));
   }
 
   revalidatePath(CHECKLISTS_PATH);
-  redirect(checklistPath(copyId));
+  redirect(redirectPath(checklistPath(copyId)));
 }
