@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { ReactElement, ReactNode } from "react";
 
-import { CATALOG_PATH } from "./view";
+import { ADMIN_SECTIONS } from "@/blocks/core/admin-sections";
 
 /**
  * Каркас админки по эталону (`docs/forge/design/screens/*.html`): левое меню
@@ -11,11 +11,15 @@ import { CATALOG_PATH } from "./view";
  *
  * Разделы, которых ещё нет в продукте, рисуются `<span aria-disabled>`, а не
  * `<a>`: ссылка вела бы на несуществующий маршрут (404), а так пункт просто не
- * откликается ни на клик, ни на фокус в смысле навигации.
+ * откликается ни на клик, ни на фокус в смысле навигации. Что именно готово —
+ * решает `core/admin-sections`, а не этот файл: свой список здесь однажды отстал от
+ * продукта, и из справочника нельзя было уйти ни в один раздел, включая готовые (#11).
  */
 
 const NAV_LABEL_CLASS =
   "px-[var(--space-7)] pb-[var(--space-3)] text-[length:var(--fs-micro)] leading-[var(--lh-micro)] font-semibold tracking-[var(--tracking-micro)] text-[var(--ink-3)] uppercase";
+const NAV_ITEM_CLASS =
+  "flex items-center gap-[var(--space-5)] border-l-2 border-transparent px-[var(--space-7)] py-[var(--space-4)] text-[var(--ink-2)] no-underline hover:bg-[var(--surface-3)] hover:text-[var(--ink)]";
 const NAV_ITEM_SOON_CLASS =
   "flex items-center gap-[var(--space-5)] border-l-2 border-transparent px-[var(--space-7)] py-[var(--space-4)] text-[var(--ink-3)]";
 const NAV_ITEM_ACTIVE_CLASS =
@@ -57,13 +61,9 @@ export async function AdminShell({
 
         <div className="flex flex-col">
           <div className={NAV_LABEL_CLASS}>{t("nav.workGroup")}</div>
-          <span
-            className={NAV_ITEM_SOON_CLASS}
-            aria-disabled="true"
-            title={soonTitle}
-          >
+          <a className={NAV_ITEM_CLASS} href={ADMIN_SECTIONS.checklists.path}>
             {t("nav.templates")}
-          </span>
+          </a>
           <span
             className={NAV_ITEM_SOON_CLASS}
             aria-disabled="true"
@@ -71,27 +71,22 @@ export async function AdminShell({
           >
             {t("nav.library")}
           </span>
-          <span
-            className={NAV_ITEM_SOON_CLASS}
-            aria-disabled="true"
-            title={soonTitle}
-          >
+          <a className={NAV_ITEM_CLASS} href={ADMIN_SECTIONS.feed.path}>
             {t("nav.feed")}
-          </span>
+          </a>
         </div>
 
         <div className="flex flex-col">
           <div className={NAV_LABEL_CLASS}>{t("nav.catalogGroup")}</div>
-          <a className={NAV_ITEM_ACTIVE_CLASS} href={CATALOG_PATH}>
+          <a
+            className={NAV_ITEM_ACTIVE_CLASS}
+            href={ADMIN_SECTIONS.catalog.path}
+          >
             {t("nav.catalog")}
           </a>
-          <span
-            className={NAV_ITEM_SOON_CLASS}
-            aria-disabled="true"
-            title={soonTitle}
-          >
+          <a className={NAV_ITEM_CLASS} href={ADMIN_SECTIONS.qr.path}>
             {t("nav.qr")}
-          </span>
+          </a>
         </div>
 
         <div className="mt-auto px-[var(--space-7)] text-[length:var(--fs-meta)] text-[var(--ink-3)]">

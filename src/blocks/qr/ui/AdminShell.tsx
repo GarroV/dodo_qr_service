@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { ReactElement, ReactNode } from "react";
 
-import { QR_PATH } from "./view";
+import { ADMIN_SECTIONS } from "@/blocks/core/admin-sections";
 
 /**
  * Каркас админки для экрана QR (эталон `docs/forge/design/screens/*.html`):
@@ -11,15 +11,11 @@ import { QR_PATH } from "./view";
  * чужого блока значило бы тащить чужую разметку экрана через ui-слой ради двух
  * десятков строк — раздутая связанность дороже, чем небольшое дублирование.
  *
- * Разделы, которых ещё нет в продукте («Библиотека блоков», «Заполнения»),
- * рисуются `<span aria-disabled>`, а не `<a>`: ссылка вела бы на несуществующий
- * маршрут (404), а так пункт просто не откликается ни на клик, ни на фокус в
- * смысле навигации. «Чек-листы» и «Страны и пиццерии» здесь уже готовы — это
- * живые ссылки.
+ * Что готово и куда ведёт — не решается здесь: адреса и готовность лежат в
+ * `core/admin-sections`. Список в этом файле однажды отстал от продукта, и
+ * «Заполнения» показывались надписью «Раздел ещё не готов», хотя раздел работал (#11).
+ * Неготовое по-прежнему рисуется `<span aria-disabled>`, а не `<a>`: ссылка вела бы в 404.
  */
-
-const CATALOG_PATH = "/admin/catalog";
-const CHECKLISTS_PATH = "/admin/checklists";
 
 const NAV_LABEL_CLASS =
   "px-[var(--space-7)] pb-[var(--space-3)] text-[length:var(--fs-micro)] leading-[var(--lh-micro)] font-semibold tracking-[var(--tracking-micro)] text-[var(--ink-3)] uppercase";
@@ -66,7 +62,7 @@ export async function AdminShell({
 
         <div className="flex flex-col">
           <div className={NAV_LABEL_CLASS}>{t("nav.workGroup")}</div>
-          <a className={NAV_ITEM_CLASS} href={CHECKLISTS_PATH}>
+          <a className={NAV_ITEM_CLASS} href={ADMIN_SECTIONS.checklists.path}>
             {t("nav.templates")}
           </a>
           <span
@@ -76,21 +72,17 @@ export async function AdminShell({
           >
             {t("nav.library")}
           </span>
-          <span
-            className={NAV_ITEM_SOON_CLASS}
-            aria-disabled="true"
-            title={soonTitle}
-          >
+          <a className={NAV_ITEM_CLASS} href={ADMIN_SECTIONS.feed.path}>
             {t("nav.feed")}
-          </span>
+          </a>
         </div>
 
         <div className="flex flex-col">
           <div className={NAV_LABEL_CLASS}>{t("nav.catalogGroup")}</div>
-          <a className={NAV_ITEM_CLASS} href={CATALOG_PATH}>
+          <a className={NAV_ITEM_CLASS} href={ADMIN_SECTIONS.catalog.path}>
             {t("nav.catalog")}
           </a>
-          <a className={NAV_ITEM_ACTIVE_CLASS} href={QR_PATH}>
+          <a className={NAV_ITEM_ACTIVE_CLASS} href={ADMIN_SECTIONS.qr.path}>
             {t("nav.qr")}
           </a>
         </div>

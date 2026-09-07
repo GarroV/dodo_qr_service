@@ -1,20 +1,17 @@
 import { useTranslations } from "next-intl";
 
-import { FEED_PATH } from "../routes";
+import { ADMIN_SECTIONS } from "@/blocks/core/admin-sections";
 
 /**
  * Левое меню админки по эталону (`docs/forge/design/screens/feed.html`): 208 px,
  * две группы разделов, внизу — кто вошёл.
  *
- * Адреса соседних разделов вписаны строками, а не импортированы из их блоков: границы
- * модулей запрещают ленте зависеть от редактора, справочника и QR (.dependency-cruiser.cjs).
- * Так же поступают меню в блоках `editor` и `qr` — общего места для каркаса в проекте нет.
- * Библиотека блоков ещё не существует, поэтому она `<span aria-disabled>`, а не ссылка:
- * ссылка вела бы в 404.
+ * Адреса соседних разделов и их готовность приходят из `core/admin-sections`: границы модулей
+ * запрещают ленте зависеть от редактора, справочника и QR (.dependency-cruiser.cjs), а `core`
+ * доступен каждому блоку. Раньше каждое меню держало свой список строками, и списки разъехались
+ * молча (#11). Библиотека блоков ещё не существует, поэтому она `<span aria-disabled>`, а не
+ * ссылка: ссылка вела бы в 404.
  */
-const CHECKLISTS_PATH = "/admin/checklists";
-const CATALOG_PATH = "/admin/catalog";
-const QR_PATH = "/admin/qr";
 
 const LABEL_CLASS =
   "px-[var(--space-7)] pb-[var(--space-3)] text-[length:var(--fs-micro)] leading-[var(--lh-micro)] font-semibold tracking-[var(--tracking-micro)] text-[var(--ink-3)] uppercase";
@@ -39,7 +36,7 @@ export function AdminNav() {
 
       <div className="flex flex-col">
         <div className={LABEL_CLASS}>{t("work")}</div>
-        <a className={ITEM_CLASS} href={CHECKLISTS_PATH}>
+        <a className={ITEM_CLASS} href={ADMIN_SECTIONS.checklists.path}>
           {t("checklists")}
         </a>
         <span
@@ -51,7 +48,7 @@ export function AdminNav() {
         </span>
         <a
           className={ITEM_ACTIVE_CLASS}
-          href={FEED_PATH}
+          href={ADMIN_SECTIONS.feed.path}
           aria-current="page"
           data-testid="nav-feed"
         >
@@ -61,10 +58,10 @@ export function AdminNav() {
 
       <div className="flex flex-col">
         <div className={LABEL_CLASS}>{t("reference")}</div>
-        <a className={ITEM_CLASS} href={CATALOG_PATH}>
+        <a className={ITEM_CLASS} href={ADMIN_SECTIONS.catalog.path}>
           {t("catalog")}
         </a>
-        <a className={ITEM_CLASS} href={QR_PATH}>
+        <a className={ITEM_CLASS} href={ADMIN_SECTIONS.qr.path}>
           {t("qr")}
         </a>
       </div>

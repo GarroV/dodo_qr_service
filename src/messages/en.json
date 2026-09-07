@@ -16,8 +16,18 @@
   },
   "admin": {
     "home": "Admin",
-    "signedIn": "You are signed in. Sections will appear here as they are built.",
-    "signOut": "Sign out"
+    "signedIn": "You are signed in. Choose a section.",
+    "signOut": "Sign out",
+    "sections": {
+      "checklists": "Checklists",
+      "checklistsHint": "Create a checklist and publish a version",
+      "qr": "QR codes",
+      "qrHint": "Print station stickers",
+      "feed": "Submissions",
+      "feedHint": "See what stations submitted",
+      "catalog": "Countries and pizzerias",
+      "catalogHint": "Add a pizzeria and its stations"
+    }
   },
   "catalog": {
     "title": "Countries and pizzerias",
