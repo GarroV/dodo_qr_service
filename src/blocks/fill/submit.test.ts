@@ -49,6 +49,7 @@ function sectionsWith(label: string): Section[] {
 
 interface Stand {
   code: string;
+  stationId: string;
   checklistId: string;
   versionId: string;
   sections: Section[];
@@ -66,6 +67,7 @@ async function stand(label: string): Promise<Stand> {
   const version = await publishVersion(checklistId);
   return {
     code: station.stationCode,
+    stationId: station.stationId,
     checklistId,
     versionId: version.id,
     sections,
@@ -106,7 +108,10 @@ describe("отправка заполнения", () => {
     expect(outcome.failedCritical).toBe(0);
     expect(outcome.durationMs).toBeGreaterThan(0);
 
-    const [row] = await listSubmissions({ limit: 1 });
+    const [row] = await listSubmissions({
+      stationId: target.stationId,
+      limit: 1,
+    });
     expect(row?.versionId).toBe(target.versionId);
   });
 
@@ -177,7 +182,10 @@ describe("гонка с публикацией новой версии", () => {
 
     // Assert: запись легла на прежнюю версию, и снимок — её пункты, а не новые.
     expect(outcome.kind).toBe("saved");
-    const [row] = await listSubmissions({ limit: 1 });
+    const [row] = await listSubmissions({
+      stationId: target.stationId,
+      limit: 1,
+    });
     expect(row?.versionId).toBe(given);
 
     const detail = await getSubmission(row?.id ?? "");
