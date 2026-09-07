@@ -7,7 +7,11 @@ import en from "@/messages/en.json";
 import ru from "@/messages/ru.json";
 
 import { pickFillLocales } from "../locale";
-import { checkScanAllowed, identifyClient } from "../rate-limit";
+import {
+  checkScanAllowed,
+  identifyClient,
+  trustedProxyHops,
+} from "../rate-limit";
 import { loadFillTarget } from "../station";
 import type { FillTarget } from "../station";
 import { buildFillView } from "../view";
@@ -47,10 +51,14 @@ export async function FillScreen({
   readonly code: string;
 }): Promise<ReactElement> {
   const requestHeaders = await headers();
-  const client = identifyClient(
-    requestHeaders.get("x-forwarded-for"),
-    requestHeaders.get("x-real-ip"),
-  );
+  const client = identifyClient({
+    forwardedFor: requestHeaders.get("x-forwarded-for"),
+    // Адреса соединения среда выполнения не даёт: Next подставляет его в тот же
+    // заголовок и только когда клиент своего не прислал — отличить одно от другого
+    // нечем. Появится источник адреса — он подставляется сюда, и предел оживает сам.
+    peerAddress: null,
+    trustedProxyHops: trustedProxyHops(process.env),
+  });
 
   // Предел на клиента применяется, только когда клиентов есть чем различать.
   // Один общий ключ превратил бы его в рубильник на всю сеть (см. `identifyClient`).

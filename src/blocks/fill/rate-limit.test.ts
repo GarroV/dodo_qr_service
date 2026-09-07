@@ -7,12 +7,23 @@ import {
   createRateLimiter,
   forgetAllFillHits,
   identifyClient,
+  trustedProxyHops,
 } from "./rate-limit";
 
 const START = new Date("2026-09-06T09:00:00Z");
 
 function later(seconds: number): Date {
   return new Date(START.getTime() + seconds * 1000);
+}
+
+/** Открытие экрана с подставленным началом цепочки: один объявленный посредник. */
+function scan(forged: string): boolean {
+  const client = identifyClient({
+    forwardedFor: `${forged}, 198.51.100.4`,
+    peerAddress: null,
+    trustedProxyHops: 1,
+  });
+  return client === null || checkScanAllowed(client, START).allowed;
 }
 
 describe("счётчик частоты", () => {
@@ -151,19 +162,88 @@ describe("пределы публичного маршрута", () => {
 });
 
 describe("кто прислал запрос", () => {
-  it("берёт первый адрес из цепочки прокси", () => {
-    expect(identifyClient("203.0.113.7, 10.0.0.1", null)).toBe("203.0.113.7");
+  const PROXY = { forwardedFor: null, peerAddress: null, trustedProxyHops: 0 };
+
+  it("без объявленного посредника заголовку не верит вовсе", () => {
+    // Заголовок задаёт сам клиент. Пока площадка не сказала, что перед продуктом
+    // стоит посредник, который его переписывает, верить в нём нечему.
+    expect(
+      identifyClient({ ...PROXY, forwardedFor: "203.0.113.7, 10.0.0.1" }),
+    ).toBeNull();
   });
 
-  it("падает на прямой адрес, когда цепочки нет", () => {
-    expect(identifyClient(null, "203.0.113.7")).toBe("203.0.113.7");
-    expect(identifyClient("  ", "203.0.113.7")).toBe("203.0.113.7");
+  it("без посредника берёт адрес соединения, если среда его даёт", () => {
+    expect(
+      identifyClient({
+        ...PROXY,
+        forwardedFor: "203.0.113.7",
+        peerAddress: "198.51.100.4",
+      }),
+    ).toBe("198.51.100.4");
+  });
+
+  it("подделанная цепочка не даёт нового ключа", () => {
+    // Один посредник: свой адрес он дописывает последним, всё левее — то, что
+    // прислал клиент. Сколько бы он ни выдумал, ключ остаётся один и тот же.
+    const keys = new Set(
+      ["9.9.9.9", "8.8.8.8, 7.7.7.7", "не адрес", "203.0.113.7"].map((forged) =>
+        identifyClient({
+          forwardedFor: `${forged}, 198.51.100.4`,
+          peerAddress: null,
+          trustedProxyHops: 1,
+        }),
+      ),
+    );
+
+    expect([...keys]).toStrictEqual(["198.51.100.4"]);
+  });
+
+  it("цепочка короче объявленной — не от нашего посредника", () => {
+    // Два посредника объявлено, а в цепочке одно звено: её писал не тот, кому верим.
+    expect(
+      identifyClient({
+        forwardedFor: "9.9.9.9",
+        peerAddress: "198.51.100.4",
+        trustedProxyHops: 2,
+      }),
+    ).toBe("198.51.100.4");
   });
 
   it("возвращает null, когда различить клиентов нечем", () => {
     // Не «все под одним ключом»: общий ключ превратил бы предел на клиента
     // в рубильник, гасящий всю сеть на пересменке.
-    expect(identifyClient(null, null)).toBeNull();
-    expect(identifyClient("", "  ")).toBeNull();
+    expect(identifyClient(PROXY)).toBeNull();
+    expect(
+      identifyClient({ ...PROXY, forwardedFor: "", peerAddress: "  " }),
+    ).toBeNull();
+  });
+
+  it("подделка заголовка не обходит предел на открытие экрана", () => {
+    for (let index = 0; index < FILL_LIMITS.scanPerClient.maxHits; index += 1) {
+      scan(`9.9.9.${String(index)}`);
+    }
+
+    expect(scan("9.9.9.250")).toBe(false);
+  });
+});
+
+describe("сколько посредников объявила площадка", () => {
+  it("не задано — ноль: заголовку не верим, пока не сказано обратное", () => {
+    expect(trustedProxyHops({})).toBe(0);
+  });
+
+  it("читает объявленное число", () => {
+    expect(trustedProxyHops({ TRUSTED_PROXY_HOPS: "1" })).toBe(1);
+    expect(trustedProxyHops({ TRUSTED_PROXY_HOPS: " 2 " })).toBe(2);
+  });
+
+  it("отказывает на негодном значении, а не считает его нулём", () => {
+    // Тихий ноль означал бы молча выключенный предел — ровно то, что и хотели
+    // перестать допускать.
+    for (const value of ["", "-1", "полтора", "1,5", "99"]) {
+      expect(() => trustedProxyHops({ TRUSTED_PROXY_HOPS: value })).toThrow(
+        /TRUSTED_PROXY_HOPS/,
+      );
+    }
   });
 });

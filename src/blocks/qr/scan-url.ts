@@ -6,6 +6,8 @@
 // адрес обязан тот, кто печатает наклейку: наклейка живёт годами, и переехавший
 // маршрут означает переклейку по всей сети. Поэтому префикс записан здесь один раз.
 
+import { stickerOrigin } from "./sticker-origin";
+
 /** Префикс публичного маршрута заполнения (docs/forge/plan.md, «Поверхности»). */
 export const STATION_SCAN_PREFIX = "/s/";
 
@@ -20,12 +22,9 @@ export function stationScanUrl(origin: string, code: string): string {
     throw new Error("ссылка станции: код пустой, вести такой наклейке некуда");
   }
 
-  let base: URL;
-  try {
-    base = new URL(origin);
-  } catch {
-    throw new Error(`ссылка станции: источник ссылки не адрес — ${origin}`);
-  }
+  // Пригодность источника проверяет `stickerOrigin`, а не `new URL`: разбирается
+  // и то, по чему камера никуда не пойдёт, — см. соседний модуль.
+  const base = stickerOrigin(origin);
 
-  return `${base.origin}${STATION_SCAN_PREFIX}${encodeURIComponent(code)}`;
+  return `${base}${STATION_SCAN_PREFIX}${encodeURIComponent(code)}`;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { STATION_SCAN_PREFIX, stationScanUrl } from "./scan-url";
+import { PUBLIC_BASE_URL_VAR } from "./sticker-origin";
 
 describe("ссылка станции для QR", () => {
   it("собирает публичный адрес заполнения из источника и кода", () => {
@@ -35,5 +36,58 @@ describe("ссылка станции для QR", () => {
 
   it("держит префикс публичного маршрута в одном месте", () => {
     expect(STATION_SCAN_PREFIX).toBe("/s/");
+  });
+});
+
+describe("ссылка станции: что считается пригодным источником", () => {
+  const CODE = "k7m2xqvpht";
+
+  it("берёт только http и https: остальные схемы дают «null» вместо адреса", () => {
+    // `new URL` глотает такие строки молча, а источник у них — «null»: наклейка
+    // с адресом `null/s/<код>` печатается один раз и живёт годами.
+    for (const origin of [
+      "javascript:alert(1)",
+      "data:text/html,hello",
+      "foo://bar",
+      "mailto:kitchen@example.com",
+    ]) {
+      // Отказ называет причину: администратор площадки ищет свою опечатку
+      // по тексту в журнале, а не по исходникам продукта.
+      expect(() => stationScanUrl(origin, CODE)).toThrow(
+        new RegExp(`${PUBLIC_BASE_URL_VAR}.*— схема не http`),
+      );
+    }
+  });
+
+  it("отказывает на источнике с учётными данными", () => {
+    // `http://логин:пароль@узел` тихо превращается в `http://узел`: адрес наклейки
+    // не совпал бы с тем, что задал администратор, и заметить это было бы негде.
+    expect(() => stationScanUrl("http://user:pass@example.com", CODE)).toThrow(
+      new RegExp(PUBLIC_BASE_URL_VAR),
+    );
+  });
+
+  it("не пересказывает негодное значение в тексте отказа", () => {
+    let message = "";
+    try {
+      stationScanUrl('"><script>alert(1)</script>', CODE);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toMatch(new RegExp(PUBLIC_BASE_URL_VAR));
+    expect(message).not.toMatch(/[<>"&]/);
+  });
+
+  it("оставляет пригодные адреса пригодными", () => {
+    expect(stationScanUrl("HTTPS://Example.COM", CODE)).toBe(
+      `https://example.com/s/${CODE}`,
+    );
+    expect(stationScanUrl("http://localhost:3160", CODE)).toBe(
+      `http://localhost:3160/s/${CODE}`,
+    );
+    expect(stationScanUrl("https://qr.example:10000/admin?x=1", CODE)).toBe(
+      `https://qr.example:10000/s/${CODE}`,
+    );
   });
 });

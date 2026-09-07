@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { PUBLIC_BASE_URL_VAR } from "./sticker-origin";
 import { QR_QUIET_ZONE, stationQrSvg } from "./svg";
 import { decodeQrSvg, parseQrSvg } from "./testing/decode-svg";
 
@@ -78,5 +79,62 @@ describe("QR станции в SVG", () => {
 
   it("отказывает на пустом коде, а не рисует ссылку в никуда", () => {
     expect(() => stationQrSvg("", ORIGIN)).toThrow(/код/i);
+  });
+});
+
+describe("QR станции: негодные значения на входе", () => {
+  // Значения, которые не должны доходить ни до картинки, ни до наклейки: одни —
+  // потому что по ним камера никуда не пойдёт (`javascript:`, `data:`, чужая схема),
+  // другие — потому что это попытка внести в вывод что-то своё.
+  const HOSTILE_ORIGINS = [
+    '"><script>alert(1)</script><svg x="',
+    "javascript:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "foo://bar",
+    "https://a.example&b=1",
+    "http://логин:пароль@example.com",
+  ];
+
+  it("отказывает на негодном источнике ссылки, а не печатает наклейку в никуда", () => {
+    for (const origin of HOSTILE_ORIGINS) {
+      expect(() => stationQrSvg(CODE, origin)).toThrow(
+        new RegExp(PUBLIC_BASE_URL_VAR),
+      );
+    }
+  });
+
+  it("в тексте отказа нет ни скобок, ни кавычек, ни амперсанда из значения", () => {
+    // Отказ уезжает в журнал площадки и в оверлей разработки: значение целиком,
+    // как его прислали, там не нужно — нужна причина и имя переменной.
+    for (const origin of HOSTILE_ORIGINS) {
+      let message = "";
+      try {
+        stationQrSvg(CODE, origin);
+      } catch (error) {
+        message = (error as Error).message;
+      }
+
+      expect(message).not.toBe("");
+      expect(message).not.toMatch(/[<>"&]/);
+    }
+  });
+
+  it("в разметке картинки нет ничего, кроме чисел и известных литералов", () => {
+    // Полная форма вывода, а не поиск «нет ли тут <script>»: любое значение,
+    // просочившееся в сборку разметки, ломает это совпадение целиком.
+    const shape =
+      /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 \d+ \d+" width="100%" height="100%" shape-rendering="crispEdges" aria-hidden="true"><path fill="#[\da-f]{6}" d="[MHhvz\d \-]*"\/><path fill="#[\da-f]{6}" d="[MHhvz\d \-]*"\/><\/svg>$/;
+
+    for (const code of [CODE, 'a"><script>alert(1)</script>', "a&b", "a<b>c"]) {
+      expect(stationQrSvg(code, ORIGIN)).toMatch(shape);
+    }
+  });
+
+  it("опасный код станции уезжает в ссылку экранированным, а не разметкой", () => {
+    const code = 'a"><script>alert(1)</script>&x';
+
+    expect(decodeQrSvg(stationQrSvg(code, ORIGIN))).toBe(
+      `${ORIGIN}/s/${encodeURIComponent(code)}`,
+    );
   });
 });
