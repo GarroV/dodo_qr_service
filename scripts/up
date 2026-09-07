@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Одна команда, поднимающая продукт на локальной площадке (T050): база в Docker,
+# миграции, демонстрационный контур, сборка и запуск. После неё остаётся только
+# открыть напечатанный адрес.
+#
+#   ./scripts/up          (или npm run up)
+#
+# Ничего не спрашивает и ничего не сносит: повторный запуск доводит стенд до того же
+# состояния. База переживает перезапуск — её том живёт в Docker.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+BOLD=$'\033[1m'; GREEN=$'\033[32m'; RED=$'\033[31m'; OFF=$'\033[0m'
+step() { printf '\n%s▸ %s%s\n' "$BOLD" "$1" "$OFF"; }
+die()  { printf '%sПРОВАЛ: %s%s\n' "$RED" "$1" "$OFF" >&2; exit 1; }
+
+# Значение из .env, не исполняя файл: `source .env` отдал бы файлу оболочку.
+env_value() {
+  local key="$1" fallback="$2" line
+  line="$(grep -E "^[[:space:]]*${key}=" .env 2>/dev/null | tail -1 || true)"
+  [ -z "$line" ] && { printf '%s' "$fallback"; return; }
+  printf '%s' "${line#*=}"
+}
+
+command -v docker >/dev/null 2>&1 || die "нет docker — база продукта живёт в контейнере"
+
+if [ ! -f .env ]; then
+  step "Окружения нет — беру пример"
+  cp .env.example .env
+  printf 'Создан .env из .env.example. Значения в нём демонстрационные: на площадке замените пароль админки и секрет подписи.\n'
+fi
+
+PORT="$(env_value PORT 3100)"
+DB_PORT="$(env_value DB_PORT 5433)"
+PROJECT="${COMPOSE_PROJECT_NAME:-$(env_value COMPOSE_PROJECT_NAME dodo-qr)}"
+URL="http://localhost:${PORT}"
+
+if [ ! -d node_modules ]; then
+  step "Зависимости"
+  npm ci
+fi
+
+step "База ($PROJECT, порт $DB_PORT)"
+docker compose -p "$PROJECT" up -d db
+
+printf 'Жду готовности базы'
+for _ in $(seq 1 60); do
+  state="$(docker inspect -f '{{.State.Health.Status}}' "${PROJECT}-db-1" 2>/dev/null || echo starting)"
+  [ "$state" = "healthy" ] && break
+  printf '.'
+  sleep 1
+done
+[ "${state:-}" = "healthy" ] || die "база не поднялась за минуту (docker compose -p $PROJECT logs db)"
+printf ' готова\n'
+
+step "Миграции"
+npm run --silent db:migrate
+
+step "Демонстрационный контур"
+node scripts/seed-demo.mjs
+
+step "Сборка"
+# Сборка запекает значения переменных окружения (D033), поэтому идёт после .env,
+# а не один раз на все запуски.
+npx --no-install next build
+
+printf '\n%sПродукт поднят: %s%s\n' "$GREEN" "$URL" "$OFF"
+printf 'Админка: %s/admin · экран заполнения открывается по ссылке станции из вывода сида.\n' "$URL"
+printf 'Остановить: Ctrl-C. Убрать базу: docker compose -p %s down -v\n\n' "$PROJECT"
+
+exec npx --no-install next start --port "$PORT"
