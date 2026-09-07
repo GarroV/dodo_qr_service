@@ -6,6 +6,10 @@ services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
+    labels:
+      # Ночной бэкап на площадке находит базы по этой метке (задача «PG Docker Backup»,
+      # 03:30 → C:\backups, ретеншн 14 дней). Без метки база в бэкап не попадает вовсе.
+      backup.pgdump: "true"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-dodo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dodo}

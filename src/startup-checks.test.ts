@@ -41,4 +41,20 @@ describe("проверка окружения при старте", () => {
       );
     }
   });
+  it("говорит вслух, что вход в админку не настроен", () => {
+    // Куплено на живом запуске 07.09.2026: `.env` был скопирован из примера и не заполнен,
+    // продукт поднялся молча, а вход упал ошибкой сервера в момент нажатия кнопки —
+    // по экрану это выглядит как поломка продукта, а не как незаполненная настройка.
+    const notes = checkStartupConfig({}).join(" \u00b7 ");
+    expect(notes).toMatch(/SESSION_SECRET/);
+    expect(notes).toMatch(/ADMIN_PASSWORD_HASH/);
+  });
+
+  it("молчит про вход, когда обе переменные заданы", () => {
+    const notes = checkStartupConfig({
+      SESSION_SECRET: "x".repeat(32),
+      ADMIN_PASSWORD_HASH: "scrypt.32768.8.3.c29sdA.a2V5",
+    }).join(" \u00b7 ");
+    expect(notes).not.toMatch(/SESSION_SECRET|ADMIN_PASSWORD_HASH/);
+  });
 });

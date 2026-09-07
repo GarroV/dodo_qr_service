@@ -26,7 +26,9 @@ if (!process.env.DATABASE_URL) {
 const { seedDemo } = await import("../src/blocks/demo/index.ts");
 const { stationScanUrl } = await import("../src/blocks/qr/scan-url.ts");
 
-const origin = process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || "3100"}`;
+const origin =
+  process.env.PUBLIC_BASE_URL ||
+  `http://localhost:${process.env.PORT || "3100"}`;
 
 try {
   const summary = await seedDemo();
@@ -39,9 +41,13 @@ try {
   console.log(
     `  блоков библиотеки ${summary.blocks} · чек-листов ${summary.checklists} · версий ${summary.versions} · заполнений ${summary.submissions}`,
   );
-  console.log("\nСсылки станций — то, что уходит внутрь напечатанного QR-кода:");
+  console.log(
+    "\nСсылки станций — то, что уходит внутрь напечатанного QR-кода:",
+  );
   for (const item of summary.codes) {
-    console.log(`  ${item.store} · ${item.station}\n    ${stationScanUrl(origin, item.code)}`);
+    console.log(
+      `  ${item.store} · ${item.station}\n    ${stationScanUrl(origin, item.code)}`,
+    );
   }
 } finally {
   // Пул слоя доступа живёт на globalThis (см. src/blocks/data/client.ts): без его

@@ -1,7 +1,8 @@
 {
   "home": {
     "title": "Digital checklists",
-    "subtitle": "Scaffold is up: Next.js, Tailwind with design-system tokens and language from browser settings."
+    "subtitle": "Build a checklist for a store, print the station QR code, and see what the kitchen submitted.",
+    "enter": "Open the workspace"
   },
   "login": {
     "brand": "Checklists",

@@ -24,7 +24,8 @@ const STEP_TIMEOUT = 20_000;
 
 function argument(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
-  if (index !== -1 && index + 1 < process.argv.length) return process.argv[index + 1];
+  if (index !== -1 && index + 1 < process.argv.length)
+    return process.argv[index + 1];
   if (fallback !== undefined) return fallback;
   throw new Error(`не задан обязательный параметр --${name}`);
 }
@@ -55,7 +56,10 @@ function check(condition, what) {
 
 async function shot(page, name) {
   step += 1;
-  const file = path.join(OUT_DIR, `${String(step).padStart(2, "0")}-${name}.png`);
+  const file = path.join(
+    OUT_DIR,
+    `${String(step).padStart(2, "0")}-${name}.png`,
+  );
   await page.screenshot({ path: file, fullPage: true });
   done.push(file);
   say(`снимок: ${path.relative(process.cwd(), file)}`);
@@ -77,14 +81,17 @@ async function idFromLink(locator, parameter) {
   const href = await locator.getAttribute("href");
   if (href === null) throw new Error("у ссылки нет адреса");
   const value = new URL(href, BASE_URL).searchParams.get(parameter);
-  if (value === null) throw new Error(`в адресе ${href} нет параметра ${parameter}`);
+  if (value === null)
+    throw new Error(`в адресе ${href} нет параметра ${parameter}`);
   return value;
 }
 
 async function createCatalog(page) {
   heading("Справочник: страна → пиццерия → станция");
 
-  await page.goto(`${BASE_URL}/admin/catalog?create=country`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/admin/catalog?create=country`, {
+    waitUntil: "domcontentloaded",
+  });
   await page.locator('form input[name="name"]').fill(COUNTRY);
   await page.locator('form select[name="locale"]').selectOption("en");
   await page.getByRole("button", { name: "Add", exact: true }).click();
@@ -93,9 +100,12 @@ async function createCatalog(page) {
   const countryId = await idFromLink(country, "country");
   check(Boolean(countryId), `страна «${COUNTRY}» заведена`);
 
-  await page.goto(`${BASE_URL}/admin/catalog?country=${countryId}&create=store`, {
-    waitUntil: "domcontentloaded",
-  });
+  await page.goto(
+    `${BASE_URL}/admin/catalog?country=${countryId}&create=store`,
+    {
+      waitUntil: "domcontentloaded",
+    },
+  );
   await page.locator('form input[name="name"]').fill(STORE);
   await page.getByRole("button", { name: "Add", exact: true }).click();
   const store = page.getByTestId("store-item").filter({ hasText: STORE });
@@ -115,7 +125,10 @@ async function createCatalog(page) {
   // Код станции — то, что уедет внутрь напечатанного QR: читаем его с экрана,
   // а не из базы, иначе смоук проверял бы не то, что видит человек.
   const code = (await row.locator("td").nth(2).innerText()).trim();
-  check(/^[\da-z]{10}$/.test(code), `станция «${STATION}» заведена, код ${code}`);
+  check(
+    /^[\da-z]{10}$/.test(code),
+    `станция «${STATION}» заведена, код ${code}`,
+  );
 
   await shot(page, "catalog");
   return { countryId, storeId, code };
@@ -124,8 +137,13 @@ async function createCatalog(page) {
 async function createChecklist(page, catalog) {
   heading("Редактор: чек-лист с критичным пунктом, публикация версии");
 
-  await page.goto(`${BASE_URL}/admin/checklists/new`, { waitUntil: "domcontentloaded" });
-  await page.getByTestId("new-checklist-form").getByRole("textbox").fill(CHECKLIST);
+  await page.goto(`${BASE_URL}/admin/checklists/new`, {
+    waitUntil: "domcontentloaded",
+  });
+  await page
+    .getByTestId("new-checklist-form")
+    .getByRole("textbox")
+    .fill(CHECKLIST);
   // Круглосуточное окно: смоук обязан проходить в любой час, а не только утром.
   await page.locator("#new-checklist-window").selectOption("any");
   await page.getByTestId("create-checklist").click();
@@ -148,14 +166,20 @@ async function createChecklist(page, catalog) {
   await page.getByTestId("item-max").first().fill("180");
   await page.getByTestId("item-critical").nth(2).click();
   check(
-    (await page.getByTestId("editor-item").nth(2).getAttribute("data-critical")) === "true",
+    (await page
+      .getByTestId("editor-item")
+      .nth(2)
+      .getAttribute("data-critical")) === "true",
     "третий пункт помечен критичным",
   );
 
   await page.getByTestId("save-draft").click();
-  await page.getByTestId("editor-meta").filter({ hasText: "Draft saved" }).waitFor({
-    timeout: STEP_TIMEOUT,
-  });
+  await page
+    .getByTestId("editor-meta")
+    .filter({ hasText: "Draft saved" })
+    .waitFor({
+      timeout: STEP_TIMEOUT,
+    });
   await shot(page, "editor");
 
   await page.getByTestId("publish").click();
@@ -169,7 +193,9 @@ async function createChecklist(page, catalog) {
 async function printQr(page, storeId) {
   heading("Печать: лист QR-кодов станций");
 
-  await page.goto(`${BASE_URL}/admin/qr?store=${storeId}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/admin/qr?store=${storeId}`, {
+    waitUntil: "domcontentloaded",
+  });
   await page.getByTestId("qr-sheet").waitFor({ timeout: STEP_TIMEOUT });
   const stickers = await page.getByTestId("qr-sticker").count();
   check(stickers >= 1, `лист печати собран, наклеек на нём ${stickers}`);
@@ -222,7 +248,9 @@ async function fillFromPhone(browser, code) {
 
     // Горизонтальной прокрутки на телефоне быть не должно — это требование экрана.
     const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
     );
     check(overflow <= 0, "горизонтальной прокрутки на 375 px нет");
     await shot(page, "fill-375px");
@@ -246,10 +274,18 @@ async function findInFeed(page) {
   await shot(page, "feed");
 
   await row.first().getByRole("link").first().click();
-  await page.getByTestId("submission-screen").waitFor({ timeout: STEP_TIMEOUT });
+  await page
+    .getByTestId("submission-screen")
+    .waitFor({ timeout: STEP_TIMEOUT });
   const card = await page.locator("body").innerText();
-  check(card.includes(COMMENT), "карточка показывает комментарий к проваленному пункту");
-  check(card.includes("Check labels on the sauces"), "карточка показывает пункты снимка");
+  check(
+    card.includes(COMMENT),
+    "карточка показывает комментарий к проваленному пункту",
+  );
+  check(
+    card.includes("Check labels on the sauces"),
+    "карточка показывает пункты снимка",
+  );
   await shot(page, "submission");
 }
 
@@ -258,7 +294,10 @@ console.log(`Сквозной смоук MVP по адресу ${BASE_URL}`);
 console.log(`Снимки: ${OUT_DIR}\n`);
 
 const browser = await chromium.launch();
-const context = await browser.newContext({ viewport: DESKTOP, locale: "en-US" });
+const context = await browser.newContext({
+  viewport: DESKTOP,
+  locale: "en-US",
+});
 const page = await context.newPage();
 let failure;
 try {

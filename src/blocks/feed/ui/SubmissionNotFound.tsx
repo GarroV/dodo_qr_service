@@ -28,7 +28,11 @@ export async function SubmissionNotFound(): Promise<ReactElement> {
     <AdminShell
       testId="submission-not-found"
       narrow
-      breadcrumb={<a href={FEED_PATH}>{t("back")}</a>}
+      breadcrumb={
+        <a href={FEED_PATH} className="underline">
+          {t("back")}
+        </a>
+      }
       // В шапке — раздел, а не тот же текст, что в карточке: заголовок дважды
       // подряд читается как сбой вёрстки, а объяснение всё равно ниже.
       title={section("title")}

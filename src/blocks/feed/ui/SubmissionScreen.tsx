@@ -80,8 +80,10 @@ export async function SubmissionScreen({
       narrow
       breadcrumb={
         <>
-          <a href={model.backHref}>{t("back")}</a> ·{" "}
-          {breadcrumbText(model, format)}
+          <a href={model.backHref} className="underline">
+            {t("back")}
+          </a>{" "}
+          · {breadcrumbText(model, format)}
         </>
       }
       title={t("title", {

@@ -64,7 +64,11 @@ function firstId(rows: { id: string }[], what: string): string {
   return id;
 }
 
-function answer(itemId: string, value: unknown, comment?: string): Answer {
+function answer(
+  itemId: string,
+  value: string | number | boolean,
+  comment?: string,
+): Answer {
   const at = Date.now();
   return comment === undefined
     ? { itemId, value, at }
@@ -189,7 +193,12 @@ async function seedAdminScreens(label: string): Promise<AdminSeed> {
       "submissions",
     );
 
-    return { countryId: country, storeId: store, checklistId: checklist, submissionId: submission };
+    return {
+      countryId: country,
+      storeId: store,
+      checklistId: checklist,
+      submissionId: submission,
+    };
   } finally {
     await pool.end();
   }
