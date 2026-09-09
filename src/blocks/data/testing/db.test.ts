@@ -39,7 +39,7 @@ describe("адрес тестовой базы", () => {
     forget();
 
     expect(testDatabaseUrl()).toBe(
-      `postgres://dodo:dodo@localhost:5433/dodo_qr_test_${repositoryCopyId()}`,
+      `postgres://dodo:dodo@localhost:5433/meridius_test_${repositoryCopyId()}`,
     );
   });
 

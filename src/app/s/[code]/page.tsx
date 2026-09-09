@@ -17,7 +17,7 @@ import { FillScreen } from "@/blocks/fill/ui/FillScreen";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "dodo_qr_service",
+  title: "MERIDIUS",
   // Публичная ссылка не должна попадать в поисковую выдачу.
   robots: { index: false, follow: false },
 };

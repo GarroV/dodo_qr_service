@@ -130,7 +130,7 @@ test.describe("вход в админку", () => {
     await page.goto(LOGIN_PATH);
 
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Чек-листы Dodo",
+      "MERIDIUS Dodo",
     );
     await expect(page.getByLabel("Пароль")).toHaveAttribute("type", "password");
     await expect(page.getByTestId("login-submit")).toHaveText("Войти");
@@ -200,7 +200,7 @@ test.describe("вход в админку", () => {
     await page.goto(LOGIN_PATH);
 
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Checklists Dodo",
+      "MERIDIUS Dodo",
     );
     await expect(page.getByTestId("login-submit")).toHaveText("Sign in");
 

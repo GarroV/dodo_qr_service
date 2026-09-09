@@ -1,6 +1,6 @@
 # Технический план
 
-dodo_qr_service · 6 сентября 2026. Черновик, утверждается владельцем на гейте.
+MERIDIUS · 6 сентября 2026. Черновик, утверждается владельцем на гейте.
 
 ## Стек с обоснованием
 
@@ -106,16 +106,16 @@ JUnit XML в `reports/`: `reports/vitest.junit.xml` (`vitest run --reporter=juni
 
 | Что | Как |
 |---|---|
-| Доставка кода | `git pull` из `GarroV/dodo_qr_service` (D039) в `C:\projects\dodo_qr_service`; папка заводится копией `C:\projects\_template` |
+| Доставка кода | `git pull` из `GarroV/meridius` (D039, D058) в `C:\projects\meridius`; папка заводится копией `C:\projects\_template` |
 | Сборка | Образ приложения собирается на самой площадке (`docker compose build`). Нужен Dockerfile и `output: 'standalone'` в `next.config.ts` — этого ещё нет, задача T074 |
-| Запуск | `docker compose -p dodo-qr up -d` — приложение и база. Своё имя compose-проекта обязательно: без него перехватываются чужие контейнеры площадки |
+| Запуск | `docker compose -p meridius up -d` — приложение и база. Своё имя compose-проекта обязательно: без него перехватываются чужие контейнеры площадки |
 | Порты | Приложение — 3100 (проверено свободным 06.09.2026). Порт базы наружу **не публикуется**: 5433 на площадке занят чужим проектом, и публиковать базу незачем |
 | Секреты | `SESSION_SECRET`, `ADMIN_PASSWORD_HASH`, `POSTGRES_PASSWORD` — свои на площадке, в `.env` рядом с compose. Демонстрационные значения из `.env.example` в production вход не открывают, и это проверяется |
 | Миграции | `npm run db:migrate` в контейнере приложения после старта базы; откат — `npm run db:rollback` |
 | Адрес снаружи | `tailscale funnel` на своём порту (D034) — корень `:443` площадки отдаёт чужой продукт |
 | Бэкап | Метка `backup.pgdump=true` на контейнере базы: её подхватывает ночная задача площадки «PG Docker Backup» (03:30, ретеншн 14 дней) |
 | Смоук | `node scripts/mvp-smoke.mjs --url <внешний адрес> --password <пароль>` — весь сквозной сценарий MVP по внешнему адресу, со снимками каждого шага (T077, T079) |
-| Откат | Поднять предыдущий образ тем же `docker compose -p dodo-qr up -d`; базу — из `C:\backups\` |
+| Откат | Поднять предыдущий образ тем же `docker compose -p meridius up -d`; базу — из `C:\backups\` |
 
 ## Риски
 

@@ -1,5 +1,5 @@
 # Локальная площадка проекта. Имя проекта compose задаётся снаружи:
-#   docker compose -p dodo-qr-<копия> up -d
+#   docker compose -p meridius-<копия> up -d
 # Без своего имени параллельные копии репозитория перехватывают контейнеры друг друга,
 # а `down -v` сносит чужой том с базой.
 services:
@@ -13,7 +13,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-dodo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dodo}
-      POSTGRES_DB: ${POSTGRES_DB:-dodo_qr}
+      POSTGRES_DB: ${POSTGRES_DB:-meridius}
     ports:
       # 5433 снаружи, чтобы не спорить с локальным PostgreSQL на 5432.
       - "${DB_PORT:-5433}:5432"
@@ -23,7 +23,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-dodo} -d ${POSTGRES_DB:-dodo_qr}",
+          "pg_isready -U ${POSTGRES_USER:-dodo} -d ${POSTGRES_DB:-meridius}",
         ]
       interval: 5s
       timeout: 3s

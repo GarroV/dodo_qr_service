@@ -5,7 +5,7 @@
     "enter": "Открыть рабочий кабинет"
   },
   "login": {
-    "brand": "Чек-листы",
+    "brand": "MERIDIUS",
     "brandMuted": "Dodo",
     "password": "Пароль",
     "submit": "Войти",
@@ -33,7 +33,7 @@
     "title": "Страны и пиццерии",
     "breadcrumb": "Справочник",
     "nav": {
-      "brand": "Чек-листы",
+      "brand": "MERIDIUS",
       "brandMuted": "Dodo",
       "workGroup": "Работа",
       "templates": "Чек-листы",
@@ -124,7 +124,7 @@
   },
   "editor": {
     "nav": {
-      "brand": "Чек-листы",
+      "brand": "MERIDIUS",
       "brandMuted": "Dodo",
       "work": "Работа",
       "checklists": "Чек-листы",
@@ -287,7 +287,7 @@
   },
   "qr": {
     "nav": {
-      "brand": "Чек-листы",
+      "brand": "MERIDIUS",
       "brandMuted": "Dodo",
       "workGroup": "Работа",
       "templates": "Чек-листы",
@@ -424,7 +424,7 @@
   },
   "feed": {
     "nav": {
-      "brand": "Чек-листы",
+      "brand": "MERIDIUS",
       "brandMuted": "Dodo",
       "work": "Работа",
       "checklists": "Чек-листы",

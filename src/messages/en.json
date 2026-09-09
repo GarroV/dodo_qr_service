@@ -5,7 +5,7 @@
     "enter": "Open the workspace"
   },
   "login": {
-    "brand": "Checklists",
+    "brand": "MERIDIUS",
     "brandMuted": "Dodo",
     "password": "Password",
     "submit": "Sign in",
@@ -33,7 +33,7 @@
     "title": "Countries and pizzerias",
     "breadcrumb": "Directory",
     "nav": {
-      "brand": "Checklists",
+      "brand": "MERIDIUS",
       "brandMuted": "Dodo",
       "workGroup": "Work",
       "templates": "Checklists",
@@ -124,7 +124,7 @@
   },
   "editor": {
     "nav": {
-      "brand": "Checklists",
+      "brand": "MERIDIUS",
       "brandMuted": "Dodo",
       "work": "Work",
       "checklists": "Checklists",
@@ -287,7 +287,7 @@
   },
   "qr": {
     "nav": {
-      "brand": "Checklists",
+      "brand": "MERIDIUS",
       "brandMuted": "Dodo",
       "workGroup": "Work",
       "templates": "Checklists",
@@ -424,7 +424,7 @@
   },
   "feed": {
     "nav": {
-      "brand": "Checklists",
+      "brand": "MERIDIUS",
       "brandMuted": "Dodo",
       "work": "Work",
       "checklists": "Checklists",

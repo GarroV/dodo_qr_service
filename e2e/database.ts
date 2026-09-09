@@ -17,7 +17,7 @@ const SUFFIX = `_e2e_${repositoryCopyId()}`;
 
 // То же умолчание, что у docker-compose.yml и .env.example: прогон обязан стартовать
 // в свежем клоне без .env — там переменной нет вовсе, а база уже поднята.
-const DEFAULT_URL = `postgres://dodo:dodo@localhost:5433/dodo_qr${SUFFIX}`;
+const DEFAULT_URL = `postgres://dodo:dodo@localhost:5433/meridius${SUFFIX}`;
 
 let envLoaded = false;
 

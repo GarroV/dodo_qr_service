@@ -21,7 +21,7 @@ const TEST_DATABASE_SUFFIX = `_test_${repositoryCopyId()}`;
  * База по этому адресу может не подняться — тогда ошибка приходит от `unreachableDatabase`
  * и говорит, какой командой её поднять, то есть пропущенной проверки не бывает.
  */
-const DEFAULT_TEST_DATABASE_URL = `postgres://dodo:dodo@localhost:5433/dodo_qr${TEST_DATABASE_SUFFIX}`;
+const DEFAULT_TEST_DATABASE_URL = `postgres://dodo:dodo@localhost:5433/meridius${TEST_DATABASE_SUFFIX}`;
 
 let envLoaded = false;
 

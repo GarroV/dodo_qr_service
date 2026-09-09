@@ -32,7 +32,7 @@ fi
 
 PORT="$(env_value PORT 3100)"
 DB_PORT="$(env_value DB_PORT 5433)"
-PROJECT="${COMPOSE_PROJECT_NAME:-$(env_value COMPOSE_PROJECT_NAME dodo-qr)}"
+PROJECT="${COMPOSE_PROJECT_NAME:-$(env_value COMPOSE_PROJECT_NAME meridius)}"
 URL="http://localhost:${PORT}"
 
 if [ ! -d node_modules ]; then

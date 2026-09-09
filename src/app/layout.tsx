@@ -31,7 +31,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "dodo_qr_service",
+  title: "MERIDIUS",
 };
 
 export default async function RootLayout({

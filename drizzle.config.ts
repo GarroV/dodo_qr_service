@@ -12,7 +12,7 @@ try {
 // Умолчание — ровно то, что поднимает docker-compose.yml (и что записано в .env.example).
 // Раньше здесь было исключение: без .env падал не только `db:migrate`, но и knip, который
 // читает этот файл, — то есть весь `scripts/check` в свежем клоне (T063).
-const DEFAULT_DATABASE_URL = "postgres://dodo:dodo@localhost:5433/dodo_qr";
+const DEFAULT_DATABASE_URL = "postgres://dodo:dodo@localhost:5433/meridius";
 
 const configured = process.env["DATABASE_URL"];
 const databaseUrl =
