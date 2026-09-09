@@ -131,6 +131,15 @@ export const FILL_LIMITS = {
   submitPerCode: { maxHits: 10, windowSeconds: 5 * 60, maxTrackedKeys: 10_000 },
   submitEveryone: { maxHits: 300, windowSeconds: 5 * 60, maxTrackedKeys: 1 },
   scanPerClient: { maxHits: 60, windowSeconds: 60, maxTrackedKeys: 10_000 },
+  // Выбор режима смены — тоже запись с публичной ссылки, и у неё свой счёт.
+  // Десять на код за пять минут: менеджер ставит режим один раз за смену и может
+  // передумать пару раз. Отдельный счёт от отправок нужен, чтобы перебор режимов
+  // не выбирал предел отправок и не запирал кухню, и наоборот.
+  shiftModePerCode: {
+    maxHits: 10,
+    windowSeconds: 5 * 60,
+    maxTrackedKeys: 10_000,
+  },
 } as const;
 
 const EVERYONE = "все";
@@ -138,6 +147,7 @@ const EVERYONE = "все";
 const submitPerCode = createRateLimiter(FILL_LIMITS.submitPerCode);
 const submitEveryone = createRateLimiter(FILL_LIMITS.submitEveryone);
 const scanPerClient = createRateLimiter(FILL_LIMITS.scanPerClient);
+const shiftModePerCode = createRateLimiter(FILL_LIMITS.shiftModePerCode);
 
 function strictest(verdicts: readonly RateVerdict[]): RateVerdict {
   const refused = verdicts.filter((verdict) => !verdict.allowed);
@@ -163,11 +173,20 @@ export function checkScanAllowed(client: string, now: Date): RateVerdict {
   return scanPerClient.hit(client, now);
 }
 
+/** Пускать ли выбор режима смены: считается код станции и вся сеть сразу. */
+export function checkShiftModeAllowed(code: string, now: Date): RateVerdict {
+  return strictest([
+    shiftModePerCode.hit(code, now),
+    submitEveryone.hit(EVERYONE, now),
+  ]);
+}
+
 /** Полный сброс. Нужен тестам, которые делят один процесс. */
 export function forgetAllFillHits(): void {
   submitPerCode.clearAll();
   submitEveryone.clearAll();
   scanPerClient.clearAll();
+  shiftModePerCode.clearAll();
 }
 
 /** Имя переменной окружения: сколько доверенных посредников стоит перед продуктом. */

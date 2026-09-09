@@ -8,6 +8,7 @@ import type { SQL } from "drizzle-orm";
 import type { Database } from "./client";
 import { getDb } from "./client";
 import { countFailedCritical, flattenItems } from "./grading";
+import { isItemInMode } from "./severity";
 import {
   checklistVersions,
   checklists,
@@ -139,7 +140,13 @@ function toSubmissionRow(row: SubmissionQueryRow): SubmissionRow {
     checklistTitle: row.checklistTitle,
     versionId: row.versionId,
     versionNumber: row.versionNumber,
-    itemCount: flattenItems(row.snapshot).length,
+    // Считаются только пункты, которых в этом режиме смены ждали. Полный снимок
+    // хранится целиком намеренно (факт сокращения не должен стираться), но счёт по
+    // нему соврал бы: в критичную смену лента показывала бы «не отвечено 2» там,
+    // где эти два пункта у сотрудника даже не спрашивали.
+    itemCount: flattenItems(row.snapshot).filter((item) =>
+      isItemInMode(item, row.mode),
+    ).length,
     answeredCount: row.answers.length,
     failedCriticalCount: countFailedCritical(row.snapshot, row.answers),
     mode: row.mode,

@@ -1,7 +1,7 @@
 // Модель экранов ленты: то, что страница посчитала, а разметка только рисует.
 // Разметка не ходит в базу, не считает провалы и не переставляет строки — иначе лента
 // и карточка начали бы считать одно и то же по-разному.
-import type { Severity } from "@/blocks/data";
+import type { Severity, ShiftMode } from "@/blocks/data";
 
 import type { Outcome } from "./outcome";
 import type { FeedPeriod, RelativeDay } from "./period";
@@ -23,6 +23,8 @@ export interface FeedRow {
   /** Сегодня, вчера или раньше: от этого зависит вид отметки времени в строке. */
   readonly whenKind: RelativeDay;
   readonly outcome: Outcome;
+  /** Режим смены, в котором заполняли (D055): сокращённый прогон видно в ленте. */
+  readonly mode: ShiftMode;
 }
 
 /** Три показателя за выбранный период — считаются по тем же строкам, что показаны. */
@@ -100,6 +102,12 @@ export interface SubmissionItemView {
   readonly title: string;
   readonly hint: string | null;
   readonly severity: Severity;
+  /**
+   * Спрашивали ли этот пункт в том режиме, в котором заполняли. `false` — пункт
+   * лежит в снимке, но сотруднику его не показывали: снимок хранится полным, чтобы
+   * факт сокращения был виден, а не стирался (D055).
+   */
+  readonly askedInMode: boolean;
   /** Диапазон числового пункта из снимка: «160–180» рядом с заголовком. */
   readonly min: number | null;
   readonly max: number | null;
@@ -135,6 +143,9 @@ export interface SubmissionModel {
   /** Когда опубликована та версия, по которой заполняли. */
   readonly versionPublishedAt: Date | null;
   readonly outcome: Outcome;
+  readonly mode: ShiftMode;
+  /** Сколько пунктов снимка в этом режиме не запрашивали вовсе. */
+  readonly skippedByModeCount: number;
   /** Ссылка на сам чек-лист в редакторе: из карточки видно, что правят сейчас. */
   readonly checklistHref: string;
   readonly sections: readonly SubmissionSectionView[];

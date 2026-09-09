@@ -16,6 +16,7 @@ import { loadFillTarget } from "../station";
 import type { FillTarget } from "../station";
 import { buildFillView } from "../view";
 import { FillForm } from "./FillForm";
+import { chooseShiftModeAction } from "./shift-mode-action";
 import { StateScreen } from "./StateScreen";
 import { submitFillAction } from "./submit-action";
 
@@ -76,7 +77,7 @@ export async function FillScreen({
 
   const target: FillTarget = await loadFillTarget(code, new Date());
 
-  if (target.kind !== "ok") {
+  if (target.kind === "unknown-code" || target.kind === "no-checklist") {
     const locale = await refusalLocale();
     const t = translatorFor(locale);
     // Неизвестный и перевыпущенный код дают один и тот же экран: различать их
@@ -102,7 +103,9 @@ export async function FillScreen({
   const t = translatorFor(locale);
 
   const view = buildFillView({
-    sections: target.version.sections,
+    // Пункты уже отфильтрованы действующим режимом смены (`loadFillTarget`):
+    // фильтр живёт в одном месте, а не повторяется здесь.
+    sections: target.sections,
     checklistTitle: target.checklist.title,
     storeName: target.storeName,
     stationName: target.stationName,
@@ -130,6 +133,8 @@ export async function FillScreen({
           versionId={target.version.id}
           stationName={target.stationName}
           storeName={target.storeName}
+          shift={{ mode: target.mode, chosen: target.modeChosen }}
+          choose={chooseShiftModeAction}
           submit={submitFillAction}
         />
       </NextIntlClientProvider>

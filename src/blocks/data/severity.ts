@@ -26,6 +26,10 @@ const SHIFT_MODES = Object.keys(MODE_SEVERITIES) as readonly ShiftMode[];
  */
 export function severityOf(item: Item): Severity {
   if (item.severity !== undefined) return item.severity;
+  // Единственное место в продукте, которое читает устаревшее поле, — и обязано его
+  // читать: иначе версии, опубликованные до появления уровней, стали бы обычными,
+  // а критичные пункты в них молча перестали бы требовать объяснения провала.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- разбор старых данных, см. выше
   return item.critical === true ? "critical" : "normal";
 }
 
@@ -36,9 +40,7 @@ export function isSeverity(value: unknown): value is Severity {
 }
 
 export function isShiftMode(value: unknown): value is ShiftMode {
-  return (
-    typeof value === "string" && SHIFT_MODES.includes(value as ShiftMode)
-  );
+  return typeof value === "string" && SHIFT_MODES.includes(value as ShiftMode);
 }
 
 export function isItemInMode(item: Item, mode: ShiftMode): boolean {

@@ -6,7 +6,12 @@ import { describe, expect, test } from "vitest";
 
 import { STATION_CODE_ALPHABET, STATION_CODE_LENGTH } from "@/blocks/catalog";
 import type { Answer, Item, LocalizedText, Section } from "@/blocks/data";
-import { countFailedCritical, flattenItems } from "@/blocks/data";
+import {
+  countFailedCritical,
+  flattenItems,
+  sectionsForMode,
+  severityOf,
+} from "@/blocks/data";
 
 import { DEMO } from "./dataset";
 import type { DemoChecklist, DemoVersion } from "./model";
@@ -177,11 +182,24 @@ describe("состав демонстрационного контура", () =>
     }
   });
 
-  test("у каждого чек-листа есть критичный пункт", () => {
-    for (const checklist of DEMO.checklists) {
-      const items = flattenItems([...publishedVersion(checklist).sections]);
-      expect(items.some((item) => item.critical)).toBe(true);
-    }
+  test("демо показывает все три уровня пунктов", () => {
+    // Демо существует, чтобы показывать продукт. Уровень, которого в нём нет,
+    // на показе не существует вовсе (D056).
+    const levels = new Set(allItems().map((item) => severityOf(item)));
+
+    expect([...levels].sort()).toStrictEqual(["critical", "major", "normal"]);
+  });
+
+  test("в критичную смену остаётся непустым хотя бы один чек-лист", () => {
+    // Иначе показ сокращённой смены упирался бы в «заполнять нечего» на каждой
+    // станции, и главную мысль градации показать было бы нечем.
+    const nonEmpty = DEMO.checklists.filter(
+      (checklist) =>
+        sectionsForMode(publishedVersion(checklist).sections, "critical")
+          .length > 0,
+    );
+
+    expect(nonEmpty.length).toBeGreaterThan(0);
   });
 
   test("блок библиотеки заведён один раз и вставлен не меньше чем в два чек-листа", () => {
@@ -251,20 +269,23 @@ describe("состав демонстрационного контура", () =>
     }
   });
 
-  test("ответы попадают в пункты своей версии и покрывают их целиком", () => {
+  test("ответы покрывают ровно те пункты, которых ждал режим смены", () => {
     const sectionsByVersion = new Map(
       allVersions().map((version) => [version.id, [...version.sections]]),
     );
     for (const submission of DEMO.submissions) {
       const sections = sectionsByVersion.get(submission.versionId) ?? [];
-      const itemIds = flattenItems(sections).map((item) => item.id);
+      // Ждали не всю версию, а её часть по режиму (D056): в критичную смену
+      // остальные пункты сотруднику не показывали вовсе.
+      const asked = flattenItems(
+        sectionsForMode(sections, submission.mode ?? "normal"),
+      ).map((item) => item.id);
       const answered = submission.answers.map((answer) => answer.itemId);
 
       expect(new Set(answered).size).toBe(answered.length);
-      for (const itemId of answered) expect(itemIds).toContain(itemId);
-      // Незаполненных пунктов в демо нет: лента показывала бы «отвечено 3 из 7»,
+      // Недозаполненных пунктов в демо нет: лента показывала бы «отвечено 3 из 7»,
       // и это читалось бы как недоделка продукта, а не как замысел данных.
-      expect([...answered].sort()).toStrictEqual([...itemIds].sort());
+      expect([...answered].sort()).toStrictEqual([...asked].sort());
     }
   });
 
@@ -285,7 +306,7 @@ describe("состав демонстрационного контура", () =>
     const [submission] = failing;
     const critical = new Set(
       flattenItems(sectionsByVersion.get(submission?.versionId ?? "") ?? [])
-        .filter((item) => item.critical)
+        .filter((item) => severityOf(item) === "critical")
         .map((item) => item.id),
     );
     const failed = submission?.answers.filter(

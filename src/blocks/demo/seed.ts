@@ -6,7 +6,7 @@
 // строки с описанием и разбирать частичные расхождения — а это ровно тот код,
 // который тихо расходится с данными. Опознаватели контура постоянны (см. model.ts),
 // поэтому снятие точечное: чужой строки сид не касается ни одной.
-import { eq, inArray, or } from "drizzle-orm";
+import { eq, inArray, or, sql } from "drizzle-orm";
 
 import type { Answer, Database, Section } from "@/blocks/data";
 import {
@@ -16,6 +16,7 @@ import {
   countries,
   getDb,
   stations,
+  storeShiftModes,
   stores,
   submissions,
 } from "@/blocks/data";
@@ -113,6 +114,12 @@ async function removeContour(
       ),
     )
     .returning({ id: submissions.id });
+
+  // Режимы смены снимаются вместе с контуром: они ссылаются на пиццерию внешним
+  // ключом, и без этого повторный прогон упёрся бы в него при удалении пиццерий.
+  await tx
+    .delete(storeShiftModes)
+    .where(inArray(storeShiftModes.storeId, storeIds));
 
   const removedVersions = await tx
     .delete(checklistVersions)
@@ -239,6 +246,8 @@ async function insertContour(
     ),
   );
 
+  await insertShiftModes(tx, data, now);
+
   await tx.insert(submissions).values(
     data.submissions.map((submission) => {
       const submittedAt = hoursBefore(now, submission.submittedHoursAgo);
@@ -259,6 +268,7 @@ async function insertContour(
         answers: withAnswerTimes(submission.answers, startedAt, durationMs),
         startedAt,
         submittedAt,
+        mode: submission.mode ?? "normal",
       };
     }),
   );
@@ -272,6 +282,32 @@ async function insertContour(
  * Всё одной транзакцией: прерванный сид не имеет права оставить базу с половиной
  * контура — показывать такое хуже, чем не показывать ничего.
  */
+/**
+ * Режим смены на сегодняшние местные сутки пиццерии. Дата считается базой из её
+ * часового пояса (D026), а не в JavaScript: иначе на показе из другого пояса режим
+ * лёг бы на чужие сутки и станция открылась бы полной сменой.
+ */
+async function insertShiftModes(
+  tx: Transaction,
+  data: DemoDataset,
+  now: Date,
+): Promise<void> {
+  if (data.shiftModes.length === 0) return;
+
+  for (const shift of data.shiftModes) {
+    await tx.execute(sql`
+      insert into store_shift_modes (store_id, local_date, mode, staff_present, staff_expected)
+      select ${shift.storeId}::uuid,
+             (${now.toISOString()}::timestamptz at time zone s.timezone)::date,
+             ${shift.mode},
+             ${shift.staffPresent},
+             ${shift.staffExpected}
+      from stores s
+      where s.id = ${shift.storeId}::uuid
+    `);
+  }
+}
+
 export async function seedDemo(
   options: SeedOptions = {},
 ): Promise<DemoSeedSummary> {

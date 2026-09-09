@@ -109,8 +109,9 @@ describe("sectionsForMode", () => {
   });
 
   test("режим, в котором не осталось ни одного пункта, даёт пустой список", () => {
-    expect(sectionsForMode([section("s", [item({ id: "x" })])], "critical"))
-      .toEqual([]);
+    expect(
+      sectionsForMode([section("s", [item({ id: "x" })])], "critical"),
+    ).toEqual([]);
   });
 
   test("исходные секции не изменяются", () => {
@@ -145,9 +146,9 @@ describe("requiresCommentOnFailure", () => {
   });
 
   test("обычный пункт объяснения не требует", () => {
-    expect(requiresCommentOnFailure(item({ id: "c", severity: "normal" }))).toBe(
-      false,
-    );
+    expect(
+      requiresCommentOnFailure(item({ id: "c", severity: "normal" })),
+    ).toBe(false);
   });
 
   test("старый критичный пункт по-прежнему требует объяснения", () => {

@@ -31,6 +31,10 @@ const TD_CLASS =
 const TD_WHEN_CLASS = `${TD_CLASS} font-[family-name:var(--font-num)] text-[length:var(--fs-num)] [font-variant-numeric:tabular-nums] whitespace-nowrap text-[var(--ink-2)]`;
 const TD_NUM_CLASS = `${TD_CLASS} text-right font-[family-name:var(--font-num)] text-[length:var(--fs-num)] [font-variant-numeric:tabular-nums]`;
 const TD_ACTIONS_CLASS = `${TD_CLASS} text-right whitespace-nowrap`;
+// Метка сокращённой смены. Полная смена метки не получает: она — норма, и метка на
+// каждой строке перестала бы что-либо значить (D055).
+const MODE_TAG_CLASS =
+  "ml-[var(--space-3)] inline-flex h-[18px] items-center rounded-[var(--r-mark)] border border-[var(--warn-line)] bg-[var(--warn-soft)] px-[var(--space-3)] text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] whitespace-nowrap text-[var(--warn-ink)] uppercase";
 const TR_CLASS = "hover:bg-[var(--surface-2)]";
 const META_CLASS = "text-[length:var(--fs-meta)] text-[var(--ink-3)]";
 const OPEN_CLASS =
@@ -80,7 +84,14 @@ async function FeedTableRow({
       data-submission-id={row.id}
     >
       <td className={TD_WHEN_CLASS}>{whenText(row, format, t)}</td>
-      <td className={TD_CLASS}>{row.storeName}</td>
+      <td className={TD_CLASS}>
+        {row.storeName}
+        {row.mode === "normal" ? null : (
+          <span data-testid="row-mode" className={MODE_TAG_CLASS}>
+            {t(`mode.${row.mode}`)}
+          </span>
+        )}
+      </td>
       <td className={TD_CLASS}>{row.stationName}</td>
       <td className={TD_CLASS}>
         {row.checklistTitle}{" "}

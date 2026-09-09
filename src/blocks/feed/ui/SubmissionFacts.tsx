@@ -22,6 +22,11 @@ const VALUE_CLASS = "text-[length:var(--fs-title)] leading-[1.2] font-semibold";
 const CAPTION_CLASS =
   "mt-[var(--space-2)] text-[length:var(--fs-meta)] text-[var(--ink-3)]";
 
+// Пояснение под показателями: сколько пунктов снимка в этом режиме не спрашивали.
+// Без него «выполнено 1 из 1» рядом с чек-листом на тридцать пунктов выглядит ложью.
+const SKIPPED_CLASS =
+  "border-t border-[var(--line)] px-[var(--cell-pad-x)] py-[var(--space-5)] text-[length:var(--fs-dense)] text-[var(--ink-2)]";
+
 interface FactProps {
   readonly value: string;
   readonly caption: string;
@@ -79,7 +84,17 @@ export async function SubmissionFacts({
           caption={t("done")}
           divided
         />
+        <Fact
+          value={t(`mode.${model.mode}`)}
+          caption={t("modeLabel")}
+          divided
+        />
       </div>
+      {model.skippedByModeCount === 0 ? null : (
+        <p data-testid="skipped-by-mode" className={SKIPPED_CLASS}>
+          {t("skippedByMode", { count: model.skippedByModeCount })}
+        </p>
+      )}
     </div>
   );
 }

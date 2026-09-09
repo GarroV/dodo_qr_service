@@ -253,7 +253,12 @@
       "critical": "Critical item",
       "range": "{min}…{max}",
       "empty": "The draft has no items yet",
-      "major": "Major item"
+      "major": "Major item",
+      "mode": {
+        "normal": "Full",
+        "reduced": "Reduced",
+        "critical": "Critical"
+      }
     },
     "errors": {
       "badFormat": "The checklist data was not accepted: check the fields and try again.",
@@ -393,7 +398,29 @@
       "title": "Too many requests",
       "text": "Wait a minute and scan the sticker again."
     },
-    "majorHint": "Major — a comment is required if it fails"
+    "majorHint": "Major — a comment is required if it fails",
+    "shift": {
+      "mode": {
+        "normal": "Full shift",
+        "reduced": "Reduced shift",
+        "critical": "Critical shift"
+      },
+      "hint": {
+        "normal": "Fully staffed — the whole checklist",
+        "reduced": "Short-staffed — critical and major only",
+        "critical": "Barely staffed — critical only"
+      },
+      "staffPresent": "On shift",
+      "staffExpected": "Standard",
+      "current": "Shift: {mode}",
+      "change": "change",
+      "refused": {
+        "tooOften": "The shift mode was changed too often. Try again in {minutes} min.",
+        "failed": "Could not set the shift mode. Please try again.",
+        "offline": "No connection. Your answers are still here — try again."
+      },
+      "close": "close"
+    }
   },
   "feed": {
     "nav": {
@@ -453,7 +480,11 @@
       "open": "Open",
       "yesterday": "yesterday {time}",
       "version": "v{number}",
-      "limitReached": "Showing the latest {count} submissions: narrow the period or the filters to see the rest"
+      "limitReached": "Showing the latest {count} submissions: narrow the period or the filters to see the rest",
+      "mode": {
+        "reduced": "reduced",
+        "critical": "critical shift"
+      }
     },
     "outcome": {
       "ok": "All done",
@@ -496,7 +527,15 @@
       "notFoundTitle": "Submission not found",
       "notFoundText": "The link points to a submission that does not exist: the address may have a typo.",
       "notFoundAction": "Back to the feed",
-      "major": "major"
+      "major": "major",
+      "notAsked": "not asked in this mode",
+      "mode": {
+        "normal": "full shift",
+        "reduced": "reduced shift",
+        "critical": "critical shift"
+      },
+      "modeLabel": "shift",
+      "skippedByMode": "{count, plural, one {# item was not asked in this mode} other {# items were not asked in this mode}}"
     }
   }
 }

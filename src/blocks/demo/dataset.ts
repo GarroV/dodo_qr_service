@@ -3,7 +3,14 @@
 // собрана через маленькие фабрики: тип пункта, флаг критичности и ключ локали "en" не должны
 // повторяться литералами по всему файлу (`sonarjs/no-duplicate-string`), это единственное место,
 // где они названы явно.
-import type { Item, LocalizedText, Section } from "@/blocks/data";
+import type {
+  Item,
+  LocalizedText,
+  Section,
+  Severity,
+  ShiftMode,
+} from "@/blocks/data";
+import { sectionsForMode } from "@/blocks/data";
 
 import { answersFor } from "./answers";
 import type {
@@ -12,6 +19,7 @@ import type {
   DemoChecklist,
   DemoCountry,
   DemoDataset,
+  DemoShiftMode,
   DemoStation,
   DemoStore,
   DemoSubmission,
@@ -58,10 +66,10 @@ function loc(text: string): LocalizedText {
 function boolItem(
   id: string,
   title: string,
-  critical: boolean,
+  severity: Severity,
   hint?: string,
 ): Item {
-  const item: Item = { id, title: loc(title), type: "bool", critical };
+  const item: Item = { id, title: loc(title), type: "bool", severity };
   return hint === undefined ? item : { ...item, hint: loc(hint) };
 }
 
@@ -70,14 +78,14 @@ function numberItem(
   title: string,
   min: number,
   max: number,
-  critical: boolean,
+  severity: Severity,
   hint?: string,
 ): Item {
   const item: Item = {
     id,
     title: loc(title),
     type: "number",
-    critical,
+    severity,
     min,
     max,
   };
@@ -85,7 +93,12 @@ function numberItem(
 }
 
 function textItem(id: string, title: string, hint?: string): Item {
-  const item: Item = { id, title: loc(title), type: "text", critical: false };
+  const item: Item = {
+    id,
+    title: loc(title),
+    type: "text",
+    severity: "normal",
+  };
   return hint === undefined ? item : { ...item, hint: loc(hint) };
 }
 
@@ -117,6 +130,7 @@ function submission(
   submittedHoursAgo: number,
   durationMinutes: number,
   answers: readonly DemoAnswer[],
+  mode: ShiftMode = "normal",
 ): DemoSubmission {
   return {
     id,
@@ -125,6 +139,7 @@ function submission(
     submittedHoursAgo,
     durationMinutes,
     answers: [...answers],
+    mode,
   };
 }
 
@@ -193,24 +208,24 @@ const FOOD_SAFETY_ITEMS: Item[] = [
     "Fridge temperature is within safe range",
     1,
     5,
-    false,
+    "normal",
     "Read the digital thermometer on the middle shelf.",
   ),
   boolItem(
     ITEM_SAUCE_LABELS_ID,
     "Open sauce containers are labeled with today's date",
-    true,
+    "critical",
     "Unlabeled containers must be discarded before service.",
   ),
   boolItem(
     "item-hand-wash",
     "Staff washed hands before starting food prep",
-    true,
+    "critical",
   ),
   boolItem(
     "item-counter-sanitized",
     "Prep counter wiped down and sanitized",
-    false,
+    "normal",
     "Let the sanitizer sit for at least 60 seconds.",
   ),
 ];
@@ -227,27 +242,27 @@ const CHECKLIST_MORNING_ITEMS_V1: Item[] = [
   boolItem(
     "item-oven-preheated",
     "Ovens are preheated to operating temperature",
-    false,
+    "normal",
   ),
   numberItem(
     "item-delivery-temperature",
     "Morning delivery temperature checked and logged",
     0,
     8,
-    true,
+    "critical",
     "Reject the delivery if the reading is above 8°C.",
   ),
   boolItem(
     "item-pos-online",
     "POS system is online and printing receipts",
-    false,
+    "normal",
   ),
   boolItem(
     "item-morning-briefing",
     "Morning briefing with the shift completed",
-    false,
+    "normal",
   ),
-  boolItem("item-trash-lined", "Trash bins are lined for the day", false),
+  boolItem("item-trash-lined", "Trash bins are lined for the day", "normal"),
 ];
 // Методист добавил пункт с заметками уже после публикации v1 — черновик и v2 идут дальше v1.
 const CHECKLIST_MORNING_ITEMS_V2: Item[] = [
@@ -308,10 +323,18 @@ const CHECKLIST_MORNING: DemoChecklist = {
 // ---------- Чек-лист 2: Evening closing — Kitchen (та же станция, 17:00–05:00) ----------
 
 const CHECKLIST_EVENING_ITEMS: Item[] = [
+  // Пример владельца в чистом виде: критичный уровень — то, что нельзя не сделать
+  // ни в какую смену. Именно этот пункт остаётся один, когда людей почти нет.
+  boolItem(
+    "item-gas-off",
+    "Gas supply to the kitchen is shut off",
+    "critical",
+    "The valve behind the ovens, not just the switch.",
+  ),
   boolItem(
     "item-equipment-off",
     "All cooking equipment is turned off",
-    true,
+    "major",
     "Check the pizza ovens last, they stay hot the longest.",
   ),
   numberItem(
@@ -319,15 +342,23 @@ const CHECKLIST_EVENING_ITEMS: Item[] = [
     "Walk-in freezer temperature logged before leaving",
     -22,
     -10,
-    true,
+    "major",
   ),
   boolItem(
     "item-trash-removed",
     "Trash removed from the kitchen to the outside bin",
-    false,
+    "major",
   ),
-  boolItem("item-floor-mopped", "Kitchen floor mopped and left to dry", false),
-  boolItem("item-manager-signoff", "Closing manager sign-off recorded", false),
+  boolItem(
+    "item-floor-mopped",
+    "Kitchen floor mopped and left to dry",
+    "normal",
+  ),
+  boolItem(
+    "item-manager-signoff",
+    "Closing manager sign-off recorded",
+    "normal",
+  ),
   textItem("item-closing-notes", "Closing notes for tomorrow's opening shift"),
 ];
 
@@ -363,38 +394,38 @@ const CHECKLIST_COUNTER_REGISTER_ITEMS: Item[] = [
   boolItem(
     "item-cash-drawer",
     "Cash drawer counted and matches the float",
-    true,
+    "major",
     "Count twice before opening the register.",
   ),
   boolItem(
     "item-card-terminal",
     "Card terminal test transaction passed",
-    false,
+    "normal",
   ),
   boolItem(
     "item-napkins-stocked",
     "Napkins and cups are stocked at the counter",
-    false,
+    "normal",
   ),
   numberItem(
     "item-drink-fridge-temperature",
     "Drink fridge temperature logged",
     1,
     6,
-    true,
+    "major",
   ),
   textItem("item-opening-notes", "Opening notes for the counter shift"),
 ];
 const CHECKLIST_COUNTER_CUSTOMER_ITEMS: Item[] = [
-  boolItem("item-tables-wiped", "Tables and chairs wiped down", false),
+  boolItem("item-tables-wiped", "Tables and chairs wiped down", "normal"),
   boolItem(
     "item-menu-updated",
     "Menu boards updated with today's specials",
-    false,
+    "normal",
   ),
-  boolItem("item-door-glass", "Entrance door glass cleaned", false),
-  boolItem("item-music-started", "Background music playlist started", false),
-  boolItem("item-ice-bin-refilled", "Ice bin cleaned and refilled", false),
+  boolItem("item-door-glass", "Entrance door glass cleaned", "normal"),
+  boolItem("item-music-started", "Background music playlist started", "normal"),
+  boolItem("item-ice-bin-refilled", "Ice bin cleaned and refilled", "normal"),
 ];
 
 const CHECKLIST_COUNTER_SECTIONS_V1: Section[] = [
@@ -555,6 +586,32 @@ const SUBMISSIONS: DemoSubmission[] = [
     9,
     answersFor(CHECKLIST_MORNING_SECTIONS_V1, { numbers: [5, 2] }),
   ),
+  // Вечернее закрытие в критичную смену: людей почти нет, и от станции ждали
+  // только критичные пункты. Ответы собраны по той же матрице, что применил бы
+  // экран, — иначе карточка показала бы «не отвечено» там, где не спрашивали.
+  submission(
+    "d7000000-0000-4000-8000-000000000013",
+    VERSION_EVENING_V1_ID,
+    STATION_CENTRAL_KITCHEN_ID,
+    29,
+    2,
+    answersFor(sectionsForMode(CHECKLIST_EVENING_SECTIONS_V1, "critical")),
+    "critical",
+  ),
+];
+
+/**
+ * Режим на сегодня у центральной пиццерии — с ограничениями. Показ открывается
+ * сразу с сокращённой сменой: полная смена ничего нового не демонстрирует, а
+ * щёлкать режим руками перед каждым показом — ровно то, от чего демо избавляет.
+ */
+const SHIFT_MODES: readonly DemoShiftMode[] = [
+  {
+    storeId: STORE_CENTRAL_ID,
+    mode: "reduced",
+    staffPresent: 2,
+    staffExpected: 4,
+  },
 ];
 
 export const DEMO: DemoDataset = {
@@ -564,4 +621,5 @@ export const DEMO: DemoDataset = {
   blocks: [FOOD_SAFETY_BLOCK],
   checklists: [CHECKLIST_MORNING, CHECKLIST_EVENING, CHECKLIST_COUNTER],
   submissions: SUBMISSIONS,
+  shiftModes: SHIFT_MODES,
 };

@@ -8,7 +8,13 @@
 // Времени в описании нет: заполнения и публикации заданы смещением назад от опорного
 // момента. Иначе демо через месяц показывало бы ленту месячной давности, а тест
 // идемпотентности не мог бы сравнить два прогона.
-import type { Answer, Item, LocalizedText, Section } from "@/blocks/data";
+import type {
+  Answer,
+  Item,
+  LocalizedText,
+  Section,
+  ShiftMode,
+} from "@/blocks/data";
 
 /** Ответ в описании контура: момент ответа считает сид, а не автор данных. */
 export type DemoAnswer = Omit<Answer, "at">;
@@ -72,6 +78,20 @@ export interface DemoSubmission {
   readonly submittedHoursAgo: number;
   /** Сколько минут заняло заполнение: из него считается момент начала. */
   readonly durationMinutes: number;
+  /** Режим смены, в котором заполняли (D055). По умолчанию полная смена. */
+  readonly mode?: ShiftMode;
+}
+
+/**
+ * Режим смены, поставленный пиццерии на сегодня. Нужен, чтобы показ открывался
+ * сразу с сокращённой сменой, а не только с полной: иначе градацию уровней на
+ * демонстрации нечем показать без ручного щёлканья.
+ */
+export interface DemoShiftMode {
+  readonly storeId: string;
+  readonly mode: ShiftMode;
+  readonly staffPresent: number;
+  readonly staffExpected: number;
 }
 
 export interface DemoDataset {
@@ -81,4 +101,5 @@ export interface DemoDataset {
   readonly blocks: readonly DemoBlock[];
   readonly checklists: readonly DemoChecklist[];
   readonly submissions: readonly DemoSubmission[];
+  readonly shiftModes: readonly DemoShiftMode[];
 }

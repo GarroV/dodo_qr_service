@@ -58,13 +58,99 @@ function boolAnswer(itemId: string, value: boolean): Answer {
   return { itemId, value, at: Date.now() };
 }
 
+/** Версия со всеми тремя уровнями: на ней проверяется счёт по режиму смены. */
+async function mixedVersion() {
+  const station = await createStation();
+  const checklistId = await createChecklist({ stationId: station.stationId });
+  const sections: Section[] = [
+    {
+      id: "s-mode",
+      title: { ru: "Закрытие", en: "Closing" },
+      source: "own",
+      items: [
+        {
+          id: "i-gas",
+          title: { ru: "Газ", en: "Gas" },
+          type: "bool",
+          severity: "critical",
+        },
+        {
+          id: "i-till",
+          title: { ru: "Касса", en: "Till" },
+          type: "bool",
+          severity: "major",
+        },
+        {
+          id: "i-tables",
+          title: { ru: "Столы", en: "Tables" },
+          type: "bool",
+          severity: "normal",
+        },
+      ],
+    },
+  ];
+  const versionId = await createPublishedVersion(checklistId, sections);
+  return { station, sections, versionId };
+}
+
+describe("счёт пунктов идёт по режиму смены, а не по всему снимку", () => {
+  test("в критичную смену ждали один пункт из трёх", async () => {
+    // Иначе лента показала бы «не отвечено 2» про пункты, которых сотруднику
+    // в этом режиме даже не показывали.
+    const { versionId } = await mixedVersion();
+
+    const id = await saveSubmission({
+      mode: "critical",
+      versionId,
+      answers: [boolAnswer("i-gas", true)],
+      startedAt: Date.now() - 60_000,
+    });
+    const detail = await getSubmission(id);
+
+    expect(detail?.mode).toBe("critical");
+    expect(detail?.itemCount).toBe(1);
+    expect(detail?.answeredCount).toBe(1);
+    // Снимок остаётся полным: факт сокращения не стирается (D055).
+    expect(detail?.snapshot[0]?.items).toHaveLength(3);
+  });
+
+  test("в смену с ограничениями ждали два пункта из трёх", async () => {
+    const { versionId } = await mixedVersion();
+
+    const id = await saveSubmission({
+      mode: "reduced",
+      versionId,
+      answers: [boolAnswer("i-gas", true), boolAnswer("i-till", true)],
+      startedAt: Date.now() - 60_000,
+    });
+
+    expect((await getSubmission(id))?.itemCount).toBe(2);
+  });
+
+  test("в полную смену ждали все три", async () => {
+    const { versionId } = await mixedVersion();
+
+    const id = await saveSubmission({
+      mode: "normal",
+      versionId,
+      answers: [boolAnswer("i-gas", true)],
+      startedAt: Date.now() - 60_000,
+    });
+    const detail = await getSubmission(id);
+
+    expect(detail?.itemCount).toBe(3);
+    expect(detail?.answeredCount).toBe(1);
+  });
+});
+
 describe("saveSubmission", () => {
   test("сохраняет снимок пунктов версии и считает провалы по нему", async () => {
     const { station, sections, versionId } = await readyVersion("save");
     const itemId = sections[0]?.items[0]?.id ?? "";
     const answers = [boolAnswer(itemId, false)];
 
-    const id = await saveSubmission({ mode: "normal",
+    const id = await saveSubmission({
+      mode: "normal",
       versionId,
       answers,
       startedAt: Date.now() - 60_000,
@@ -86,7 +172,8 @@ describe("saveSubmission", () => {
     const startedAt = Date.now() - 5 * 60_000;
 
     const before = Date.now();
-    const id = await saveSubmission({ mode: "normal",
+    const id = await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [boolAnswer(itemId, true)],
       startedAt,
@@ -107,7 +194,8 @@ describe("saveSubmission", () => {
     const itemId = sections[0]?.items[0]?.id ?? "";
     const otherStation = await createStation();
 
-    const id = await saveSubmission({ mode: "normal",
+    const id = await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [boolAnswer(itemId, true)],
       startedAt: Date.now(),
@@ -143,7 +231,8 @@ describe("saveSubmission", () => {
       .set({ stationId: another.stationId })
       .where(eq(checklists.id, checklistId));
 
-    const id = await saveSubmission({ mode: "normal",
+    const id = await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [boolAnswer(itemId, true)],
       startedAt: Date.now(),
@@ -158,7 +247,8 @@ describe("saveSubmission", () => {
     const itemId = sections[0]?.items[0]?.id ?? "";
     const answers = [boolAnswer(itemId, true)];
 
-    const id = await saveSubmission({ mode: "normal",
+    const id = await saveSubmission({
+      mode: "normal",
       versionId,
       answers,
       startedAt: Date.now(),
@@ -184,7 +274,8 @@ describe("saveSubmission", () => {
     const versionId = await createArchivedVersion(checklistId, sections, 1);
     const itemId = sections[0]?.items[0]?.id ?? "";
 
-    const id = await saveSubmission({ mode: "normal",
+    const id = await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [boolAnswer(itemId, false)],
       startedAt: Date.now(),
@@ -201,7 +292,12 @@ describe("saveSubmission", () => {
     const versionId = await createDraft(checklistId, sampleSections("draft"));
 
     await expect(
-      saveSubmission({ mode: "normal", versionId, answers: [], startedAt: Date.now() }),
+      saveSubmission({
+        mode: "normal",
+        versionId,
+        answers: [],
+        startedAt: Date.now(),
+      }),
     ).rejects.toThrow();
   });
 
@@ -213,13 +309,19 @@ describe("saveSubmission", () => {
     );
 
     await expect(
-      saveSubmission({ mode: "normal", versionId, answers: [], startedAt: Date.now() }),
+      saveSubmission({
+        mode: "normal",
+        versionId,
+        answers: [],
+        startedAt: Date.now(),
+      }),
     ).rejects.toThrow();
   });
 
   test("отказывает понятной ошибкой, если версии не существует", async () => {
     await expect(
-      saveSubmission({ mode: "normal",
+      saveSubmission({
+        mode: "normal",
         versionId: randomUUID(),
         answers: [],
         startedAt: Date.now(),
@@ -234,7 +336,8 @@ describe("getSubmission", () => {
     // хранит свою копию пунктов. Если карточка читает версию, вторая опора мнимая —
     // достаточно одной правки версии мимо слоя доступа, чтобы история переписалась.
     const { sections, versionId } = await readyVersion("опора");
-    const id = await saveSubmission({ mode: "normal",
+    const id = await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [boolAnswer(sections[0]?.items[0]?.id ?? "", false)],
       startedAt: Date.now(),
@@ -265,12 +368,14 @@ describe("listSubmissions — фильтры", () => {
     const b = await readyVersion("filter-b");
     const itemA = a.sections[0]?.items[0]?.id ?? "";
     const itemB = b.sections[0]?.items[0]?.id ?? "";
-    const idA = await saveSubmission({ mode: "normal",
+    const idA = await saveSubmission({
+      mode: "normal",
       versionId: a.versionId,
       answers: [boolAnswer(itemA, true)],
       startedAt: Date.now(),
     });
-    const idB = await saveSubmission({ mode: "normal",
+    const idB = await saveSubmission({
+      mode: "normal",
       versionId: b.versionId,
       answers: [boolAnswer(itemB, true)],
       startedAt: Date.now(),

@@ -2,10 +2,11 @@
 // показателя и снимок пунктов — и здесь же держится главное правило обоих экранов:
 // показатели считаются по ТОМУ ЖЕ массиву строк, который показан в ленте.
 import type { Locale } from "@/blocks/core/locale";
-import type { Answer, Section, SubmissionRow } from "@/blocks/data";
+import type { Answer, Section, ShiftMode, SubmissionRow } from "@/blocks/data";
 import {
   getSubmission,
   isFailed,
+  isItemInMode,
   listSubmissions,
   severityOf,
 } from "@/blocks/data";
@@ -143,6 +144,7 @@ function toFeedRow(row: SubmissionRow, context: RowContext): FeedRow {
     versionNumber: row.versionNumber,
     timeZone: context.timeZone,
     whenKind: relativeDay(row.submittedAt, context.now, context.timeZone),
+    mode: row.mode,
     outcome: outcomeOf({
       itemCount: row.itemCount,
       answeredCount: row.answeredCount,
@@ -173,8 +175,18 @@ export async function buildSubmissionModel(
     versionPublishedAt(detail.versionId),
   ]);
 
-  const sections = toSectionViews(detail.snapshot, detail.answers, locale);
-  const items = sections.flatMap((section) => section.items);
+  const sections = toSectionViews(
+    detail.snapshot,
+    detail.answers,
+    locale,
+    detail.mode,
+  );
+  const allItems = sections.flatMap((section) => section.items);
+  // Счёт идёт только по тому, что в этом режиме спрашивали. Пункты, которых
+  // сотруднику не показывали, остаются в карточке видимыми — но «не отвечено»
+  // про них было бы упрёком за работу, которой от него не ждали.
+  const items = allItems.filter((item) => item.askedInMode);
+  const skippedByModeCount = allItems.length - items.length;
   const answeredCount = items.filter(
     (item) => item.answer.kind !== "none",
   ).length;
@@ -195,6 +207,8 @@ export async function buildSubmissionModel(
     durationMs: detail.durationMs,
     itemCount: items.length,
     doneCount: answeredCount - failedCount,
+    mode: detail.mode,
+    skippedByModeCount,
     versionNumber: detail.versionNumber,
     versionPublishedAt: publishedAt,
     outcome: outcomeOf({
@@ -230,6 +244,7 @@ function toSectionViews(
   snapshot: readonly Section[],
   answers: readonly Answer[],
   locale: Locale,
+  mode: ShiftMode,
 ): SubmissionSectionView[] {
   const byItem = new Map(answers.map((answer) => [answer.itemId, answer]));
 
@@ -244,6 +259,7 @@ function toSectionViews(
         title: pickText(item.title, locale),
         hint: item.hint === undefined ? null : pickText(item.hint, locale),
         severity: severityOf(item),
+        askedInMode: isItemInMode(item, mode),
         min: item.min ?? null,
         max: item.max ?? null,
         failed: isFailed(item, answer),

@@ -56,7 +56,12 @@ describe("parseSections", () => {
       goodSection({
         items: [
           { id: "item-1", title: { ru: "Газ" }, type: "bool", critical: true },
-          { id: "item-2", title: { ru: "Столы" }, type: "bool", critical: false },
+          {
+            id: "item-2",
+            title: { ru: "Столы" },
+            type: "bool",
+            critical: false,
+          },
         ],
       }),
     ]);
@@ -127,7 +132,12 @@ describe("parseSections", () => {
             type: "bool",
             severity: "normal",
           },
-          { id: "item-2", title: { ru: "  " }, type: "bool", severity: "normal" },
+          {
+            id: "item-2",
+            title: { ru: "  " },
+            type: "bool",
+            severity: "normal",
+          },
         ],
       }),
     ]);

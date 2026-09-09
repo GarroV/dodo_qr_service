@@ -102,7 +102,8 @@ async function seed(label: string, options: SeedOptions): Promise<Seeded> {
   const station = await createStation({ timezone: options.timezone ?? "UTC" });
   const checklistId = await createChecklist({ stationId: station.stationId });
   const versionId = await createPublishedVersion(checklistId, sections(label));
-  const submissionId = await saveSubmission({ mode: "normal",
+  const submissionId = await saveSubmission({
+    mode: "normal",
     versionId,
     answers: options.answers,
     startedAt: options.submittedAt.getTime() - options.durationMs,
@@ -164,7 +165,8 @@ describe("buildFeedModel — фильтры", () => {
       submittedAt: new Date("2026-09-05T09:12:00Z"),
       durationMs: 60_000,
     });
-    const yesterdayId = await saveSubmission({ mode: "normal",
+    const yesterdayId = await saveSubmission({
+      mode: "normal",
       versionId: today.versionId,
       answers: [answer(`item-oven-${label}`, true)],
       startedAt: Date.parse("2026-09-04T21:00:00Z"),
@@ -230,7 +232,8 @@ describe("buildFeedModel — показатели и результат стро
       submittedAt: new Date("2026-09-05T09:12:00Z"),
       durationMs: 204_000,
     });
-    const secondId = await saveSubmission({ mode: "normal",
+    const secondId = await saveSubmission({
+      mode: "normal",
       versionId: first.versionId,
       answers: [
         answer(`item-oven-${label}`, true),

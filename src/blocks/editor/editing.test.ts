@@ -89,7 +89,11 @@ describe("addItemAfter (Enter создаёт следующий пункт)", ()
     );
     const created = after[0]?.items.find((one) => one.id === focusItemId);
 
-    expect(created).toMatchObject({ type: "bool", severity: "normal", title: {} });
+    expect(created).toMatchObject({
+      type: "bool",
+      severity: "normal",
+      title: {},
+    });
   });
 });
 
