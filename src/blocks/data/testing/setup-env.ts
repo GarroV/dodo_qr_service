@@ -7,6 +7,6 @@ const url = testDatabaseUrl();
 
 // Обе переменные пиньтся одним значением. Иначе следующий вызов testDatabaseUrl() в том же
 // воркере увидел бы уже подменённый DATABASE_URL и приписал бы суффикс второй раз:
-// база `dodo_qr_test_test` не существует, и весь слой доступа падает на подключении.
+// база `meridius_test_test` не существует, и весь слой доступа падает на подключении.
 process.env["TEST_DATABASE_URL"] = url;
 process.env["DATABASE_URL"] = url;

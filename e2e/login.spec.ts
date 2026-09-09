@@ -8,7 +8,7 @@ import {
 
 const LOGIN_PATH = "/admin/login";
 const ADMIN_PATH = "/admin";
-const SESSION_COOKIE = "dodo_qr_admin";
+const SESSION_COOKIE = "meridius_admin";
 const DAY_MS = 24 * 60 * 60 * 1000;
 // Столько неудач подряд с одного адреса терпит вход (src/blocks/auth/rate-limit.ts).
 const FAILURES_BEFORE_LOCK = 5;

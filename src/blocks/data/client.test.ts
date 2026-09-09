@@ -19,7 +19,7 @@ const CONNECT_SENTINEL_MS = EXPECTED_CONNECTION_TIMEOUT_MS * 2;
 const TEST_TIMEOUT_MS = 30_000;
 
 interface PoolHolder {
-  dodoQrPool?: Pool;
+  meridiusPool?: Pool;
 }
 
 /**
@@ -28,7 +28,7 @@ interface PoolHolder {
  */
 function appPool(): Pool {
   getDb(); // getDb создаёт пул при первом обращении
-  const pool = (globalThis as PoolHolder).dodoQrPool;
+  const pool = (globalThis as PoolHolder).meridiusPool;
   if (pool === undefined) {
     throw new Error("Пул продукта не создан: getDb() его не завёл");
   }

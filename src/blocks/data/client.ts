@@ -12,7 +12,7 @@ export type Database = NodePgDatabase<typeof schema>;
 // Next в режиме разработки перезагружает модули на каждую правку. Без общего хранилища
 // каждая перезагрузка открывала бы новый пул, и соединения кончились бы за день работы.
 interface PoolHolder {
-  dodoQrPool?: Pool;
+  meridiusPool?: Pool;
 }
 const holder = globalThis as PoolHolder;
 
@@ -50,11 +50,11 @@ const POOL_LIMITS = {
 
 export function getDb(): Database {
   if (database === undefined) {
-    holder.dodoQrPool ??= new Pool({
+    holder.meridiusPool ??= new Pool({
       connectionString: connectionString(),
       ...POOL_LIMITS,
     });
-    database = drizzle(holder.dodoQrPool, { schema });
+    database = drizzle(holder.meridiusPool, { schema });
   }
   return database;
 }

@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** Имя сессионной куки. Одно на весь продукт: аккаунт в MVP один (D014). */
-export const SESSION_COOKIE_NAME = "dodo_qr_admin";
+export const SESSION_COOKIE_NAME = "meridius_admin";
 
 /**
  * Срок жизни сессии — 30 дней по контракту блока.
