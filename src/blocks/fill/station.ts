@@ -5,12 +5,19 @@
 // оно живёт в `getPublishedVersionForStation`, и здесь только вызывается.
 import { and, eq } from "drizzle-orm";
 
-import type { Checklist, ChecklistVersion, Section } from "@/blocks/data";
+import type {
+  Checklist,
+  ChecklistVersion,
+  Section,
+  ShiftMode,
+} from "@/blocks/data";
 import {
   checklistVersions,
   countries,
   getDb,
   getPublishedVersionForStation,
+  getShiftMode,
+  sectionsForMode,
   stations,
   stores,
 } from "@/blocks/data";
@@ -38,6 +45,19 @@ interface FillTargetReady {
   readonly kind: "ok";
   readonly version: ChecklistVersion;
   readonly checklist: Checklist;
+  /**
+   * Пункты, отфильтрованные действующим режимом смены (D056). Полные секции версии
+   * НЕ отдаются наружу: сотруднику показывается ровно то, что от него сегодня ждут,
+   * а факт сокращения хранит снимок заполнения, а не этот экран.
+   */
+  readonly sections: Section[];
+  readonly mode: ShiftMode;
+  /**
+   * Выбирал ли кто-нибудь режим на сегодня. `false` — работает полная смена по
+   * умолчанию, и шапка говорит об этом ровно так же: сокращение обязано быть
+   * видимым действием, а не догадкой по числу пунктов на экране.
+   */
+  readonly modeChosen: boolean;
   readonly stationName: string;
   readonly storeName: string;
   readonly countryLocale: string;
@@ -61,6 +81,7 @@ const UNKNOWN_CODE = { kind: "unknown-code" } as const;
 const NO_CHECKLIST = { kind: "no-checklist" } as const;
 
 interface StationContext {
+  readonly storeId: string;
   readonly stationName: string;
   readonly storeName: string;
   readonly countryLocale: string;
@@ -70,6 +91,7 @@ interface StationContext {
 async function stationContext(code: string): Promise<StationContext | null> {
   const [row] = await getDb()
     .select({
+      storeId: stores.id,
       stationName: stations.name,
       storeName: stores.name,
       countryLocale: countries.locale,
@@ -100,20 +122,44 @@ export async function loadFillTarget(
   const found = await getPublishedVersionForStation(code, at);
   if (found === null) return NO_CHECKLIST;
 
+  // Режим на сегодня, а если его никто не ставил — полная смена. Спрашивать первого
+  // отсканировавшего нельзя: гейта на этом экране нет (D052), и первым подходит не
+  // обязательно тот, кто знает график. Поэтому путь сотрудника остаётся прежним, а
+  // сокращение делает тот, кто решает, — одним касанием по строке в шапке.
+  const shift = await getShiftMode(context.storeId, at);
+  const mode: ShiftMode = shift?.mode ?? "normal";
+
+  const sections = sectionsForMode(found.version.sections, mode);
+  // В этом режиме от станции сегодня не ждут ничего: честнее сказать «заполнять
+  // нечего», чем открыть чек-лист без пунктов с активной кнопкой отправки.
+  if (sections.length === 0) return NO_CHECKLIST;
+
   return {
     kind: "ok",
     version: found.version,
     checklist: found.checklist,
+    sections,
+    mode,
+    modeChosen: shift?.chosen ?? false,
     stationName: context.stationName,
     storeName: context.storeName,
     countryLocale: context.countryLocale,
   };
 }
 
+/** Пиццерия станции по коду с наклейки: нужна, чтобы поставить ей режим смены. */
+export async function storeIdForCode(code: string): Promise<string | null> {
+  if (!isPlausibleCode(code)) return null;
+  const context = await stationContext(code);
+  return context?.storeId ?? null;
+}
+
 /** Версия, на которую пришло заполнение, — со снимком пунктов для проверки ответов. */
 export interface StationVersion {
   readonly versionId: string;
   readonly stationId: string;
+  /** Пиццерия станции: по ней читается действующий режим смены (D055). */
+  readonly storeId: string;
   readonly sections: Section[];
 }
 
@@ -139,6 +185,7 @@ export async function findStationVersion(
     .select({
       versionId: checklistVersions.id,
       stationId: stations.id,
+      storeId: stations.storeId,
       sections: checklistVersions.sections,
     })
     .from(checklistVersions)

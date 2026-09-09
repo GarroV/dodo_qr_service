@@ -8,6 +8,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -24,6 +25,7 @@ import type {
   Item,
   LocalizedText,
   Section,
+  ShiftMode,
   VersionStatus,
 } from "./types";
 
@@ -202,6 +204,10 @@ export const submissions = pgTable(
     // Снимок пунктов на момент заполнения (D002): второй способ хранения истории.
     snapshot: jsonb("snapshot").$type<Section[]>().notNull(),
     answers: jsonb("answers").$type<Answer[]>().notNull(),
+    // Режим смены, в котором заполняли (D055). Хранится здесь, а не выводится задним
+    // числом из `store_shift_modes`: вечерняя перестановка режима не имеет права
+    // переписать, в каком режиме заполняли утром (принцип 3, D002).
+    mode: text("mode").$type<ShiftMode>().notNull().default("normal"),
     // Начало — с устройства сотрудника (нужно для длительности), отправка — время сервера.
     startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
     submittedAt: serverTimestamp("submitted_at"),
@@ -225,6 +231,52 @@ export const submissions = pgTable(
       "submissions_answers_size",
       jsonbSizeLimit("answers", ANSWERS_MAX_BYTES),
     ),
+    check("submissions_mode", sql`mode in ('normal', 'reduced', 'critical')`),
+  ],
+);
+
+/**
+ * История режимов смены пиццерии (D052, D055, D056).
+ *
+ * Таблица только пополняется: перестановка — новая строка. Действующий режим — самая
+ * свежая строка по паре (пиццерия, местная дата); строки нет — значит полная смена.
+ * Видимость каждой перестановки и есть то единственное, что удерживает от привычки
+ * сокращать чек-лист каждый день: гейта на выбор режима нет сознательно (D052).
+ */
+export const storeShiftModes = pgTable(
+  "store_shift_modes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id, { onDelete: "restrict" }),
+    // Местная дата пиццерии: сутки кончаются там, где работает смена (D026).
+    localDate: date("local_date").notNull(),
+    mode: text("mode").$type<ShiftMode>().notNull(),
+    // Причина сокращения. Необязательна: принуждение считать людей на входе вернуло бы
+    // трение, ради отсутствия которого от гейта и отказались.
+    staffPresent: integer("staff_present"),
+    staffExpected: integer("staff_expected"),
+    setAt: serverTimestamp("set_at"),
+  },
+  (table) => [
+    index("store_shift_modes_current_idx").on(
+      table.storeId,
+      table.localDate,
+      table.setAt.desc(),
+    ),
+    check(
+      "store_shift_modes_mode",
+      sql`mode in ('normal', 'reduced', 'critical')`,
+    ),
+    check(
+      "store_shift_modes_staff_present",
+      sql`staff_present is null or staff_present >= 0`,
+    ),
+    check(
+      "store_shift_modes_staff_expected",
+      sql`staff_expected is null or staff_expected >= 0`,
+    ),
   ],
 );
 
@@ -235,3 +287,4 @@ export type Checklist = typeof checklists.$inferSelect;
 export type ChecklistVersion = typeof checklistVersions.$inferSelect;
 export type Block = typeof blocks.$inferSelect;
 export type Submission = typeof submissions.$inferSelect;
+export type StoreShiftMode = typeof storeShiftModes.$inferSelect;

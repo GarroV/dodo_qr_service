@@ -2,14 +2,24 @@
 // показателя и снимок пунктов — и здесь же держится главное правило обоих экранов:
 // показатели считаются по ТОМУ ЖЕ массиву строк, который показан в ленте.
 import type { Locale } from "@/blocks/core/locale";
-import type { Answer, Section, SubmissionRow } from "@/blocks/data";
-import { getSubmission, isFailed, listSubmissions } from "@/blocks/data";
+import type { Answer, Section, ShiftMode, SubmissionRow } from "@/blocks/data";
+import {
+  getSubmission,
+  isFailed,
+  isItemInMode,
+  listSubmissions,
+  severityOf,
+} from "@/blocks/data";
 
+import type { AlarmList, AlarmScope } from "../alarms";
+import { listAlarms } from "../alarms";
 import { checklistHref } from "../checklist-link";
 import { loadFailedCounts } from "../failures";
 import { computeMetrics } from "../metrics";
 import type {
+  AlarmRow,
   AnswerView,
+  FeedAlarms,
   FeedEmptyKind,
   FeedModel,
   FeedRow,
@@ -38,6 +48,21 @@ import type { FeedView } from "../view";
  */
 const FEED_LIMIT = 200;
 
+/**
+ * Сколько тревог показывает полоса. Остальные считаются и объявляются числом: полоса
+ * из сорока строк перестаёт быть тревогой и становится фоном, который перестают читать.
+ */
+const ALARM_STRIP_LIMIT = 6;
+
+/** Фильтры экрана в том виде, в каком их принимают запросы: незаданное не передаётся. */
+function scopeOf(selection: FeedSelection): AlarmScope {
+  return {
+    ...(selection.countryId === null ? {} : { countryId: selection.countryId }),
+    ...(selection.storeId === null ? {} : { storeId: selection.storeId }),
+    ...(selection.stationId === null ? {} : { stationId: selection.stationId }),
+  };
+}
+
 /** Пояс площадки: последнее слово, когда пояс пиццерии выяснить неоткуда. */
 function platformTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -58,9 +83,7 @@ export async function buildFeedModel(
   const { from, to } = resolvePeriod(selection.period, now, timeZone);
 
   const rows = await listSubmissions({
-    ...(selection.countryId === null ? {} : { countryId: selection.countryId }),
-    ...(selection.storeId === null ? {} : { storeId: selection.storeId }),
-    ...(selection.stationId === null ? {} : { stationId: selection.stationId }),
+    ...scopeOf(selection),
     from,
     to,
     limit: FEED_LIMIT,
@@ -69,6 +92,10 @@ export async function buildFeedModel(
   // Провалы дочитываются по идентификаторам уже отобранных строк: набор строк
   // остаётся целиком за слоем доступа, второго набора условий отбора не появляется.
   const failedCounts = await loadFailedCounts(rows.map((row) => row.id));
+
+  // Тревоги берутся своим запросом и без периода: полоса обязана показывать
+  // состояние на сейчас, а не выборку, суженную фильтром периода (D053).
+  const alarms = await listAlarms(scopeOf(selection), now);
 
   const feedRows = rows.map((row) =>
     toFeedRow(row, {
@@ -86,6 +113,7 @@ export async function buildFeedModel(
     periodFrom: from,
     periodTo: to,
     metrics: computeMetrics(feedRows),
+    alarms: toFeedAlarms(alarms, locale),
     rows: feedRows,
     // Предел задан здесь, а не унаследован у слоя доступа: экран обязан знать число,
     // на котором лента обрывается, чтобы честно об этом сказать.
@@ -94,6 +122,30 @@ export async function buildFeedModel(
       feedRows.length > 0
         ? null
         : await emptyKindOf(selection, catalog.stations.length),
+  };
+}
+
+/** Тревоги в том виде, в каком их рисует полоса: язык уже выбран, лишнее отброшено. */
+function toFeedAlarms(list: AlarmList, locale: Locale): FeedAlarms {
+  const rows: AlarmRow[] = list.alarms
+    .slice(0, ALARM_STRIP_LIMIT)
+    .map((alarm) => ({
+      key: alarm.key,
+      kind: alarm.kind,
+      storeName: alarm.storeName,
+      stationName: alarm.stationName,
+      checklistTitle: pickText(alarm.checklistTitle, locale),
+      timeZone: alarm.timeZone,
+      at: alarm.at,
+      itemCount: alarm.itemCount,
+      submissionId: alarm.submissionId,
+    }));
+
+  return {
+    rows,
+    hiddenCount: list.alarms.length - rows.length,
+    capped: list.capped,
+    unknownTimezoneStores: list.unknownTimezoneStores,
   };
 }
 
@@ -109,9 +161,7 @@ async function emptyKindOf(
   if (stationCount === 0) return "no-stations";
 
   const ever = await listSubmissions({
-    ...(selection.countryId === null ? {} : { countryId: selection.countryId }),
-    ...(selection.storeId === null ? {} : { storeId: selection.storeId }),
-    ...(selection.stationId === null ? {} : { stationId: selection.stationId }),
+    ...scopeOf(selection),
     limit: 1,
   });
 
@@ -138,6 +188,7 @@ function toFeedRow(row: SubmissionRow, context: RowContext): FeedRow {
     versionNumber: row.versionNumber,
     timeZone: context.timeZone,
     whenKind: relativeDay(row.submittedAt, context.now, context.timeZone),
+    mode: row.mode,
     outcome: outcomeOf({
       itemCount: row.itemCount,
       answeredCount: row.answeredCount,
@@ -168,14 +219,24 @@ export async function buildSubmissionModel(
     versionPublishedAt(detail.versionId),
   ]);
 
-  const sections = toSectionViews(detail.snapshot, detail.answers, locale);
-  const items = sections.flatMap((section) => section.items);
+  const sections = toSectionViews(
+    detail.snapshot,
+    detail.answers,
+    locale,
+    detail.mode,
+  );
+  const allItems = sections.flatMap((section) => section.items);
+  // Счёт идёт только по тому, что в этом режиме спрашивали. Пункты, которых
+  // сотруднику не показывали, остаются в карточке видимыми — но «не отвечено»
+  // про них было бы упрёком за работу, которой от него не ждали.
+  const items = allItems.filter((item) => item.askedInMode);
+  const skippedByModeCount = allItems.length - items.length;
   const answeredCount = items.filter(
     (item) => item.answer.kind !== "none",
   ).length;
   const failedCount = items.filter((item) => item.failed).length;
   const failedCriticalCount = items.filter(
-    (item) => item.failed && item.critical,
+    (item) => item.failed && item.severity === "critical",
   ).length;
 
   return {
@@ -190,6 +251,8 @@ export async function buildSubmissionModel(
     durationMs: detail.durationMs,
     itemCount: items.length,
     doneCount: answeredCount - failedCount,
+    mode: detail.mode,
+    skippedByModeCount,
     versionNumber: detail.versionNumber,
     versionPublishedAt: publishedAt,
     outcome: outcomeOf({
@@ -225,6 +288,7 @@ function toSectionViews(
   snapshot: readonly Section[],
   answers: readonly Answer[],
   locale: Locale,
+  mode: ShiftMode,
 ): SubmissionSectionView[] {
   const byItem = new Map(answers.map((answer) => [answer.itemId, answer]));
 
@@ -238,7 +302,8 @@ function toSectionViews(
         itemId: item.id,
         title: pickText(item.title, locale),
         hint: item.hint === undefined ? null : pickText(item.hint, locale),
-        critical: item.critical,
+        severity: severityOf(item),
+        askedInMode: isItemInMode(item, mode),
         min: item.min ?? null,
         max: item.max ?? null,
         failed: isFailed(item, answer),

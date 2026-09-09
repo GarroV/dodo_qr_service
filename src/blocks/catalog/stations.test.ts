@@ -310,6 +310,7 @@ describe("перевыпуск кода станции (T016)", () => {
       sampleSections("история"),
     );
     const submissionId = await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [{ itemId: "item-история", value: true, at: Date.now() }],
       startedAt: Date.now(),
@@ -331,6 +332,7 @@ describe("перевыпуск кода станции (T016)", () => {
       sampleSections("удаление"),
     );
     await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [{ itemId: "item-удаление", value: true, at: Date.now() }],
       startedAt: Date.now(),

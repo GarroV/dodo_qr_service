@@ -87,7 +87,7 @@ export function parsePastedLines(text: string): string[] {
 
 /**
  * Пункты чек-листа из вставленного списка. Заголовок пишется под ключ языка `locale`
- * (интерфейс редактора двуязычный: "ru" | "en"); тип ответа "bool", критичность false.
+ * (интерфейс редактора двуязычный: "ru" | "en"); тип ответа "bool", уровень «обычный».
  */
 export function parsePastedList(text: string, locale: string): Item[] {
   return parsePastedLines(text).map((line) => {
@@ -96,7 +96,7 @@ export function parsePastedList(text: string, locale: string): Item[] {
       id: crypto.randomUUID(),
       title,
       type: "bool",
-      critical: false,
+      severity: "normal",
     };
   });
 }

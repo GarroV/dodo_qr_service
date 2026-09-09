@@ -4,7 +4,14 @@
 //
 // Отказ приходит кодом, а не текстом: экран двуязычный, и сообщение выбирает он,
 // а не слой данных.
-import type { Item, ItemType, LocalizedText, Section } from "@/blocks/data";
+import type {
+  Item,
+  ItemType,
+  LocalizedText,
+  Section,
+  Severity,
+} from "@/blocks/data";
+import { isSeverity } from "@/blocks/data";
 import type { Locale } from "@/blocks/core/locale";
 
 export type EditorErrorCode =
@@ -132,6 +139,17 @@ function parseItemType(input: unknown): ItemType {
  * Пункт чек-листа. Пункт без названия — это пустая строка внизу списка, которую методист
  * ещё не заполнил: она пропускается (`null`), а не роняет сохранение всего чек-листа.
  */
+/**
+ * Уровень пункта из формы. Явное значение сильнее; при его отсутствии читается
+ * старый признак `critical`, потому что в базе лежат черновики, заведённые до
+ * появления уровней (D056, `severityOf`).
+ */
+function parseSeverity(input: Record<string, unknown>): Severity {
+  const value = input["severity"];
+  if (isSeverity(value)) return value;
+  return input["critical"] === true ? "critical" : "normal";
+}
+
 function parseItem(input: unknown): Item | null {
   if (!isRecord(input)) fail("badFormat", "Пункт должен быть объектом");
 
@@ -142,7 +160,7 @@ function parseItem(input: unknown): Item | null {
     id: parseId(input["id"], "Пункт"),
     title,
     type: parseItemType(input["type"]),
-    critical: input["critical"] === true,
+    severity: parseSeverity(input),
   };
 
   const min = parseBound(input["min"], "Пункт");

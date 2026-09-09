@@ -79,7 +79,7 @@ describe("duplicateChecklist", () => {
     expect(copyItem.id).not.toBe(originalItem.id);
     expect(copyItem.title).toStrictEqual(originalItem.title);
     expect(copyItem.type).toBe(originalItem.type);
-    expect(copyItem.critical).toBe(originalItem.critical);
+    expect(copyItem.severity).toBe(originalItem.severity);
   });
 
   test("сохраняет диапазон числового пункта", async () => {
@@ -220,6 +220,7 @@ describe("duplicateChecklist", () => {
       1,
     );
     await saveSubmission({
+      mode: "normal",
       versionId: publishedId,
       answers: [{ itemId: "item-исходный", value: true, at: Date.now() }],
       startedAt: Date.now(),

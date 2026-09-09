@@ -83,7 +83,9 @@ function starterSections(): Section[] {
       id: randomUUID(),
       title: {},
       source: "own",
-      items: [{ id: randomUUID(), title: {}, type: "bool", critical: false }],
+      items: [
+        { id: randomUUID(), title: {}, type: "bool", severity: "normal" },
+      ],
     },
   ];
 }

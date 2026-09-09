@@ -31,6 +31,9 @@ const TAG_BASE_CLASS =
   "inline-flex h-[20px] items-center gap-[var(--space-2)] rounded-[var(--r-mark)] border px-[var(--space-4)] text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] whitespace-nowrap uppercase";
 const CRIT_TAG_CLASS = `${TAG_BASE_CLASS} border-[var(--warn-line)] bg-[var(--warn-soft)] text-[var(--warn-ink)]`;
 const LIBRARY_TAG_CLASS = `${TAG_BASE_CLASS} border-[var(--reg-supp-line)] bg-[var(--reg-supp-soft)] text-[var(--reg-supp)]`;
+// Пункт лежит в снимке, но в том режиме смены его сотруднику не показывали. Метка
+// нейтральная: это не нарушение, а объяснение, почему строка пустая (D055).
+const SKIPPED_TAG_CLASS = `${TAG_BASE_CLASS} bg-surface-2 border-[var(--line-strong)] text-[var(--ink-2)]`;
 
 const ROW_CLASS =
   "grid items-center gap-[var(--space-6)] px-[var(--space-7)] py-[var(--space-5)]";
@@ -125,13 +128,17 @@ function AnswerRow({
       data-testid="answer-row"
       data-item-id={item.itemId}
       data-failed={String(item.failed)}
+      data-asked={String(item.askedInMode)}
     >
       <span className={markClass(item)} />
       <span className={TITLE_ROW_CLASS}>
         <span>{item.title}</span>
-        {item.critical ? (
-          <span className={CRIT_TAG_CLASS}>{t("critical")}</span>
-        ) : null}
+        {item.severity === "normal" ? null : (
+          <span className={CRIT_TAG_CLASS}>{t(item.severity)}</span>
+        )}
+        {item.askedInMode ? null : (
+          <span className={SKIPPED_TAG_CLASS}>{t("notAsked")}</span>
+        )}
         {note === null ? null : <span className={HINT_CLASS}>{note}</span>}
       </span>
       <span

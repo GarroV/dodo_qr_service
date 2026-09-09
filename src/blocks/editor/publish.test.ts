@@ -32,7 +32,7 @@ function libraryItem(label: string): Item {
     id: `item-${label}`,
     title: { ru: `Пункт ${label}`, en: `Item ${label}` },
     type: "bool",
-    critical: false,
+    severity: "normal",
   };
 }
 

@@ -2,6 +2,7 @@
 // и next/navigation здесь: их приносит только серверный компонент, а сама сборка
 // проверяется модульными тестами без базы и без React.
 import type { Locale } from "@/blocks/core/locale";
+import { severityOf } from "@/blocks/data";
 import type { Item, LocalizedText, Section } from "@/blocks/data";
 
 import { pickFillText } from "./locale";
@@ -100,7 +101,7 @@ function buildItemView(
     id: item.id,
     title: pickFillText(item.title, locales),
     type: item.type,
-    critical: item.critical,
+    severity: severityOf(item),
     // exactOptionalPropertyTypes требует не выставлять ключ, а не выставлять его в undefined.
     ...(item.min === undefined ? {} : { min: item.min }),
     ...(item.max === undefined ? {} : { max: item.max }),

@@ -16,6 +16,7 @@ function row(durationMs: number, criticalFailed = 0): FeedRow {
     versionNumber: 2,
     timeZone: "Asia/Almaty",
     whenKind: "today",
+    mode: "normal",
     outcome:
       criticalFailed > 0
         ? { kind: "criticalFailed", count: criticalFailed }

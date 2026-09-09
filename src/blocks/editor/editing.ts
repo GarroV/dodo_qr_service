@@ -12,9 +12,9 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
-/** Пустой пункт: тип «да/нет» и без критичности — так его заводит методист чаще всего. */
+/** Пустой пункт: тип «да/нет» и обычный уровень — так его заводит методист чаще всего. */
 export function emptyItem(): Item {
-  return { id: newId(), title: {}, type: "bool", critical: false };
+  return { id: newId(), title: {}, type: "bool", severity: "normal" };
 }
 
 /** Пустая секция с одним пустым пунктом: курсору сразу есть куда встать. */
@@ -159,7 +159,7 @@ export function updateItem(
         id: merged.id,
         title: merged.title,
         type: merged.type,
-        critical: merged.critical,
+        severity: merged.severity,
         ...(merged.hint === undefined ? {} : { hint: merged.hint }),
       };
     }),

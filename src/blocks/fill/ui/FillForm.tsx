@@ -16,7 +16,10 @@ import {
 } from "../answers";
 import type { DraftAnswer, FillDraft } from "../answers";
 import type { FillItemView, FillScreenView } from "../model";
+import type { ShiftModeOutcome } from "../shift-mode";
 import type { SubmitOutcome } from "../submit";
+import type { ShiftState } from "./ShiftModeBar";
+import { ShiftModeBar } from "./ShiftModeBar";
 import { StateScreen } from "./StateScreen";
 
 /**
@@ -84,6 +87,10 @@ export interface FillFormProps {
   readonly versionId: string;
   readonly stationName: string;
   readonly storeName: string;
+  /** Режим сегодняшней смены и то, ставил ли его кто-нибудь (D055). */
+  readonly shift: ShiftState;
+  /** Серверное действие смены режима: тот же адрес `/s/<код>`. */
+  readonly choose: (input: unknown) => Promise<ShiftModeOutcome>;
   /** Серверное действие: POST уходит на тот же адрес `/s/<код>`. */
   readonly submit: (input: unknown) => Promise<SubmitOutcome>;
 }
@@ -147,17 +154,25 @@ function ItemBody({
       />
       <span className={TEXT_CLASS}>
         {item.title}
-        {item.critical ? (
-          <span className="ml-[var(--space-2)] font-bold text-[var(--warn-mark)]">
+        {item.severity === "normal" ? null : (
+          <span
+            className={`ml-[var(--space-2)] font-bold ${
+              item.severity === "critical"
+                ? "text-[var(--warn-mark)]"
+                : "text-[var(--ink-3)]"
+            }`}
+          >
             !
           </span>
-        ) : null}
+        )}
         {item.hint === null ? null : (
           <span className={HINT_CLASS}>{item.hint}</span>
         )}
-        {item.critical ? (
-          <span className={HINT_CLASS}>{t("criticalHint")}</span>
-        ) : null}
+        {item.severity === "normal" ? null : (
+          <span className={HINT_CLASS}>
+            {t(item.severity === "critical" ? "criticalHint" : "majorHint")}
+          </span>
+        )}
       </span>
     </>
   );
@@ -169,6 +184,8 @@ export function FillForm({
   versionId,
   stationName,
   storeName,
+  shift,
+  choose,
   submit,
 }: FillFormProps): ReactElement {
   const t = useTranslations("fill");
@@ -288,6 +305,9 @@ export function FillForm({
       <header className={HEAD_CLASS}>
         <div className={TITLE_CLASS}>{view.checklistTitle}</div>
         <div className={WHERE_CLASS}>{view.where}</div>
+        <div className="mt-[var(--space-4)]">
+          <ShiftModeBar code={code} shift={shift} choose={choose} />
+        </div>
         <div className="mt-[var(--space-6)] flex items-center gap-[var(--space-5)]">
           <span
             data-testid="fill-progress"
@@ -401,7 +421,7 @@ export function FillForm({
                   </div>
                 ) : null}
 
-                {failed && item.critical ? (
+                {failed && item.severity !== "normal" ? (
                   <div className="mx-[var(--space-7)] mb-[var(--space-6)] rounded-[var(--r-block)] border border-[var(--err-line)] bg-[var(--err-soft)] p-[var(--space-6)]">
                     <label
                       htmlFor={`comment-${item.id}`}

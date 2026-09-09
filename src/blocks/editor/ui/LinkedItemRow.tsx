@@ -1,11 +1,17 @@
 import { useTranslations } from "next-intl";
 
 import type { Item } from "@/blocks/data";
+// `severityOf` берётся напрямую из модуля уровней, а НЕ из входа `@/blocks/data`:
+// эта строка попадает в клиентскую сборку (её рисует клиентский `ChecklistEditor`),
+// а вход блока data тянет за собой пул подключений и драйвер `pg`, которого в браузере
+// нет — сборка админки падала на `module-not-found`. Модуль уровней чистый: ни базы,
+// ни узловых зависимостей.
+import { severityOf } from "@/blocks/data/severity";
 
 /**
  * Пункт вставленного блока библиотеки: только для чтения. Правится он в самом блоке,
  * и правка приходит во все черновики сразу (D011) — поэтому здесь ни полей, ни кнопок,
- * а тип и критичность показаны метками, как в эталоне.
+ * а тип и уровень показаны метками, как в эталоне.
  */
 export function LinkedItemRow({
   item,
@@ -17,7 +23,7 @@ export function LinkedItemRow({
   readonly locale: string;
 }) {
   const t = useTranslations("editor.item");
-  const critical = item.critical;
+  const severity = severityOf(item);
 
   const typeText =
     item.type === "number"
@@ -30,7 +36,7 @@ export function LinkedItemRow({
     <div
       data-testid="editor-item"
       data-linked="true"
-      className={`grid grid-cols-[28px_1fr_auto] items-center gap-[var(--space-5)] border-b border-[var(--line)] px-[var(--space-6)] py-[var(--space-4)] opacity-85 ${critical ? "bg-[var(--warn-soft)]" : ""}`}
+      className={`grid grid-cols-[28px_1fr_auto] items-center gap-[var(--space-5)] border-b border-[var(--line)] px-[var(--space-6)] py-[var(--space-4)] opacity-85 ${severity === "critical" ? "bg-[var(--warn-soft)]" : ""}`}
     >
       <div className="text-right text-[length:var(--fs-meta)] text-[var(--ink-3)]">
         {ordinal}
@@ -42,11 +48,17 @@ export function LinkedItemRow({
         <span className="bg-surface-2 inline-flex h-[20px] items-center rounded-[var(--r-mark)] border border-[var(--line-strong)] px-[var(--space-4)] text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] whitespace-nowrap text-[var(--ink-2)] uppercase">
           {typeText}
         </span>
-        {critical ? (
-          <span className="inline-flex h-[20px] items-center rounded-[var(--r-mark)] border border-[var(--warn-line)] bg-[var(--warn-soft)] px-[var(--space-4)] text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] whitespace-nowrap text-[var(--warn-ink)] uppercase">
-            {t("critical")}
+        {severity === "normal" ? null : (
+          <span
+            className={`inline-flex h-[20px] items-center rounded-[var(--r-mark)] border px-[var(--space-4)] text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] whitespace-nowrap uppercase ${
+              severity === "critical"
+                ? "border-[var(--warn-line)] bg-[var(--warn-soft)] text-[var(--warn-ink)]"
+                : "bg-surface-2 border-[var(--line-strong)] text-[var(--ink-2)]"
+            }`}
+          >
+            {t(severity)}
           </span>
-        ) : null}
+        )}
       </div>
     </div>
   );

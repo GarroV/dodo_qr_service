@@ -56,7 +56,12 @@ async function submit(answers: Answer[]): Promise<string> {
   const station = await createStation();
   const checklistId = await createChecklist({ stationId: station.stationId });
   const versionId = await createPublishedVersion(checklistId, SECTIONS);
-  return saveSubmission({ versionId, answers, startedAt: Date.now() - 60_000 });
+  return saveSubmission({
+    mode: "normal",
+    versionId,
+    answers,
+    startedAt: Date.now() - 60_000,
+  });
 }
 
 describe("loadFailedCounts", () => {
@@ -91,6 +96,7 @@ describe("loadFailedCounts", () => {
     const checklistId = await createChecklist({ stationId: station.stationId });
     const versionId = await createPublishedVersion(checklistId, SECTIONS);
     const id = await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [answer("item-critical", 9), answer("item-plain", true)],
       startedAt: Date.now() - 60_000,

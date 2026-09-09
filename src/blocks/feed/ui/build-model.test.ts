@@ -103,6 +103,7 @@ async function seed(label: string, options: SeedOptions): Promise<Seeded> {
   const checklistId = await createChecklist({ stationId: station.stationId });
   const versionId = await createPublishedVersion(checklistId, sections(label));
   const submissionId = await saveSubmission({
+    mode: "normal",
     versionId,
     answers: options.answers,
     startedAt: options.submittedAt.getTime() - options.durationMs,
@@ -165,6 +166,7 @@ describe("buildFeedModel — фильтры", () => {
       durationMs: 60_000,
     });
     const yesterdayId = await saveSubmission({
+      mode: "normal",
       versionId: today.versionId,
       answers: [answer(`item-oven-${label}`, true)],
       startedAt: Date.parse("2026-09-04T21:00:00Z"),
@@ -231,6 +233,7 @@ describe("buildFeedModel — показатели и результат стро
       durationMs: 204_000,
     });
     const secondId = await saveSubmission({
+      mode: "normal",
       versionId: first.versionId,
       answers: [
         answer(`item-oven-${label}`, true),
@@ -389,7 +392,7 @@ describe("buildSubmissionModel", () => {
 
     const temperature = card?.sections[1]?.items[0];
     expect(temperature?.title).toBe("Температура камеры");
-    expect(temperature?.critical).toBe(true);
+    expect(temperature?.severity).toBe("critical");
     expect(temperature?.failed).toBe(true);
     expect(temperature?.answer).toStrictEqual({ kind: "number", value: 9 });
     expect(temperature?.comment).toBe(

@@ -6,7 +6,9 @@ import {
   getDb,
   publishVersion,
   stations,
+  setShiftMode,
 } from "@/blocks/data";
+import type { Section } from "@/blocks/data";
 import {
   createChecklist,
   createDraft,
@@ -38,6 +40,138 @@ async function publishedStation(): Promise<{
     versionId: version.id,
   };
 }
+
+/** Чек-лист со всеми тремя уровнями: на нём и проверяется фильтр по режиму. */
+function mixedSections(): Section[] {
+  return [
+    {
+      id: "s-mixed",
+      title: { ru: "Закрытие", en: "Closing" },
+      source: "own",
+      items: [
+        {
+          id: "i-gas",
+          title: { ru: "Газ выключен", en: "Gas off" },
+          type: "bool",
+          severity: "critical",
+        },
+        {
+          id: "i-till",
+          title: { ru: "Касса пересчитана", en: "Till counted" },
+          type: "bool",
+          severity: "major",
+        },
+        {
+          id: "i-tables",
+          title: { ru: "Столы протёрты", en: "Tables wiped" },
+          type: "bool",
+          severity: "normal",
+        },
+      ],
+    },
+  ];
+}
+
+async function mixedStation(): Promise<{ code: string; storeId: string }> {
+  const station = await createStation();
+  const checklistId = await createChecklist({
+    stationId: station.stationId,
+    windowStart: "06:00:00",
+    windowEnd: "12:00:00",
+  });
+  await createDraft(checklistId, mixedSections());
+  await publishVersion(checklistId);
+  return { code: station.stationCode, storeId: station.storeId };
+}
+
+/** Идентификаторы пунктов, которые экран покажет сотруднику. */
+async function shownItemIds(code: string): Promise<string[]> {
+  const target = await loadFillTarget(code, MORNING);
+  if (target.kind !== "ok") return [];
+  return target.sections.flatMap((section) =>
+    section.items.map((item) => item.id),
+  );
+}
+
+describe("режим смены решает, что попадёт на экран", () => {
+  it("без выбора режима работает полная смена: показаны все пункты", async () => {
+    const { code } = await mixedStation();
+
+    expect(await shownItemIds(code)).toStrictEqual([
+      "i-gas",
+      "i-till",
+      "i-tables",
+    ]);
+  });
+
+  it("шапка говорит, что режим никто не ставил", async () => {
+    const { code } = await mixedStation();
+
+    const target = await loadFillTarget(code, MORNING);
+
+    expect(target).toMatchObject({ mode: "normal", modeChosen: false });
+  });
+
+  it("смена с ограничениями убирает обычные пункты", async () => {
+    const { code, storeId } = await mixedStation();
+
+    await setShiftMode({ storeId, mode: "reduced" }, MORNING);
+
+    expect(await shownItemIds(code)).toStrictEqual(["i-gas", "i-till"]);
+  });
+
+  it("критичная смена оставляет только критичное", async () => {
+    const { code, storeId } = await mixedStation();
+
+    await setShiftMode({ storeId, mode: "critical" }, MORNING);
+
+    const target = await loadFillTarget(code, MORNING);
+
+    expect(target).toMatchObject({ mode: "critical", modeChosen: true });
+    expect(await shownItemIds(code)).toStrictEqual(["i-gas"]);
+  });
+
+  it("режим, в котором не осталось пунктов, не открывает пустой чек-лист", async () => {
+    // Чек-лист без критичных пунктов в критичную смену: честнее сказать «заполнять
+    // нечего», чем показать экран без пунктов с активной кнопкой отправки.
+    const station = await createStation();
+    const checklistId = await createChecklist({
+      stationId: station.stationId,
+      windowStart: "06:00:00",
+      windowEnd: "12:00:00",
+    });
+    await createDraft(checklistId, [
+      {
+        id: "s-soft",
+        title: { ru: "Уборка", en: "Cleaning" },
+        source: "own",
+        items: [
+          {
+            id: "i-soft",
+            title: { ru: "Полить цветы", en: "Water the plants" },
+            type: "bool",
+            severity: "normal",
+          },
+        ],
+      },
+    ]);
+    await publishVersion(checklistId);
+    await setShiftMode({ storeId: station.storeId, mode: "critical" }, MORNING);
+
+    expect(await loadFillTarget(station.stationCode, MORNING)).toStrictEqual({
+      kind: "no-checklist",
+    });
+  });
+
+  it("режим соседней пиццерии на эту станцию не влияет", async () => {
+    const mine = await mixedStation();
+    const other = await mixedStation();
+
+    await setShiftMode({ storeId: other.storeId, mode: "critical" }, MORNING);
+
+    expect(await shownItemIds(mine.code)).toHaveLength(3);
+  });
+});
 
 describe("что отдаёт публичный маршрут по коду станции", () => {
   it("отдаёт опубликованную версию, название пиццерии и язык страны", async () => {
@@ -78,6 +212,11 @@ describe("что отдаёт публичный маршрут по коду с
       "checklist",
       "countryLocale",
       "kind",
+      // Режим смены и отфильтрованные им пункты — то, что экран и так показывает
+      // человеку с наклейкой в руках; истории станции среди них нет (D021, D055).
+      "mode",
+      "modeChosen",
+      "sections",
       "stationName",
       "storeName",
       "version",

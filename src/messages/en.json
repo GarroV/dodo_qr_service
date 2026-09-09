@@ -215,7 +215,10 @@
       "max": "Upper bound",
       "remove": "Delete item",
       "moveUp": "Up",
-      "moveDown": "Down"
+      "moveDown": "Down",
+      "normal": "Normal",
+      "major": "Major",
+      "severityLabel": "How critical the item is"
     },
     "keys": {
       "enter": "next item",
@@ -249,7 +252,13 @@
       "finish": "Finish",
       "critical": "Critical item",
       "range": "{min}…{max}",
-      "empty": "The draft has no items yet"
+      "empty": "The draft has no items yet",
+      "major": "Major item",
+      "mode": {
+        "normal": "Full",
+        "reduced": "Reduced",
+        "critical": "Critical"
+      }
     },
     "errors": {
       "badFormat": "The checklist data was not accepted: check the fields and try again.",
@@ -388,6 +397,29 @@
     "tooOften": {
       "title": "Too many requests",
       "text": "Wait a minute and scan the sticker again."
+    },
+    "majorHint": "Major — a comment is required if it fails",
+    "shift": {
+      "mode": {
+        "normal": "Full shift",
+        "reduced": "Reduced shift",
+        "critical": "Critical shift"
+      },
+      "hint": {
+        "normal": "Fully staffed — the whole checklist",
+        "reduced": "Short-staffed — critical and major only",
+        "critical": "Barely staffed — critical only"
+      },
+      "staffPresent": "On shift",
+      "staffExpected": "Standard",
+      "current": "Shift: {mode}",
+      "change": "change",
+      "refused": {
+        "tooOften": "The shift mode was changed too often. Try again in {minutes} min.",
+        "failed": "Could not set the shift mode. Please try again.",
+        "offline": "No connection. Your answers are still here — try again."
+      },
+      "close": "close"
     }
   },
   "feed": {
@@ -436,6 +468,18 @@
       "averageDuration": "average time to fill",
       "noValue": "—"
     },
+    "alarms": {
+      "title": "Alarms",
+      "count": "{count, plural, one {# alarm} other {# alarms}}",
+      "criticalFailed": "{count, plural, one {a critical item was not done} other {# critical items were not done}}",
+      "criticalUnanswered": "{count, plural, one {a critical item was left unanswered} other {# critical items were left unanswered}}",
+      "missed": "checklist was not filled, the window closed at {time}",
+      "open": "Open",
+      "hidden": "{count, plural, one {# more alarm} other {# more alarms}}: narrow the filters to see the rest",
+      "capped": "The read limit was reached: there may be more alarms — narrow the filters",
+      "quiet": "No alarms",
+      "unknownTimezone": "{count, plural, one {# pizzeria is not being watched} other {# pizzerias are not being watched}}: the database does not recognise their time zone — fix it in the catalog"
+    },
     "list": {
       "title": "Feed",
       "count": "{count, plural, one {# record} other {# records}}",
@@ -448,7 +492,11 @@
       "open": "Open",
       "yesterday": "yesterday {time}",
       "version": "v{number}",
-      "limitReached": "Showing the latest {count} submissions: narrow the period or the filters to see the rest"
+      "limitReached": "Showing the latest {count} submissions: narrow the period or the filters to see the rest",
+      "mode": {
+        "reduced": "reduced",
+        "critical": "critical shift"
+      }
     },
     "outcome": {
       "ok": "All done",
@@ -490,7 +538,16 @@
       "noAnswer": "no answer",
       "notFoundTitle": "Submission not found",
       "notFoundText": "The link points to a submission that does not exist: the address may have a typo.",
-      "notFoundAction": "Back to the feed"
+      "notFoundAction": "Back to the feed",
+      "major": "major",
+      "notAsked": "not asked in this mode",
+      "mode": {
+        "normal": "full shift",
+        "reduced": "reduced shift",
+        "critical": "critical shift"
+      },
+      "modeLabel": "shift",
+      "skippedByMode": "{count, plural, one {# item was not asked in this mode} other {# items were not asked in this mode}}"
     }
   }
 }

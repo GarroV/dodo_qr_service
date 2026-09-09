@@ -6,7 +6,7 @@
 // строки с описанием и разбирать частичные расхождения — а это ровно тот код,
 // который тихо расходится с данными. Опознаватели контура постоянны (см. model.ts),
 // поэтому снятие точечное: чужой строки сид не касается ни одной.
-import { eq, inArray, or } from "drizzle-orm";
+import { eq, inArray, or, sql } from "drizzle-orm";
 
 import type { Answer, Database, Section } from "@/blocks/data";
 import {
@@ -16,6 +16,7 @@ import {
   countries,
   getDb,
   stations,
+  storeShiftModes,
   stores,
   submissions,
 } from "@/blocks/data";
@@ -25,6 +26,7 @@ import type { DemoDataset } from "./model";
 
 const HOUR_MS = 3_600_000;
 const MINUTE_MS = 60_000;
+const MS_PER_SECOND = 1000;
 
 export interface DemoStationCode {
   readonly station: string;
@@ -113,6 +115,12 @@ async function removeContour(
       ),
     )
     .returning({ id: submissions.id });
+
+  // Режимы смены снимаются вместе с контуром: они ссылаются на пиццерию внешним
+  // ключом, и без этого повторный прогон упёрся бы в него при удалении пиццерий.
+  await tx
+    .delete(storeShiftModes)
+    .where(inArray(storeShiftModes.storeId, storeIds));
 
   const removedVersions = await tx
     .delete(checklistVersions)
@@ -239,9 +247,18 @@ async function insertContour(
     ),
   );
 
+  await insertShiftModes(tx, data, now);
+
+  const times = await submittedTimes(tx, data, now);
+
   await tx.insert(submissions).values(
     data.submissions.map((submission) => {
-      const submittedAt = hoursBefore(now, submission.submittedHoursAgo);
+      const submittedAt = times.get(submission.id);
+      if (submittedAt === undefined) {
+        throw new Error(
+          `Момент отправки заполнения ${submission.id} не посчитан`,
+        );
+      }
       const durationMs = submission.durationMinutes * MINUTE_MS;
       const startedAt = new Date(submittedAt.getTime() - durationMs);
       const snapshot = sectionsByVersion.get(submission.versionId);
@@ -259,6 +276,7 @@ async function insertContour(
         answers: withAnswerTimes(submission.answers, startedAt, durationMs),
         startedAt,
         submittedAt,
+        mode: submission.mode ?? "normal",
       };
     }),
   );
@@ -272,6 +290,72 @@ async function insertContour(
  * Всё одной транзакцией: прерванный сид не имеет права оставить базу с половиной
  * контура — показывать такое хуже, чем не показывать ничего.
  */
+/**
+ * Режим смены на сегодняшние местные сутки пиццерии. Дата считается базой из её
+ * часового пояса (D026), а не в JavaScript: иначе на показе из другого пояса режим
+ * лёг бы на чужие сутки и станция открылась бы полной сменой.
+ */
+async function insertShiftModes(
+  tx: Transaction,
+  data: DemoDataset,
+  now: Date,
+): Promise<void> {
+  if (data.shiftModes.length === 0) return;
+
+  for (const shift of data.shiftModes) {
+    await tx.execute(sql`
+      insert into store_shift_modes (store_id, local_date, mode, staff_present, staff_expected)
+      select ${shift.storeId}::uuid,
+             (${now.toISOString()}::timestamptz at time zone s.timezone)::date,
+             ${shift.mode},
+             ${shift.staffPresent},
+             ${shift.staffExpected}
+      from stores s
+      where s.id = ${shift.storeId}::uuid
+    `);
+  }
+}
+
+/**
+ * Моменты отправки заполнений: местное время пиццерии переводится в мгновение базой,
+ * а не в JavaScript (D026). Сдвиг «столько часов назад» здесь не годится: заполнение
+ * обязано попадать ВНУТРЬ окна своего чек-листа при любом времени показа, иначе
+ * вечернее закрытие оказывается заполненным в полдень.
+ *
+ * Момент в будущем подрезается до «сейчас»: если контур сажают до того часа, который
+ * задан сегодняшнему заполнению, лента показала бы заполнение, которого ещё не было.
+ */
+async function submittedTimes(
+  tx: Transaction,
+  data: DemoDataset,
+  now: Date,
+): Promise<Map<string, Date>> {
+  const times = new Map<string, Date>();
+
+  for (const item of data.submissions) {
+    const result = await tx.execute<{ at: number }>(sql`
+      select extract(epoch from least(
+               ((((${now.toISOString()}::timestamptz at time zone s.timezone)::date
+                   - ${item.daysAgo}::int) + ${item.at}::time) at time zone s.timezone),
+               ${now.toISOString()}::timestamptz
+             ))::float8 as at
+      from stations st
+      join stores s on st.store_id = s.id
+      where st.id = ${item.stationId}::uuid
+    `);
+
+    const seconds = result.rows[0]?.at;
+    if (seconds === undefined) {
+      throw new Error(
+        `Заполнение ${item.id} ссылается на станцию ${item.stationId}, которой нет в описании контура`,
+      );
+    }
+    times.set(item.id, new Date(seconds * MS_PER_SECOND));
+  }
+
+  return times;
+}
+
 export async function seedDemo(
   options: SeedOptions = {},
 ): Promise<DemoSeedSummary> {

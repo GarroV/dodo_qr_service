@@ -7,11 +7,32 @@ export type LocalizedText = Record<string, string>;
 /** Тип ответа на пункт: да/нет, число с диапазоном, свободный текст. */
 export type ItemType = "bool" | "number" | "text";
 
+/**
+ * Насколько тяжело не выполнить пункт (D056).
+ * `critical` — не выполнить нельзя: входит в любой режим смены и поднимает тревогу.
+ * `major` — деньги и оборудование: выпадает только в критичной смене.
+ * `normal` — обычная работа: остаётся лишь в полной смене.
+ */
+export type Severity = "critical" | "major" | "normal";
+
+/**
+ * Режим смены пиццерии (D055, D056): сколько людей сегодня в графике и, значит,
+ * какие уровни пунктов вообще показывать.
+ */
+export type ShiftMode = "normal" | "reduced" | "critical";
+
 export interface Item {
   id: string;
   title: LocalizedText;
   type: ItemType;
-  critical: boolean;
+  severity?: Severity;
+  /**
+   * Признак до появления уровней. Не пишется больше нигде, но читается вечно:
+   * он лежит внутри уже опубликованных версий и снимков заполнений, которые
+   * переписывать запрещено (принцип 3, D002). Разбирает его `severityOf`.
+   * @deprecated используйте `severity`
+   */
+  critical?: boolean;
   min?: number;
   max?: number;
   hint?: LocalizedText;

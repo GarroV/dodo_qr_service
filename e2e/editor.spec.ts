@@ -144,11 +144,12 @@ test.describe("редактор чек-листа", () => {
     await page.getByTestId("item-type").first().selectOption("number");
     await page.getByTestId("item-min").first().fill("160");
     await page.getByTestId("item-max").first().fill("180");
-    await page.getByTestId("item-critical").first().click();
+    // Переключатель уровня: три положения вместо тумблера критичности (D056).
+    await page.getByTestId("item-severity-critical").first().click();
 
     await expect(page.getByTestId("editor-item").first()).toHaveAttribute(
-      "data-critical",
-      "true",
+      "data-severity",
+      "critical",
     );
 
     await page.getByTestId("save-draft").click();
@@ -161,8 +162,8 @@ test.describe("редактор чек-листа", () => {
     await expect(page.getByTestId("item-min").first()).toHaveValue("160");
     await expect(page.getByTestId("item-max").first()).toHaveValue("180");
     await expect(page.getByTestId("editor-item").first()).toHaveAttribute(
-      "data-critical",
-      "true",
+      "data-severity",
+      "critical",
     );
   });
 

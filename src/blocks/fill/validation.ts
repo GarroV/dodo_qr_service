@@ -10,7 +10,11 @@
 // маршрут, и зависимость ради неё — лишний код в единственной точке записи, открытой
 // интернету. Разбор возвращает новый объект и никогда не пропускает поля входа дальше.
 import type { Answer, Item, Section } from "@/blocks/data";
-import { flattenItems, isFailed } from "@/blocks/data";
+import {
+  flattenItems,
+  isFailed,
+  requiresCommentOnFailure,
+} from "@/blocks/data";
 
 import { isPlausibleCode } from "./station";
 
@@ -137,7 +141,7 @@ export function matchAnswersToSnapshot(
     if (!matchesType(item, answer.value)) return MALFORMED;
 
     const needsComment =
-      item.critical &&
+      requiresCommentOnFailure(item) &&
       isFailed(item, answer) &&
       (answer.comment ?? "").trim() === "";
     if (needsComment) return { ok: false, reason: "comment-required" };

@@ -39,6 +39,7 @@ describe("listChecklists", () => {
       sampleSections("опубликованный"),
     );
     await saveSubmission({
+      mode: "normal",
       versionId,
       answers: [{ itemId: "item-опубликованный", value: true, at: Date.now() }],
       startedAt: Date.now(),

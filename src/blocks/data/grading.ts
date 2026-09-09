@@ -1,5 +1,6 @@
 // Что считается проваленным пунктом. Правило живёт в одном месте: и лента заполнений,
 // и карточка считают провалы одинаково, иначе два экрана покажут разные числа.
+import { severityOf } from "./severity";
 import type { Answer, Item, Section } from "./types";
 
 /** Все пункты снимка подряд: секции нужны на экране, а для счёта важны только пункты. */
@@ -30,6 +31,30 @@ export function countFailedCritical(
 ): number {
   const byItem = new Map(answers.map((answer) => [answer.itemId, answer]));
   return flattenItems(snapshot).filter(
-    (item) => item.critical && isFailed(item, byItem.get(item.id)),
+    (item) =>
+      severityOf(item) === "critical" && isFailed(item, byItem.get(item.id)),
+  ).length;
+}
+
+/**
+ * Сколько критичных пунктов остались БЕЗ ОТВЕТА.
+ *
+ * Это не то же, что провал, и потому считается отдельно. Неполное заполнение продукт
+ * принимает сознательно (`matchAnswersToSnapshot`): отвергнуть почти готовый чек-лист
+ * значит потерять работу сотрудника. Но у критичного пункта пустота — не «мелкая
+ * неполнота»: «выключить газ» без ответа ничем не отличается для управляющего от
+ * «газ не выключен», и молчание тут обязано звучать так же громко, как отказ.
+ *
+ * Режим смены здесь не при чём: критичный пункт показывается во ВСЕХ трёх режимах
+ * (матрица в `severity.ts`), поэтому его отсутствие в ответах — всегда пропуск, а не
+ * следствие сокращения смены.
+ */
+export function countUnansweredCritical(
+  snapshot: Section[],
+  answers: Answer[],
+): number {
+  const answered = new Set(answers.map((answer) => answer.itemId));
+  return flattenItems(snapshot).filter(
+    (item) => severityOf(item) === "critical" && !answered.has(item.id),
   ).length;
 }

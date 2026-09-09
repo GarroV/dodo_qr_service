@@ -2,7 +2,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
 
-import type { Item, LocalizedText, Section } from "@/blocks/data";
+import type { Item, LocalizedText, Section, ShiftMode } from "@/blocks/data";
+import { isShiftMode, sectionsForMode, severityOf } from "@/blocks/data";
 
 import { loadEditor } from "../drafts";
 import { checklistPath } from "../routes";
@@ -63,6 +64,16 @@ function visibleSections(sections: readonly Section[]): Section[] {
     .filter((section) => section.items.length > 0);
 }
 
+/** Порядок переключателя режима: полная смена слева, критичная справа. */
+const MODES: readonly ShiftMode[] = ["normal", "reduced", "critical"];
+
+const MODE_BAR_CLASS =
+  "mx-auto mt-[var(--space-5)] flex max-w-[420px] gap-[2px] rounded-[var(--r-control)] bg-[var(--seg-track)] p-[2px]";
+const MODE_TAB_CLASS =
+  "flex-1 rounded-[var(--r-mark)] px-[var(--space-4)] py-[var(--space-3)] text-center text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] uppercase";
+const MODE_TAB_ON_CLASS = "bg-surface text-[var(--ink)] shadow-[var(--sh-xs)]";
+const MODE_TAB_OFF_CLASS = "text-[var(--ink-3)]";
+
 function totalItems(sections: readonly Section[]): number {
   return sections.reduce((total, section) => total + section.items.length, 0);
 }
@@ -90,6 +101,7 @@ function ItemRow({
   readonly isFirst: boolean;
 }): ReactElement {
   const range = rangeHint(item, t);
+  const severity = severityOf(item);
 
   return (
     <div
@@ -99,14 +111,24 @@ function ItemRow({
       <span className={ITEM_BOX_CLASS} />
       <span className={ITEM_TEXT_CLASS}>
         {pickText(item.title, locale)}
-        {item.critical ? (
-          <span className="ml-[var(--space-2)] font-bold text-[var(--warn-mark)]">
+        {severity === "normal" ? null : (
+          <span
+            className={`ml-[var(--space-2)] font-bold ${
+              severity === "critical"
+                ? "text-[var(--warn-mark)]"
+                : "text-[var(--ink-3)]"
+            }`}
+          >
             !
           </span>
-        ) : null}
-        {item.critical ? (
-          <span className={ITEM_HINT_CLASS}>{t("preview.critical")}</span>
-        ) : null}
+        )}
+        {severity === "normal" ? null : (
+          <span className={ITEM_HINT_CLASS}>
+            {severity === "critical"
+              ? t("preview.critical")
+              : t("preview.major")}
+          </span>
+        )}
         {range !== null ? (
           <span className={ITEM_HINT_CLASS}>{range}</span>
         ) : null}
@@ -136,8 +158,11 @@ function ProgressBar({
 
 export async function PreviewScreen({
   id,
+  mode: requested,
 }: {
   readonly id: string;
+  /** Режим смены, в котором смотрят предпросмотр; по умолчанию полная смена. */
+  readonly mode?: string | undefined;
 }): Promise<ReactElement> {
   const state = await loadEditor(id);
   if (state === null) notFound();
@@ -150,7 +175,11 @@ export async function PreviewScreen({
     state.station === null
       ? t("list.noStation")
       : `${state.station.countryName} · ${state.station.storeName} · ${state.station.name}`;
-  const sections = visibleSections(state.sections);
+  // Методист обязан видеть своими глазами, во что превращается его чек-лист на
+  // тридцать пунктов в критичную смену. Иначе он узнает это от повара через две
+  // недели, а обещание предпросмотра «так это увидит сотрудник» станет ложью.
+  const mode: ShiftMode = isShiftMode(requested) ? requested : "normal";
+  const sections = sectionsForMode(visibleSections(state.sections), mode);
   const total = totalItems(sections);
 
   return (
@@ -164,6 +193,19 @@ export async function PreviewScreen({
           <a href={checklistPath(id)} className="font-medium whitespace-nowrap">
             {t("preview.back")}
           </a>
+        </div>
+        <div className={MODE_BAR_CLASS} data-testid="preview-mode-bar">
+          {MODES.map((option) => (
+            <a
+              key={option}
+              href={`${checklistPath(id)}/preview?mode=${option}`}
+              data-testid={`preview-mode-${option}`}
+              data-selected={option === mode ? "true" : "false"}
+              className={`${MODE_TAB_CLASS} ${option === mode ? MODE_TAB_ON_CLASS : MODE_TAB_OFF_CLASS}`}
+            >
+              {t(`preview.mode.${option}`)}
+            </a>
+          ))}
         </div>
       </div>
 

@@ -23,7 +23,7 @@ import {
 } from "./editing";
 
 function item(id: string, title = `Пункт ${id}`): Item {
-  return { id, title: { ru: title }, type: "bool", critical: false };
+  return { id, title: { ru: title }, type: "bool", severity: "normal" };
 }
 
 function sections(): Section[] {
@@ -80,7 +80,7 @@ describe("addItemAfter (Enter создаёт следующий пункт)", ()
     expect(ids(after, "s3")).toStrictEqual([focusItemId]);
   });
 
-  test("новый пункт — обычный «да/нет», не критичный", () => {
+  test("новый пункт — обычный «да/нет» обычного уровня", () => {
     // Тип по умолчанию задан требованием блока: критичность выставляется по месту.
     const { sections: after, focusItemId } = addItemAfter(
       sections(),
@@ -89,7 +89,11 @@ describe("addItemAfter (Enter создаёт следующий пункт)", ()
     );
     const created = after[0]?.items.find((one) => one.id === focusItemId);
 
-    expect(created).toMatchObject({ type: "bool", critical: false, title: {} });
+    expect(created).toMatchObject({
+      type: "bool",
+      severity: "normal",
+      title: {},
+    });
   });
 });
 
@@ -174,7 +178,7 @@ describe("правка пункта", () => {
             id: "a",
             title: { ru: "Печь", en: "Oven" },
             type: "bool",
-            critical: false,
+            severity: "normal",
           },
         ],
       },
@@ -191,14 +195,14 @@ describe("правка пункта", () => {
   test("тип ответа и критичность меняются по месту", () => {
     const after = updateItem(sections(), "a", {
       type: "number",
-      critical: true,
+      severity: "critical",
       min: 160,
       max: 180,
     });
 
     expect(after[0]?.items[0]).toMatchObject({
       type: "number",
-      critical: true,
+      severity: "critical",
       min: 160,
       max: 180,
     });

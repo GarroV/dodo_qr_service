@@ -1,6 +1,9 @@
 // Модель экранов ленты: то, что страница посчитала, а разметка только рисует.
 // Разметка не ходит в базу, не считает провалы и не переставляет строки — иначе лента
 // и карточка начали бы считать одно и то же по-разному.
+import type { Severity, ShiftMode } from "@/blocks/data";
+
+import type { AlarmKind } from "./alarms";
 import type { Outcome } from "./outcome";
 import type { FeedPeriod, RelativeDay } from "./period";
 
@@ -21,6 +24,45 @@ export interface FeedRow {
   /** Сегодня, вчера или раньше: от этого зависит вид отметки времени в строке. */
   readonly whenKind: RelativeDay;
   readonly outcome: Outcome;
+  /** Режим смены, в котором заполняли (D055): сокращённый прогон видно в ленте. */
+  readonly mode: ShiftMode;
+}
+
+/**
+ * Строка полосы тревог. Ровно то, что рисуется: режим смены здесь не показывается —
+ * его тревога уже учла (чек-лист, отменённый режимом, тревоги не поднимает), и метка
+ * «критичная смена» рядом с тревогой читалась бы как оправдание.
+ */
+export interface AlarmRow {
+  readonly key: string;
+  readonly kind: AlarmKind;
+  readonly storeName: string;
+  readonly stationName: string;
+  /** Название чек-листа на языке интерфейса. */
+  readonly checklistTitle: string;
+  /** Пояс пиццерии: время тревоги показывается в нём, как и время строк ленты. */
+  readonly timeZone: string;
+  /** Отправка заполнения с провалом или закрытие пустого окна. */
+  readonly at: Date;
+  /** Сколько критичных пунктов в этом состоянии. У незаполненного чек-листа — 0. */
+  readonly itemCount: number;
+  /** Заполнение с провалом — по нему строится ссылка. `null` у пропуска: его нет. */
+  readonly submissionId: string | null;
+}
+
+/**
+ * Полоса тревог над лентой. Выбранный период на неё НЕ влияет: тревога — про
+ * сейчас, и «за месяц» не должно приносить месяц старых тревог, а «за сегодня» —
+ * прятать вчерашнее вечернее закрытие, закрывшееся в полночь (D053).
+ */
+export interface FeedAlarms {
+  readonly rows: readonly AlarmRow[];
+  /** Сколько тревог не поместилось в полосу. */
+  readonly hiddenCount: number;
+  /** Прочитан предел выдачи: тревог может быть больше, и полоса об этом говорит. */
+  readonly capped: boolean;
+  /** Пиццерии, чей часовой пояс база не знает: их тревоги посчитать нечем (T062). */
+  readonly unknownTimezoneStores: number;
 }
 
 /** Три показателя за выбранный период — считаются по тем же строкам, что показаны. */
@@ -70,6 +112,8 @@ export interface FeedModel {
   readonly periodFrom: Date;
   readonly periodTo: Date;
   readonly metrics: FeedMetrics;
+  /** Тревоги: то, что требует вмешательства сейчас, — над всем остальным. */
+  readonly alarms: FeedAlarms;
   readonly rows: readonly FeedRow[];
   /** Лента упёрлась в предел выдачи: показаны не все заполнения периода. */
   readonly limitReached: boolean;
@@ -97,7 +141,13 @@ export interface SubmissionItemView {
   readonly itemId: string;
   readonly title: string;
   readonly hint: string | null;
-  readonly critical: boolean;
+  readonly severity: Severity;
+  /**
+   * Спрашивали ли этот пункт в том режиме, в котором заполняли. `false` — пункт
+   * лежит в снимке, но сотруднику его не показывали: снимок хранится полным, чтобы
+   * факт сокращения был виден, а не стирался (D055).
+   */
+  readonly askedInMode: boolean;
   /** Диапазон числового пункта из снимка: «160–180» рядом с заголовком. */
   readonly min: number | null;
   readonly max: number | null;
@@ -133,6 +183,9 @@ export interface SubmissionModel {
   /** Когда опубликована та версия, по которой заполняли. */
   readonly versionPublishedAt: Date | null;
   readonly outcome: Outcome;
+  readonly mode: ShiftMode;
+  /** Сколько пунктов снимка в этом режиме не запрашивали вовсе. */
+  readonly skippedByModeCount: number;
   /** Ссылка на сам чек-лист в редакторе: из карточки видно, что правят сейчас. */
   readonly checklistHref: string;
   readonly sections: readonly SubmissionSectionView[];
