@@ -468,6 +468,18 @@
       "averageDuration": "average time to fill",
       "noValue": "—"
     },
+    "alarms": {
+      "title": "Alarms",
+      "count": "{count, plural, one {# alarm} other {# alarms}}",
+      "criticalFailed": "{count, plural, one {a critical item was not done} other {# critical items were not done}}",
+      "criticalUnanswered": "{count, plural, one {a critical item was left unanswered} other {# critical items were left unanswered}}",
+      "missed": "checklist was not filled, the window closed at {time}",
+      "open": "Open",
+      "hidden": "{count, plural, one {# more alarm} other {# more alarms}}: narrow the filters to see the rest",
+      "capped": "The read limit was reached: there may be more alarms — narrow the filters",
+      "quiet": "No alarms",
+      "unknownTimezone": "{count, plural, one {# pizzeria is not being watched} other {# pizzerias are not being watched}}: the database does not recognise their time zone — fix it in the catalog"
+    },
     "list": {
       "title": "Feed",
       "count": "{count, plural, one {# record} other {# records}}",

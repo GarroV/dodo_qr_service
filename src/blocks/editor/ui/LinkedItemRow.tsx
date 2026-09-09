@@ -1,7 +1,12 @@
 import { useTranslations } from "next-intl";
 
 import type { Item } from "@/blocks/data";
-import { severityOf } from "@/blocks/data";
+// `severityOf` берётся напрямую из модуля уровней, а НЕ из входа `@/blocks/data`:
+// эта строка попадает в клиентскую сборку (её рисует клиентский `ChecklistEditor`),
+// а вход блока data тянет за собой пул подключений и драйвер `pg`, которого в браузере
+// нет — сборка админки падала на `module-not-found`. Модуль уровней чистый: ни базы,
+// ни узловых зависимостей.
+import { severityOf } from "@/blocks/data/severity";
 
 /**
  * Пункт вставленного блока библиотеки: только для чтения. Правится он в самом блоке,

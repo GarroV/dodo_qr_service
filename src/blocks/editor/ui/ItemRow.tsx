@@ -2,7 +2,12 @@ import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, KeyboardEvent } from "react";
 
 import type { Item, ItemType, Severity } from "@/blocks/data";
-import { severityOf } from "@/blocks/data";
+// `severityOf` берётся напрямую из модуля уровней, а НЕ из входа `@/blocks/data`:
+// эта строка попадает в клиентскую сборку (её рисует клиентский `ChecklistEditor`),
+// а вход блока data тянет за собой пул подключений и драйвер `pg`, которого в браузере
+// нет — сборка админки падала на `module-not-found`. Модуль уровней чистый: ни базы,
+// ни узловых зависимостей.
+import { severityOf } from "@/blocks/data/severity";
 
 import { SELECT_ARROW_SMALL } from "./select-style";
 
@@ -37,11 +42,18 @@ const ITEM_TYPES: readonly ItemType[] = ["bool", "number", "text"];
 /** Порядок положений переключателя уровня: слева направо, от лёгкого к тяжёлому. */
 const SEVERITIES: readonly Severity[] = ["normal", "major", "critical"];
 
+/**
+ * Вид выбранного положения. Все три сидят на `bg-surface`, а различаются цветом
+ * подписи и обводкой: белая подпись на `--warn-mark` давала контраст 2,3:1 против
+ * порога 4,5 — axe поймал это на сквозном прогоне. Прежний тумблер проходил потому,
+ * что `--warn-mark` был фоном дорожки БЕЗ текста, а подпись лежала на фоне строки.
+ */
 const SEVERITY_TONE: Readonly<Record<Severity, string>> = {
   normal: "bg-surface text-[var(--ink-2)] shadow-[var(--sh-xs)]",
   major:
     "bg-surface text-[var(--ink)] shadow-[var(--sh-xs)] ring-1 ring-[var(--line-strong)]",
-  critical: "bg-[var(--warn-mark)] text-[var(--ink-inverse)]",
+  critical:
+    "bg-surface text-[var(--warn-ink)] shadow-[var(--sh-xs)] ring-1 ring-[var(--warn-mark)]",
 };
 
 /** Ключ подписи типа ответа: "typeBool" | "typeNumber" | "typeText". */
@@ -172,7 +184,10 @@ export function ItemRow({
                 className={`inline-flex h-[19px] items-center rounded-[var(--r-mark)] px-[var(--space-4)] text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] uppercase transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-1 peer-focus-visible:outline-[var(--focus-ring)] ${
                   severity === level
                     ? SEVERITY_TONE[level]
-                    : "text-[var(--ink-3)]"
+                    : // Не `--ink-3`: на дорожке `--seg-track` он даёт 4,4:1 — ниже
+                      // порога. `--ink-2` даёт 4,7:1 и не спорит с выбранным положением,
+                      // которое отличается фоном и тенью, а не только цветом подписи.
+                      "text-[var(--ink-2)]"
                 }`}
               >
                 {t(level)}

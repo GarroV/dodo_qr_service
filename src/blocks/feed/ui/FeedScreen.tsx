@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 
 import type { FeedModel } from "../model";
 import { AdminShell } from "./AdminShell";
+import { AlarmStrip } from "./AlarmStrip";
 import { FeedEmpty } from "./FeedEmpty";
 import { FeedFilters } from "./FeedFilters";
 import { FeedMetrics } from "./FeedMetrics";
@@ -90,6 +91,9 @@ export async function FeedScreen({
         timeZone={model.timeZone}
         timeZoneAmbiguous={model.timeZoneAmbiguous}
       />
+      {/* Тревоги выше показателей и ленты: это единственное на экране, что требует
+          действия сегодня, а не сведений о прошлом (D053). */}
+      <AlarmStrip alarms={model.alarms} selection={model.selection} />
       <FeedMetrics metrics={model.metrics} period={model.selection.period} />
 
       {/* Показатели остаются на месте и при пустой ленте: ноль заполнений — это факт,

@@ -332,6 +332,37 @@ test.describe("лента заполнений", () => {
     await expect(page.getByTestId("metric-duration")).not.toHaveText("—");
   });
 
+  test("полоса тревог показывает проваленный критичный пункт и ведёт в карточку", async ({
+    page,
+  }) => {
+    const seeded = await seed();
+    await signIn(page);
+
+    await page.goto(FEED_PATH);
+    await expect(page.getByTestId("feed-screen")).toBeVisible();
+    await pick(page, "Пиццерия", { label: seeded.storeName });
+    await pick(page, "Станция", { label: seeded.kitchenName });
+
+    // Тревога одна: критичный пункт провален в одном заполнении из двух. Окно
+    // чек-листа сценария 00:00–23:59, то есть за сегодня оно ещё не закрылось —
+    // тревоги о незаполненном чек-листе здесь быть не должно.
+    const strip = page.getByTestId("alarm-strip");
+    await expect(strip).toBeVisible();
+    await expect(strip.getByTestId("alarm-row")).toHaveCount(1);
+    await expect(strip.getByTestId("alarm-row")).toHaveAttribute(
+      "data-kind",
+      "criticalFailed",
+    );
+    await expect(strip).toContainText(seeded.kitchenName);
+
+    // Из тревоги открывается та самая карточка, а не лента заново.
+    await strip.getByTestId("alarm-open").click();
+    await expect(page.getByTestId("submission-screen")).toBeVisible();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/feed/${seeded.failedSubmissionId}`),
+    );
+  });
+
   test("фильтр по станции сужает ленту, а сброс возвращает всё", async ({
     page,
   }) => {

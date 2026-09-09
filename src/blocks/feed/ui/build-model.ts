@@ -11,11 +11,15 @@ import {
   severityOf,
 } from "@/blocks/data";
 
+import type { AlarmList, AlarmScope } from "../alarms";
+import { listAlarms } from "../alarms";
 import { checklistHref } from "../checklist-link";
 import { loadFailedCounts } from "../failures";
 import { computeMetrics } from "../metrics";
 import type {
+  AlarmRow,
   AnswerView,
+  FeedAlarms,
   FeedEmptyKind,
   FeedModel,
   FeedRow,
@@ -44,6 +48,21 @@ import type { FeedView } from "../view";
  */
 const FEED_LIMIT = 200;
 
+/**
+ * Сколько тревог показывает полоса. Остальные считаются и объявляются числом: полоса
+ * из сорока строк перестаёт быть тревогой и становится фоном, который перестают читать.
+ */
+const ALARM_STRIP_LIMIT = 6;
+
+/** Фильтры экрана в том виде, в каком их принимают запросы: незаданное не передаётся. */
+function scopeOf(selection: FeedSelection): AlarmScope {
+  return {
+    ...(selection.countryId === null ? {} : { countryId: selection.countryId }),
+    ...(selection.storeId === null ? {} : { storeId: selection.storeId }),
+    ...(selection.stationId === null ? {} : { stationId: selection.stationId }),
+  };
+}
+
 /** Пояс площадки: последнее слово, когда пояс пиццерии выяснить неоткуда. */
 function platformTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -64,9 +83,7 @@ export async function buildFeedModel(
   const { from, to } = resolvePeriod(selection.period, now, timeZone);
 
   const rows = await listSubmissions({
-    ...(selection.countryId === null ? {} : { countryId: selection.countryId }),
-    ...(selection.storeId === null ? {} : { storeId: selection.storeId }),
-    ...(selection.stationId === null ? {} : { stationId: selection.stationId }),
+    ...scopeOf(selection),
     from,
     to,
     limit: FEED_LIMIT,
@@ -75,6 +92,10 @@ export async function buildFeedModel(
   // Провалы дочитываются по идентификаторам уже отобранных строк: набор строк
   // остаётся целиком за слоем доступа, второго набора условий отбора не появляется.
   const failedCounts = await loadFailedCounts(rows.map((row) => row.id));
+
+  // Тревоги берутся своим запросом и без периода: полоса обязана показывать
+  // состояние на сейчас, а не выборку, суженную фильтром периода (D053).
+  const alarms = await listAlarms(scopeOf(selection), now);
 
   const feedRows = rows.map((row) =>
     toFeedRow(row, {
@@ -92,6 +113,7 @@ export async function buildFeedModel(
     periodFrom: from,
     periodTo: to,
     metrics: computeMetrics(feedRows),
+    alarms: toFeedAlarms(alarms, locale),
     rows: feedRows,
     // Предел задан здесь, а не унаследован у слоя доступа: экран обязан знать число,
     // на котором лента обрывается, чтобы честно об этом сказать.
@@ -100,6 +122,30 @@ export async function buildFeedModel(
       feedRows.length > 0
         ? null
         : await emptyKindOf(selection, catalog.stations.length),
+  };
+}
+
+/** Тревоги в том виде, в каком их рисует полоса: язык уже выбран, лишнее отброшено. */
+function toFeedAlarms(list: AlarmList, locale: Locale): FeedAlarms {
+  const rows: AlarmRow[] = list.alarms
+    .slice(0, ALARM_STRIP_LIMIT)
+    .map((alarm) => ({
+      key: alarm.key,
+      kind: alarm.kind,
+      storeName: alarm.storeName,
+      stationName: alarm.stationName,
+      checklistTitle: pickText(alarm.checklistTitle, locale),
+      timeZone: alarm.timeZone,
+      at: alarm.at,
+      itemCount: alarm.itemCount,
+      submissionId: alarm.submissionId,
+    }));
+
+  return {
+    rows,
+    hiddenCount: list.alarms.length - rows.length,
+    capped: list.capped,
+    unknownTimezoneStores: list.unknownTimezoneStores,
   };
 }
 
@@ -115,9 +161,7 @@ async function emptyKindOf(
   if (stationCount === 0) return "no-stations";
 
   const ever = await listSubmissions({
-    ...(selection.countryId === null ? {} : { countryId: selection.countryId }),
-    ...(selection.storeId === null ? {} : { storeId: selection.storeId }),
-    ...(selection.stationId === null ? {} : { stationId: selection.stationId }),
+    ...scopeOf(selection),
     limit: 1,
   });
 

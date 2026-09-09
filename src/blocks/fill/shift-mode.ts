@@ -20,9 +20,11 @@ import { isPlausibleCode, storeIdForCode } from "./station";
  */
 const MAX_STAFF = 999;
 
-export type ShiftModeRefusal = "malformed" | "unknown-code" | "rate-limited";
+// Не выставляется наружу: наружу выходят `ParsedShiftModeChoice` и `ShiftModeOutcome`,
+// а причина отказа читается через них.
+type ShiftModeRefusal = "malformed" | "unknown-code" | "rate-limited";
 
-export interface ShiftModeChoice {
+interface ShiftModeChoice {
   readonly code: string;
   readonly mode: ShiftMode;
   readonly staffPresent: number | undefined;

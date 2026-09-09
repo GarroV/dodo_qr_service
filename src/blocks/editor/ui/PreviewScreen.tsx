@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
 
-import type { Item, LocalizedText, Section, ShiftMode  } from "@/blocks/data";
+import type { Item, LocalizedText, Section, ShiftMode } from "@/blocks/data";
 import { isShiftMode, sectionsForMode, severityOf } from "@/blocks/data";
 
 import { loadEditor } from "../drafts";

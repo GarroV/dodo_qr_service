@@ -5,7 +5,8 @@ import {
   checklistVersions,
   getDb,
   publishVersion,
-  stations, setShiftMode 
+  stations,
+  setShiftMode,
 } from "@/blocks/data";
 import type { Section } from "@/blocks/data";
 import {

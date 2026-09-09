@@ -265,7 +265,8 @@ describe("состав демонстрационного контура", () =>
         submission.stationId,
       );
       expect(submission.durationMinutes).toBeGreaterThan(0);
-      expect(submission.submittedHoursAgo).toBeGreaterThanOrEqual(0);
+      expect(submission.daysAgo).toBeGreaterThanOrEqual(0);
+      expect(submission.at).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/u);
     }
   });
 
@@ -377,3 +378,117 @@ function toMinutes(time: string): number {
   const [hours, minutes] = time.split(":");
   return Number(hours) * 60 + Number(minutes);
 }
+
+// ---------- Время заполнений: демо не должно спорить само с собой ----------
+
+const MINUTES_PER_HOUR = 60;
+
+/** "23:30" → 1410. Формат уже проверен выше, здесь достаточно разбора. */
+function minutesOf(time: string): number {
+  const [hours, minutes] = time.split(":").map(Number);
+  return (hours ?? 0) * MINUTES_PER_HOUR + (minutes ?? 0);
+}
+
+interface Windowed {
+  readonly checklistId: string;
+  readonly start: number;
+  readonly end: number;
+  /** Окно через полночь: 17:00–05:00. */
+  readonly crossesMidnight: boolean;
+}
+
+/** Окно чек-листа, к которому относится версия заполнения. */
+function windowByVersion(): Map<string, Windowed> {
+  const byVersion = new Map<string, Windowed>();
+  for (const checklist of DEMO.checklists) {
+    const start = minutesOf(checklist.window.start);
+    const end = minutesOf(checklist.window.end);
+    for (const version of checklist.versions) {
+      byVersion.set(version.id, {
+        checklistId: checklist.id,
+        start,
+        end,
+        crossesMidnight: start > end,
+      });
+    }
+  }
+  return byVersion;
+}
+
+/**
+ * В каких местных сутках НАЧАЛСЯ проход окна, который закрыло это заполнение.
+ * У окна через полночь заполнение после полуночи относится к проходу, начатому
+ * в предыдущие сутки.
+ */
+function occurrenceStartDaysAgo(
+  daysAgo: number,
+  at: number,
+  window: Windowed,
+): number {
+  return window.crossesMidnight && at < window.end ? daysAgo + 1 : daysAgo;
+}
+
+describe("время заполнений демо", () => {
+  test("каждое заполнение попадает внутрь окна своего чек-листа", () => {
+    // Иначе демо противоречит само себе: лента показывает вечерний чек-лист
+    // выполненным в полдень, а тревога — пропущенным. Оба утверждения верны,
+    // и вместе они читаются как дефект продукта ровно на показе.
+    const windows = windowByVersion();
+
+    for (const submission of DEMO.submissions) {
+      const window = windows.get(submission.versionId);
+      if (window === undefined) throw new Error("версия без чек-листа");
+      const at = minutesOf(submission.at);
+
+      const inside = window.crossesMidnight
+        ? at >= window.start || at < window.end
+        : at >= window.start && at < window.end;
+      expect(inside).toBe(true);
+    }
+  });
+
+  test("чек-лист с окном внутри суток заполнен сегодня: ложной тревоги не будет", () => {
+    // Окно 05:00–17:00 закрывается вечером того же дня. Если заполнения за сегодня
+    // нет, показ после 17:00 открывался бы тревогой о пропуске — про чек-лист,
+    // который в демо считается сделанным.
+    const windows = windowByVersion();
+    const filledToday = new Set<string>();
+
+    for (const submission of DEMO.submissions) {
+      const window = windows.get(submission.versionId);
+      if (window === undefined) continue;
+      const startDay = occurrenceStartDaysAgo(
+        submission.daysAgo,
+        minutesOf(submission.at),
+        window,
+      );
+      if (startDay === 0) filledToday.add(window.checklistId);
+    }
+
+    for (const checklist of DEMO.checklists) {
+      if (minutesOf(checklist.window.start) > minutesOf(checklist.window.end)) {
+        continue;
+      }
+      expect(filledToday).toContain(checklist.id);
+    }
+  });
+
+  test("вечернее закрытие за прошедшую ночь намеренно НЕ заполнено", () => {
+    // Это и есть тревога, которую демо показывает: смена ушла, не закрыв кухню.
+    // Заполни этот проход — и второй вид тревоги на показе исчезнет.
+    const windows = windowByVersion();
+
+    for (const submission of DEMO.submissions) {
+      const window = windows.get(submission.versionId);
+      if (!window?.crossesMidnight) continue;
+
+      const startDay = occurrenceStartDaysAgo(
+        submission.daysAgo,
+        minutesOf(submission.at),
+        window,
+      );
+      // Проход, закончившийся сегодня в 05:00, начался вчера — его и оставляем пустым.
+      expect(startDay).not.toBe(1);
+    }
+  });
+});

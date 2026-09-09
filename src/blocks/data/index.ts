@@ -42,6 +42,8 @@ export {
   submissions,
 } from "./schema";
 
+export { timezoneNames } from "./timezones";
+
 export type { Database } from "./client";
 export { getDb } from "./client";
 
@@ -60,7 +62,12 @@ export type {
 } from "./submissions";
 export { getSubmission, listSubmissions, saveSubmission } from "./submissions";
 
-export { countFailedCritical, flattenItems, isFailed } from "./grading";
+export {
+  countFailedCritical,
+  countUnansweredCritical,
+  flattenItems,
+  isFailed,
+} from "./grading";
 
 export type { SetShiftModeInput, ShiftModeState } from "./shift-modes";
 export {
@@ -68,6 +75,12 @@ export {
   listShiftModeChanges,
   setShiftMode,
 } from "./shift-modes";
+
+// ВАЖНО про клиентские компоненты: этот вход тянет `./client`, то есть пул и драйвер
+// `pg`. Значение, импортированное отсюда в файл, который попадает в клиентскую сборку,
+// роняет сборку целиком (`module-not-found: pg` в браузере) — проверено на `ItemRow`,
+// который рисует клиентский редактор. Типы импортировать можно: они стираются. За
+// значением идти прямо в чистый модуль: `@/blocks/data/severity`.
 
 // Накат и откат миграций через этот вход НЕ выставляются: `migrator.ts` вычисляет путь
 // к каталогу миграций через `new URL("./migrations", import.meta.url)`, а сборщик Next

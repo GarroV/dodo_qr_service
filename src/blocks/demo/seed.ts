@@ -26,6 +26,7 @@ import type { DemoDataset } from "./model";
 
 const HOUR_MS = 3_600_000;
 const MINUTE_MS = 60_000;
+const MS_PER_SECOND = 1000;
 
 export interface DemoStationCode {
   readonly station: string;
@@ -248,9 +249,16 @@ async function insertContour(
 
   await insertShiftModes(tx, data, now);
 
+  const times = await submittedTimes(tx, data, now);
+
   await tx.insert(submissions).values(
     data.submissions.map((submission) => {
-      const submittedAt = hoursBefore(now, submission.submittedHoursAgo);
+      const submittedAt = times.get(submission.id);
+      if (submittedAt === undefined) {
+        throw new Error(
+          `Момент отправки заполнения ${submission.id} не посчитан`,
+        );
+      }
       const durationMs = submission.durationMinutes * MINUTE_MS;
       const startedAt = new Date(submittedAt.getTime() - durationMs);
       const snapshot = sectionsByVersion.get(submission.versionId);
@@ -306,6 +314,46 @@ async function insertShiftModes(
       where s.id = ${shift.storeId}::uuid
     `);
   }
+}
+
+/**
+ * Моменты отправки заполнений: местное время пиццерии переводится в мгновение базой,
+ * а не в JavaScript (D026). Сдвиг «столько часов назад» здесь не годится: заполнение
+ * обязано попадать ВНУТРЬ окна своего чек-листа при любом времени показа, иначе
+ * вечернее закрытие оказывается заполненным в полдень.
+ *
+ * Момент в будущем подрезается до «сейчас»: если контур сажают до того часа, который
+ * задан сегодняшнему заполнению, лента показала бы заполнение, которого ещё не было.
+ */
+async function submittedTimes(
+  tx: Transaction,
+  data: DemoDataset,
+  now: Date,
+): Promise<Map<string, Date>> {
+  const times = new Map<string, Date>();
+
+  for (const item of data.submissions) {
+    const result = await tx.execute<{ at: number }>(sql`
+      select extract(epoch from least(
+               ((((${now.toISOString()}::timestamptz at time zone s.timezone)::date
+                   - ${item.daysAgo}::int) + ${item.at}::time) at time zone s.timezone),
+               ${now.toISOString()}::timestamptz
+             ))::float8 as at
+      from stations st
+      join stores s on st.store_id = s.id
+      where st.id = ${item.stationId}::uuid
+    `);
+
+    const seconds = result.rows[0]?.at;
+    if (seconds === undefined) {
+      throw new Error(
+        `Заполнение ${item.id} ссылается на станцию ${item.stationId}, которой нет в описании контура`,
+      );
+    }
+    times.set(item.id, new Date(seconds * MS_PER_SECOND));
+  }
+
+  return times;
 }
 
 export async function seedDemo(

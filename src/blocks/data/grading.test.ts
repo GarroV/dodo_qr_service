@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 
-import { countFailedCritical, flattenItems, isFailed } from "./grading";
+import {
+  countFailedCritical,
+  countUnansweredCritical,
+  flattenItems,
+  isFailed,
+} from "./grading";
 import type { Answer, Item, Section } from "./types";
 
 function item(overrides: Partial<Item> & Pick<Item, "id" | "type">): Item {
@@ -121,5 +126,57 @@ describe("flattenItems", () => {
       "a",
       "b",
     ]);
+  });
+});
+
+describe("countUnansweredCritical", () => {
+  const sections: Section[] = [
+    {
+      id: "s1",
+      title: { ru: "Закрытие", en: "Closing" },
+      source: "own",
+      items: [
+        item({ id: "gas", type: "bool", severity: "critical" }),
+        item({ id: "hood", type: "bool", severity: "critical" }),
+        item({ id: "till", type: "bool", severity: "major" }),
+        item({ id: "tables", type: "bool", severity: "normal" }),
+      ],
+    },
+  ];
+
+  test("критичный пункт без ответа считается", () => {
+    expect(countUnansweredCritical(sections, [answer("gas", true)])).toBe(1);
+  });
+
+  test("отвеченный «нет» критичный пункт здесь не считается: это провал", () => {
+    // Провал и молчание — разные тревоги, и складывать их в одно число значит
+    // показать управляющему «2», за которыми стоят два разных разговора.
+    const answers = [answer("gas", false), answer("hood", true)];
+
+    expect(countUnansweredCritical(sections, answers)).toBe(0);
+    expect(countFailedCritical(sections, answers)).toBe(1);
+  });
+
+  test("важные и обычные пункты без ответа не считаются", () => {
+    const answers = [answer("gas", true), answer("hood", true)];
+
+    expect(countUnansweredCritical(sections, answers)).toBe(0);
+  });
+
+  test("устаревший признак critical читается так же, как уровень", () => {
+    const legacy: Section[] = [
+      {
+        id: "s-old",
+        title: { ru: "Старое", en: "Legacy" },
+        source: "own",
+        items: [item({ id: "old-gas", type: "bool", critical: true })],
+      },
+    ];
+
+    expect(countUnansweredCritical(legacy, [])).toBe(1);
+  });
+
+  test("без ответов не отвечены все критичные", () => {
+    expect(countUnansweredCritical(sections, [])).toBe(2);
   });
 });
