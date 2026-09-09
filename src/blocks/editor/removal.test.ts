@@ -73,7 +73,7 @@ describe("removeChecklist", () => {
       checklistId,
       sampleSections("версия"),
     );
-    const submissionId = await saveSubmission({
+    const submissionId = await saveSubmission({ mode: "normal",
       versionId,
       answers: [{ itemId: "item-версия", value: true, at: Date.now() }],
       startedAt: Date.now(),
@@ -104,7 +104,7 @@ describe("removeChecklist", () => {
       checklistId,
       sampleSections("версия"),
     );
-    await saveSubmission({
+    await saveSubmission({ mode: "normal",
       versionId,
       answers: [{ itemId: "item-версия", value: true, at: Date.now() }],
       startedAt: Date.now(),
@@ -162,7 +162,7 @@ describe("previewRemoval", () => {
       sampleSections("версия"),
     );
     for (let count = 0; count < 2; count += 1) {
-      await saveSubmission({
+      await saveSubmission({ mode: "normal",
         versionId,
         answers: [{ itemId: "item-версия", value: true, at: Date.now() }],
         startedAt: Date.now(),
@@ -185,7 +185,7 @@ describe("previewRemoval", () => {
       checklistId,
       sampleSections("версия"),
     );
-    await saveSubmission({
+    await saveSubmission({ mode: "normal",
       versionId,
       answers: [{ itemId: "item-версия", value: true, at: Date.now() }],
       startedAt: Date.now(),

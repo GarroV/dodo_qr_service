@@ -7,8 +7,19 @@ export type {
   ItemType,
   LocalizedText,
   Section,
+  Severity,
+  ShiftMode,
   VersionStatus,
 } from "./types";
+
+export {
+  isItemInMode,
+  isSeverity,
+  isShiftMode,
+  requiresCommentOnFailure,
+  sectionsForMode,
+  severityOf,
+} from "./severity";
 
 export type {
   Block,
@@ -17,6 +28,7 @@ export type {
   Country,
   Station,
   Store,
+  StoreShiftMode,
   Submission,
 } from "./schema";
 export {
@@ -25,6 +37,7 @@ export {
   checklists,
   countries,
   stations,
+  storeShiftModes,
   stores,
   submissions,
 } from "./schema";
@@ -48,6 +61,13 @@ export type {
 export { getSubmission, listSubmissions, saveSubmission } from "./submissions";
 
 export { countFailedCritical, flattenItems, isFailed } from "./grading";
+
+export type { SetShiftModeInput, ShiftModeState } from "./shift-modes";
+export {
+  getShiftMode,
+  listShiftModeChanges,
+  setShiftMode,
+} from "./shift-modes";
 
 // Накат и откат миграций через этот вход НЕ выставляются: `migrator.ts` вычисляет путь
 // к каталогу миграций через `new URL("./migrations", import.meta.url)`, а сборщик Next

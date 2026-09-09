@@ -141,11 +141,11 @@ describe("parsePastedLines", () => {
 });
 
 describe("parsePastedList", () => {
-  test("строит пункт с типом bool и некритичным по умолчанию", () => {
+  test("строит пункт с типом bool и обычным уровнем по умолчанию", () => {
     const [item] = parsePastedList("Включить печь", "ru");
 
     expect(item?.type).toBe("bool");
-    expect(item?.critical).toBe(false);
+    expect(item?.severity).toBe("normal");
     expect(item?.min).toBeUndefined();
     expect(item?.max).toBeUndefined();
     expect(item?.hint).toBeUndefined();

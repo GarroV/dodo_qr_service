@@ -64,7 +64,7 @@ describe("saveSubmission", () => {
     const itemId = sections[0]?.items[0]?.id ?? "";
     const answers = [boolAnswer(itemId, false)];
 
-    const id = await saveSubmission({
+    const id = await saveSubmission({ mode: "normal",
       versionId,
       answers,
       startedAt: Date.now() - 60_000,
@@ -86,7 +86,7 @@ describe("saveSubmission", () => {
     const startedAt = Date.now() - 5 * 60_000;
 
     const before = Date.now();
-    const id = await saveSubmission({
+    const id = await saveSubmission({ mode: "normal",
       versionId,
       answers: [boolAnswer(itemId, true)],
       startedAt,
@@ -107,7 +107,7 @@ describe("saveSubmission", () => {
     const itemId = sections[0]?.items[0]?.id ?? "";
     const otherStation = await createStation();
 
-    const id = await saveSubmission({
+    const id = await saveSubmission({ mode: "normal",
       versionId,
       answers: [boolAnswer(itemId, true)],
       startedAt: Date.now(),
@@ -143,7 +143,7 @@ describe("saveSubmission", () => {
       .set({ stationId: another.stationId })
       .where(eq(checklists.id, checklistId));
 
-    const id = await saveSubmission({
+    const id = await saveSubmission({ mode: "normal",
       versionId,
       answers: [boolAnswer(itemId, true)],
       startedAt: Date.now(),
@@ -158,7 +158,7 @@ describe("saveSubmission", () => {
     const itemId = sections[0]?.items[0]?.id ?? "";
     const answers = [boolAnswer(itemId, true)];
 
-    const id = await saveSubmission({
+    const id = await saveSubmission({ mode: "normal",
       versionId,
       answers,
       startedAt: Date.now(),
@@ -184,7 +184,7 @@ describe("saveSubmission", () => {
     const versionId = await createArchivedVersion(checklistId, sections, 1);
     const itemId = sections[0]?.items[0]?.id ?? "";
 
-    const id = await saveSubmission({
+    const id = await saveSubmission({ mode: "normal",
       versionId,
       answers: [boolAnswer(itemId, false)],
       startedAt: Date.now(),
@@ -201,7 +201,7 @@ describe("saveSubmission", () => {
     const versionId = await createDraft(checklistId, sampleSections("draft"));
 
     await expect(
-      saveSubmission({ versionId, answers: [], startedAt: Date.now() }),
+      saveSubmission({ mode: "normal", versionId, answers: [], startedAt: Date.now() }),
     ).rejects.toThrow();
   });
 
@@ -213,13 +213,13 @@ describe("saveSubmission", () => {
     );
 
     await expect(
-      saveSubmission({ versionId, answers: [], startedAt: Date.now() }),
+      saveSubmission({ mode: "normal", versionId, answers: [], startedAt: Date.now() }),
     ).rejects.toThrow();
   });
 
   test("отказывает понятной ошибкой, если версии не существует", async () => {
     await expect(
-      saveSubmission({
+      saveSubmission({ mode: "normal",
         versionId: randomUUID(),
         answers: [],
         startedAt: Date.now(),
@@ -234,7 +234,7 @@ describe("getSubmission", () => {
     // хранит свою копию пунктов. Если карточка читает версию, вторая опора мнимая —
     // достаточно одной правки версии мимо слоя доступа, чтобы история переписалась.
     const { sections, versionId } = await readyVersion("опора");
-    const id = await saveSubmission({
+    const id = await saveSubmission({ mode: "normal",
       versionId,
       answers: [boolAnswer(sections[0]?.items[0]?.id ?? "", false)],
       startedAt: Date.now(),
@@ -265,12 +265,12 @@ describe("listSubmissions — фильтры", () => {
     const b = await readyVersion("filter-b");
     const itemA = a.sections[0]?.items[0]?.id ?? "";
     const itemB = b.sections[0]?.items[0]?.id ?? "";
-    const idA = await saveSubmission({
+    const idA = await saveSubmission({ mode: "normal",
       versionId: a.versionId,
       answers: [boolAnswer(itemA, true)],
       startedAt: Date.now(),
     });
-    const idB = await saveSubmission({
+    const idB = await saveSubmission({ mode: "normal",
       versionId: b.versionId,
       answers: [boolAnswer(itemB, true)],
       startedAt: Date.now(),

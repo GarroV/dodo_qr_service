@@ -12,6 +12,7 @@
 // и по той же причине уже применён к миграциям — см. хвост `src/blocks/data/index.ts`.
 // Оба файла ниже чистые: `types.ts` — только типы, `grading.ts` — только правило провала.
 import { flattenItems, isFailed } from "@/blocks/data/grading";
+import { requiresCommentOnFailure } from "@/blocks/data/severity";
 import type { Answer, Item, Section } from "@/blocks/data/types";
 
 import type { FillScreenView } from "./model";
@@ -87,7 +88,7 @@ export function summarizeFill(
 
     if (!isFailed(item, toAnswer(item.id, entry))) continue;
     failedItemIds.push(item.id);
-    if (item.critical && entry.comment.trim() === "") {
+    if (requiresCommentOnFailure(item) && entry.comment.trim() === "") {
       needsCommentItemIds.push(item.id);
     }
   }
@@ -151,7 +152,7 @@ export function gradingSections(view: FillScreenView): Section[] {
       id: item.id,
       title: {},
       type: item.type,
-      critical: item.critical,
+      severity: item.severity,
       ...(item.min === undefined ? {} : { min: item.min }),
       ...(item.max === undefined ? {} : { max: item.max }),
     })),

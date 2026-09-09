@@ -1,5 +1,6 @@
 // Что считается проваленным пунктом. Правило живёт в одном месте: и лента заполнений,
 // и карточка считают провалы одинаково, иначе два экрана покажут разные числа.
+import { severityOf } from "./severity";
 import type { Answer, Item, Section } from "./types";
 
 /** Все пункты снимка подряд: секции нужны на экране, а для счёта важны только пункты. */
@@ -30,6 +31,7 @@ export function countFailedCritical(
 ): number {
   const byItem = new Map(answers.map((answer) => [answer.itemId, answer]));
   return flattenItems(snapshot).filter(
-    (item) => item.critical && isFailed(item, byItem.get(item.id)),
+    (item) =>
+      severityOf(item) === "critical" && isFailed(item, byItem.get(item.id)),
   ).length;
 }

@@ -114,6 +114,8 @@ export async function loadFillTarget(
 export interface StationVersion {
   readonly versionId: string;
   readonly stationId: string;
+  /** Пиццерия станции: по ней читается действующий режим смены (D055). */
+  readonly storeId: string;
   readonly sections: Section[];
 }
 
@@ -139,6 +141,7 @@ export async function findStationVersion(
     .select({
       versionId: checklistVersions.id,
       stationId: stations.id,
+      storeId: stations.storeId,
       sections: checklistVersions.sections,
     })
     .from(checklistVersions)

@@ -43,6 +43,13 @@
       "when": 1788773869828,
       "tag": "0005_checklist_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788788034188,
+      "tag": "0006_shift_modes",
+      "breakpoints": true
     }
   ]
 }

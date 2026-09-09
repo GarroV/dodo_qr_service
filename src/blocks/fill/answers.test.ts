@@ -20,7 +20,6 @@ function item(id: string, patch: Partial<Item> = {}): Item {
     id,
     title: { ru: id, en: id },
     type: "bool",
-    critical: false,
     ...patch,
   };
 }
@@ -141,6 +140,24 @@ describe("проваленный критичный пункт требует к
     expect(summary.canSubmit).toBe(false);
   });
 
+  it("важный пункт тоже требует объяснения провала", () => {
+    const list = sections(item("m", { severity: "major" }));
+
+    const summary = summarizeFill(list, answered(emptyDraft(), "m", false));
+
+    expect(summary.needsCommentItemIds).toStrictEqual(["m"]);
+    expect(summary.canSubmit).toBe(false);
+  });
+
+  it("обычный пункт провалить можно молча", () => {
+    const list = sections(item("n", { severity: "normal" }));
+
+    const summary = summarizeFill(list, answered(emptyDraft(), "n", false));
+
+    expect(summary.needsCommentItemIds).toStrictEqual([]);
+    expect(summary.canSubmit).toBe(true);
+  });
+
   it("с комментарием отправка открывается", () => {
     const list = sections(item("c", { critical: true }));
 
@@ -165,7 +182,7 @@ describe("проваленный критичный пункт требует к
 
   it("критичное число вне диапазона тоже требует комментарий", () => {
     const list = sections(
-      item("n", { type: "number", critical: true, min: 2, max: 4 }),
+      item("n", { type: "number", severity: "critical", min: 2, max: 4 }),
     );
 
     expect(
@@ -250,14 +267,14 @@ describe("модель экрана обратно в пункты для счё
             id: "a",
             title: "Включить",
             type: "bool",
-            critical: true,
+            severity: "critical",
             hint: null,
           },
           {
             id: "n",
             title: "Температура",
             type: "number",
-            critical: false,
+            severity: "normal",
             min: 2,
             max: 4,
             hint: "2…4",
@@ -274,7 +291,7 @@ describe("модель экрана обратно в пункты для счё
       id: "a",
       title: {},
       type: "bool",
-      critical: true,
+      severity: "critical",
     });
     expect(section?.items[1]).toMatchObject({ type: "number", min: 2, max: 4 });
   });

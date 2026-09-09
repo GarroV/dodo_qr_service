@@ -219,7 +219,7 @@ describe("duplicateChecklist", () => {
       sampleSections("исходный"),
       1,
     );
-    await saveSubmission({
+    await saveSubmission({ mode: "normal",
       versionId: publishedId,
       answers: [{ itemId: "item-исходный", value: true, at: Date.now() }],
       startedAt: Date.now(),

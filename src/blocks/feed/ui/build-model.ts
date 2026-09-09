@@ -3,7 +3,12 @@
 // показатели считаются по ТОМУ ЖЕ массиву строк, который показан в ленте.
 import type { Locale } from "@/blocks/core/locale";
 import type { Answer, Section, SubmissionRow } from "@/blocks/data";
-import { getSubmission, isFailed, listSubmissions } from "@/blocks/data";
+import {
+  getSubmission,
+  isFailed,
+  listSubmissions,
+  severityOf,
+} from "@/blocks/data";
 
 import { checklistHref } from "../checklist-link";
 import { loadFailedCounts } from "../failures";
@@ -175,7 +180,7 @@ export async function buildSubmissionModel(
   ).length;
   const failedCount = items.filter((item) => item.failed).length;
   const failedCriticalCount = items.filter(
-    (item) => item.failed && item.critical,
+    (item) => item.failed && item.severity === "critical",
   ).length;
 
   return {
@@ -238,7 +243,7 @@ function toSectionViews(
         itemId: item.id,
         title: pickText(item.title, locale),
         hint: item.hint === undefined ? null : pickText(item.hint, locale),
-        critical: item.critical,
+        severity: severityOf(item),
         min: item.min ?? null,
         max: item.max ?? null,
         failed: isFailed(item, answer),

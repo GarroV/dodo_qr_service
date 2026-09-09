@@ -5,6 +5,7 @@
 // доходил бы до пула соединений раньше, чем до отказа.
 import {
   countFailedCritical,
+  getShiftMode,
   getSubmission,
   saveSubmission,
 } from "@/blocks/data";
@@ -73,10 +74,15 @@ export async function submitFilling(
   const checked = matchAnswersToSnapshot(version.sections, answers);
   if (!checked.ok) return refuse(checked.reason);
 
+  // Режим читается на сервере, а не приходит из браузера: заполнение обязано помнить,
+  // при каком режиме его собирали, и подделать эту запись отправкой нельзя (D055).
+  const shift = await getShiftMode(version.storeId, now);
+
   const submissionId = await saveSubmission({
     versionId: version.versionId,
     answers: [...checked.value],
     startedAt: clampStartedAt(startedAt, now),
+    mode: shift?.mode ?? "normal",
   });
 
   // Время и длительность читаются обратно из базы, а не считаются здесь: на экране

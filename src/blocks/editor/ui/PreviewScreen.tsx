@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
 
 import type { Item, LocalizedText, Section } from "@/blocks/data";
+import { severityOf } from "@/blocks/data";
 
 import { loadEditor } from "../drafts";
 import { checklistPath } from "../routes";
@@ -90,6 +91,7 @@ function ItemRow({
   readonly isFirst: boolean;
 }): ReactElement {
   const range = rangeHint(item, t);
+  const severity = severityOf(item);
 
   return (
     <div
@@ -99,14 +101,24 @@ function ItemRow({
       <span className={ITEM_BOX_CLASS} />
       <span className={ITEM_TEXT_CLASS}>
         {pickText(item.title, locale)}
-        {item.critical ? (
-          <span className="ml-[var(--space-2)] font-bold text-[var(--warn-mark)]">
+        {severity === "normal" ? null : (
+          <span
+            className={`ml-[var(--space-2)] font-bold ${
+              severity === "critical"
+                ? "text-[var(--warn-mark)]"
+                : "text-[var(--ink-3)]"
+            }`}
+          >
             !
           </span>
-        ) : null}
-        {item.critical ? (
-          <span className={ITEM_HINT_CLASS}>{t("preview.critical")}</span>
-        ) : null}
+        )}
+        {severity === "normal" ? null : (
+          <span className={ITEM_HINT_CLASS}>
+            {severity === "critical"
+              ? t("preview.critical")
+              : t("preview.major")}
+          </span>
+        )}
         {range !== null ? (
           <span className={ITEM_HINT_CLASS}>{range}</span>
         ) : null}

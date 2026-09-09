@@ -147,17 +147,25 @@ function ItemBody({
       />
       <span className={TEXT_CLASS}>
         {item.title}
-        {item.critical ? (
-          <span className="ml-[var(--space-2)] font-bold text-[var(--warn-mark)]">
+        {item.severity === "normal" ? null : (
+          <span
+            className={`ml-[var(--space-2)] font-bold ${
+              item.severity === "critical"
+                ? "text-[var(--warn-mark)]"
+                : "text-[var(--ink-3)]"
+            }`}
+          >
             !
           </span>
-        ) : null}
+        )}
         {item.hint === null ? null : (
           <span className={HINT_CLASS}>{item.hint}</span>
         )}
-        {item.critical ? (
-          <span className={HINT_CLASS}>{t("criticalHint")}</span>
-        ) : null}
+        {item.severity === "normal" ? null : (
+          <span className={HINT_CLASS}>
+            {t(item.severity === "critical" ? "criticalHint" : "majorHint")}
+          </span>
+        )}
       </span>
     </>
   );
@@ -401,7 +409,7 @@ export function FillForm({
                   </div>
                 ) : null}
 
-                {failed && item.critical ? (
+                {failed && item.severity !== "normal" ? (
                   <div className="mx-[var(--space-7)] mb-[var(--space-6)] rounded-[var(--r-block)] border border-[var(--err-line)] bg-[var(--err-soft)] p-[var(--space-6)]">
                     <label
                       htmlFor={`comment-${item.id}`}

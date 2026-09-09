@@ -215,7 +215,10 @@
       "max": "Upper bound",
       "remove": "Delete item",
       "moveUp": "Up",
-      "moveDown": "Down"
+      "moveDown": "Down",
+      "normal": "Normal",
+      "major": "Major",
+      "severityLabel": "How critical the item is"
     },
     "keys": {
       "enter": "next item",
@@ -249,7 +252,8 @@
       "finish": "Finish",
       "critical": "Critical item",
       "range": "{min}…{max}",
-      "empty": "The draft has no items yet"
+      "empty": "The draft has no items yet",
+      "major": "Major item"
     },
     "errors": {
       "badFormat": "The checklist data was not accepted: check the fields and try again.",
@@ -388,7 +392,8 @@
     "tooOften": {
       "title": "Too many requests",
       "text": "Wait a minute and scan the sticker again."
-    }
+    },
+    "majorHint": "Major — a comment is required if it fails"
   },
   "feed": {
     "nav": {
@@ -490,7 +495,8 @@
       "noAnswer": "no answer",
       "notFoundTitle": "Submission not found",
       "notFoundText": "The link points to a submission that does not exist: the address may have a typo.",
-      "notFoundAction": "Back to the feed"
+      "notFoundAction": "Back to the feed",
+      "major": "major"
     }
   }
 }

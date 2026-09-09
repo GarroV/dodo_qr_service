@@ -21,7 +21,7 @@ function goodSection(overrides: Record<string, unknown> = {}): unknown {
         id: "item-1",
         title: { ru: "Включить печь", en: "Turn on the oven" },
         type: "bool",
-        critical: false,
+        severity: "normal",
       },
     ],
     ...overrides,
@@ -42,11 +42,47 @@ describe("parseSections", () => {
             id: "item-1",
             title: { ru: "Включить печь", en: "Turn on the oven" },
             type: "bool",
-            critical: false,
+            severity: "normal",
           },
         ],
       },
     ]);
+  });
+
+  test("старый признак critical из черновика читается как уровень", () => {
+    // Черновики, заведённые до появления уровней, лежат в базе с булевым `critical`
+    // и обязаны продолжать открываться правильно (D056).
+    const sections = parseSections([
+      goodSection({
+        items: [
+          { id: "item-1", title: { ru: "Газ" }, type: "bool", critical: true },
+          { id: "item-2", title: { ru: "Столы" }, type: "bool", critical: false },
+        ],
+      }),
+    ]);
+
+    expect(sections[0]?.items.map((item) => item.severity)).toStrictEqual([
+      "critical",
+      "normal",
+    ]);
+  });
+
+  test("явный уровень сильнее старого признака", () => {
+    const sections = parseSections([
+      goodSection({
+        items: [
+          {
+            id: "item-1",
+            title: { ru: "Газ" },
+            type: "bool",
+            critical: true,
+            severity: "major",
+          },
+        ],
+      }),
+    ]);
+
+    expect(sections[0]?.items[0]?.severity).toBe("major");
   });
 
   test("отбрасывает поля, которых нет в контракте с блоком fill", () => {
@@ -60,7 +96,7 @@ describe("parseSections", () => {
             id: "item-1",
             title: { ru: "Включить печь" },
             type: "bool",
-            critical: false,
+            severity: "normal",
             secret: "шпион",
           },
         ],
@@ -89,9 +125,9 @@ describe("parseSections", () => {
             id: "item-1",
             title: { ru: "Включить печь" },
             type: "bool",
-            critical: false,
+            severity: "normal",
           },
-          { id: "item-2", title: { ru: "  " }, type: "bool", critical: false },
+          { id: "item-2", title: { ru: "  " }, type: "bool", severity: "normal" },
         ],
       }),
     ]);
@@ -125,7 +161,7 @@ describe("parseSections", () => {
             id: "item-1",
             title: { ru: "Температура фритюра" },
             type: "number",
-            critical: true,
+            severity: "critical",
             min: "160",
             max: "180",
           },
@@ -135,7 +171,7 @@ describe("parseSections", () => {
 
     expect(sections[0]?.items[0]).toMatchObject({
       type: "number",
-      critical: true,
+      severity: "critical",
       min: 160,
       max: 180,
     });
@@ -149,7 +185,7 @@ describe("parseSections", () => {
             id: "item-1",
             title: { ru: "Температура фритюра" },
             type: "number",
-            critical: false,
+            severity: "normal",
             min: "",
             max: "",
           },
@@ -170,7 +206,7 @@ describe("parseSections", () => {
               id: "item-1",
               title: { ru: "Температура" },
               type: "number",
-              critical: false,
+              severity: "normal",
               min: 180,
               max: 160,
             },
@@ -189,7 +225,7 @@ describe("parseSections", () => {
               id: "item-1",
               title: { ru: "Пункт" },
               type: "подпись",
-              critical: false,
+              severity: "normal",
             },
           ],
         }),
@@ -223,7 +259,7 @@ describe("parseSections", () => {
         id: `item-${String(index)}`,
         title: { ru: `Пункт ${String(index)}` },
         type: "bool",
-        critical: false,
+        severity: "normal",
       }),
     );
 

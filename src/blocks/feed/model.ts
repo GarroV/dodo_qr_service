@@ -1,6 +1,8 @@
 // Модель экранов ленты: то, что страница посчитала, а разметка только рисует.
 // Разметка не ходит в базу, не считает провалы и не переставляет строки — иначе лента
 // и карточка начали бы считать одно и то же по-разному.
+import type { Severity } from "@/blocks/data";
+
 import type { Outcome } from "./outcome";
 import type { FeedPeriod, RelativeDay } from "./period";
 
@@ -97,7 +99,7 @@ export interface SubmissionItemView {
   readonly itemId: string;
   readonly title: string;
   readonly hint: string | null;
-  readonly critical: boolean;
+  readonly severity: Severity;
   /** Диапазон числового пункта из снимка: «160–180» рядом с заголовком. */
   readonly min: number | null;
   readonly max: number | null;

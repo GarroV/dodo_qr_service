@@ -125,7 +125,7 @@ export function sampleSections(label: string): Section[] {
           id: `item-${label}`,
           title: { ru: `Пункт ${label}`, en: `Item ${label}` },
           type: "bool",
-          critical: true,
+          severity: "critical",
         },
       ],
     },

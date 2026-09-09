@@ -1,13 +1,13 @@
 // Что видит экран заполнения. Тексты здесь уже выбраны по языку и склеены:
 // разметке остаётся только показать строки, а вся работа с языками и формат
 // подсказок живут в одном месте (`view.ts`) и проверяются модульными тестами.
-import type { ItemType } from "@/blocks/data";
+import type { ItemType, Severity } from "@/blocks/data";
 
 export interface FillItemView {
   readonly id: string;
   readonly title: string;
   readonly type: ItemType;
-  readonly critical: boolean;
+  readonly severity: Severity;
   readonly min?: number;
   readonly max?: number;
   /** Подсказка методиста и диапазон одной строкой; `null` — строки нет. */

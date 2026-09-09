@@ -129,9 +129,9 @@ function AnswerRow({
       <span className={markClass(item)} />
       <span className={TITLE_ROW_CLASS}>
         <span>{item.title}</span>
-        {item.critical ? (
-          <span className={CRIT_TAG_CLASS}>{t("critical")}</span>
-        ) : null}
+        {item.severity === "normal" ? null : (
+          <span className={CRIT_TAG_CLASS}>{t(item.severity)}</span>
+        )}
         {note === null ? null : <span className={HINT_CLASS}>{note}</span>}
       </span>
       <span

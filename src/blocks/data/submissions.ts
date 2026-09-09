@@ -16,7 +16,7 @@ import {
   stores,
   submissions,
 } from "./schema";
-import type { Answer, LocalizedText, Section } from "./types";
+import type { Answer, LocalizedText, Section, ShiftMode } from "./types";
 
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
@@ -31,6 +31,12 @@ export interface SaveSubmissionInput {
   versionId: string;
   answers: Answer[];
   startedAt: number;
+  /**
+   * Режим смены, действовавший в момент отправки (D055). Читается на сервере, а не
+   * приходит из браузера: заполнение обязано помнить, при каком режиме его собирали,
+   * а вечерняя перестановка режима не имеет права переписать утреннюю историю.
+   */
+  mode: ShiftMode;
 }
 
 export interface SubmissionFilter {
@@ -60,6 +66,8 @@ export interface SubmissionRow {
   itemCount: number;
   answeredCount: number;
   failedCriticalCount: number;
+  /** Режим смены, в котором заполняли: лента обязана показывать сокращённый прогон. */
+  mode: ShiftMode;
 }
 
 export interface SubmissionDetail extends SubmissionRow {
@@ -89,6 +97,7 @@ const SUBMISSION_COLUMNS = {
   // правка версии мимо слоя доступа переписывает то, что видел сотрудник.
   snapshot: submissions.snapshot,
   answers: submissions.answers,
+  mode: submissions.mode,
 };
 
 function submissionsBaseQuery(db: Database) {
@@ -133,6 +142,7 @@ function toSubmissionRow(row: SubmissionQueryRow): SubmissionRow {
     itemCount: flattenItems(row.snapshot).length,
     answeredCount: row.answers.length,
     failedCriticalCount: countFailedCritical(row.snapshot, row.answers),
+    mode: row.mode,
   };
 }
 
@@ -214,6 +224,7 @@ export async function saveSubmission(
       snapshot: version.sections,
       answers: input.answers,
       startedAt: new Date(input.startedAt),
+      mode: input.mode,
     })
     .returning({ id: submissions.id });
 

@@ -1,7 +1,8 @@
 import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, KeyboardEvent } from "react";
 
-import type { Item, ItemType } from "@/blocks/data";
+import type { Item, ItemType, Severity } from "@/blocks/data";
+import { severityOf } from "@/blocks/data";
 
 import { SELECT_ARROW_SMALL } from "./select-style";
 
@@ -33,6 +34,16 @@ const BOUND_CLASS =
 
 const ITEM_TYPES: readonly ItemType[] = ["bool", "number", "text"];
 
+/** Порядок положений переключателя уровня: слева направо, от лёгкого к тяжёлому. */
+const SEVERITIES: readonly Severity[] = ["normal", "major", "critical"];
+
+const SEVERITY_TONE: Readonly<Record<Severity, string>> = {
+  normal: "bg-surface text-[var(--ink-2)] shadow-[var(--sh-xs)]",
+  major:
+    "bg-surface text-[var(--ink)] shadow-[var(--sh-xs)] ring-1 ring-[var(--line-strong)]",
+  critical: "bg-[var(--warn-mark)] text-[var(--ink-inverse)]",
+};
+
 /** Ключ подписи типа ответа: "typeBool" | "typeNumber" | "typeText". */
 function typeKey(type: ItemType): string {
   if (type === "number") return "typeNumber";
@@ -63,13 +74,13 @@ export function ItemRow({
   onPaste,
 }: ItemRowProps) {
   const t = useTranslations("editor.item");
-  const critical = item.critical;
+  const severity = severityOf(item);
 
   return (
     <div
       data-testid="editor-item"
-      data-critical={critical ? "true" : "false"}
-      className={`${ROW_CLASS} ${critical ? "bg-[var(--warn-soft)]" : "hover:bg-[var(--surface-2)]"}`}
+      data-severity={severity}
+      className={`${ROW_CLASS} ${severity === "critical" ? "bg-[var(--warn-soft)]" : "hover:bg-[var(--surface-2)]"}`}
     >
       <div className="text-right text-[length:var(--fs-meta)] text-[var(--ink-3)]">
         {ordinal}
@@ -134,29 +145,41 @@ export function ItemRow({
           </span>
         ) : null}
 
-        <button
-          type="button"
-          role="switch"
-          aria-checked={critical}
-          data-testid="item-critical"
-          className="inline-flex cursor-pointer items-center gap-[var(--space-3)] border-0 bg-transparent whitespace-nowrap"
-          onClick={() => {
-            onPatch({ critical: !critical });
-          }}
+        <span
+          data-testid="item-severity"
+          role="group"
+          aria-label={t("severityLabel")}
+          className="inline-flex gap-[2px] rounded-[var(--r-control)] bg-[var(--seg-track)] p-[2px] whitespace-nowrap"
         >
-          <span
-            className={`relative h-[17px] w-[30px] rounded-[9px] transition-colors ${critical ? "bg-[var(--warn-mark)]" : "bg-[var(--seg-track)]"}`}
-          >
-            <span
-              className={`bg-surface absolute top-[2px] left-[2px] h-[13px] w-[13px] rounded-full shadow-[var(--sh-xs)] transition-transform ${critical ? "translate-x-[13px]" : ""}`}
-            />
-          </span>
-          <span
-            className={`text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] uppercase ${critical ? "text-[var(--warn-ink)]" : "text-[var(--ink-3)]"}`}
-          >
-            {t("critical")}
-          </span>
-        </button>
+          {SEVERITIES.map((level) => (
+            <label
+              key={level}
+              className="cursor-pointer"
+              data-testid={`item-severity-${level}`}
+              data-selected={severity === level ? "true" : "false"}
+            >
+              <input
+                type="radio"
+                name={`severity-${item.id}`}
+                value={level}
+                checked={severity === level}
+                onChange={() => {
+                  onPatch({ severity: level });
+                }}
+                className="peer sr-only"
+              />
+              <span
+                className={`inline-flex h-[19px] items-center rounded-[var(--r-mark)] px-[var(--space-4)] text-[length:var(--fs-micro)] font-semibold tracking-[var(--tracking-micro)] uppercase transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-1 peer-focus-visible:outline-[var(--focus-ring)] ${
+                  severity === level
+                    ? SEVERITY_TONE[level]
+                    : "text-[var(--ink-3)]"
+                }`}
+              >
+                {t(level)}
+              </span>
+            </label>
+          ))}
+        </span>
 
         <button
           type="button"

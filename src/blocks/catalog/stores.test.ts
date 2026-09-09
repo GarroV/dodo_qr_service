@@ -248,7 +248,7 @@ describe("deleteStore", () => {
       checklistId,
       sampleSections("история"),
     );
-    await saveSubmission({
+    await saveSubmission({ mode: "normal",
       versionId,
       answers: [boolAnswer("item-история", true)],
       startedAt: Date.now(),
