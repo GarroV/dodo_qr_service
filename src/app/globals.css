@@ -1,6 +1,6 @@
 @import "tailwindcss";
 /* Единственный источник токенов — экранный эталон, копии здесь нет (решение D013). */
-@import "../../docs/forge/design/reference/tokens.css";
+@import "../../docs/furca/design/reference/tokens.css";
 
 /* Токены дизайн-системы названы не по конвенции Tailwind, поэтому прокидываются
    в нужные namespace через @theme inline: значения остаются в tokens.css. */
